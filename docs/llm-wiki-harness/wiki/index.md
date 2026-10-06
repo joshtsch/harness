@@ -1,0 +1,14 @@
+# Wiki Index
+
+**Summary**: Table of contents for harness knowledge and cross-project information.
+**Sources**: ../../../AGENTS.md
+**Last updated**: October 6, 2026
+
+Wiki covers harness workflow, project boundaries, and shared cross-project knowledge.
+
+## Related pages
+
+- [[log]]
+- [[code-graph-intelligence]]
+- [Attio and Granola API workflow](../../agents/tooling.md#api-access-and-fallback)
+- [Fresh public repository decision](../../adr/0012-public-repository-hygiene.md)

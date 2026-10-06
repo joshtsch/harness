@@ -1,0 +1,10 @@
+# Harness-level MCP servers. Project config is loaded only for trusted repositories.
+
+[mcp_servers.attio]
+url = "https://mcp.attio.com/mcp"
+
+[mcp_servers.granola]
+url = "https://mcp.granola.ai/mcp"
+
+[mcp_servers.stitch]
+url = "https://stitch.googleapis.com/mcp"

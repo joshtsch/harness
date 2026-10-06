@@ -1,0 +1,5 @@
+sources:
+  - name: mattpocock-skills
+    repository: mattpocock/skills
+    installer: pnpm dlx skills add mattpocock/skills
+    scope: project

@@ -1,0 +1,38 @@
+version: 1
+providers: [codex, gemini]
+skills:
+  agent-system-audit: { capability: agent-system-audit, state: canonical, codex: supported, gemini: supported }
+  cavecrew: { capability: cavecrew, state: canonical, codex: degraded, gemini: unavailable }
+  caveman: { capability: caveman, state: canonical, codex: supported, gemini: supported }
+  caveman-commit: { capability: caveman-commit, state: canonical, codex: supported, gemini: supported }
+  caveman-compress: { capability: caveman-compress, state: canonical, codex: supported, gemini: degraded }
+  caveman-discover: { capability: caveman-discover, state: canonical, codex: supported, gemini: degraded }
+  caveman-evidence-review: { capability: caveman-evidence-review, state: canonical, codex: supported, gemini: degraded }
+  caveman-explore: { capability: caveman-explore, state: canonical, codex: degraded, gemini: unavailable }
+  caveman-help: { capability: caveman-help, state: canonical, codex: supported, gemini: degraded }
+  caveman-learn: { capability: caveman-learn, state: canonical, codex: supported, gemini: degraded }
+  caveman-manage: { capability: caveman-manage, state: canonical, codex: supported, gemini: degraded }
+  caveman-optimize: { capability: caveman-optimize, state: canonical, codex: supported, gemini: degraded }
+  caveman-review: { capability: caveman-review, state: canonical, codex: supported, gemini: supported }
+  caveman-setup: { capability: caveman-setup, state: canonical, codex: supported, gemini: degraded }
+  caveman-stats: { capability: caveman-stats, state: canonical, codex: supported, gemini: degraded }
+  domain-modeling: { capability: domain-modeling, state: canonical, codex: supported, gemini: supported }
+  grill-with-docs: { capability: harness-grill-with-docs, state: available, requires: [grilling, domain-modeling], codex: supported, gemini: degraded }
+  grilling: { capability: grilling, state: canonical, codex: supported, gemini: supported }
+  harness-grill-with-docs: { capability: harness-grill-with-docs, state: canonical, requires: [grill-with-docs, grilling, domain-modeling], codex: supported, gemini: degraded }
+  initialize-llm-wiki: { capability: initialize-llm-wiki, state: canonical, codex: supported, gemini: degraded }
+  investigate-first: { capability: investigate-first, state: canonical, codex: supported, gemini: supported }
+  lean-build: { capability: lean-build, state: canonical, codex: supported, gemini: supported }
+  migration: { capability: migration, state: canonical, codex: supported, gemini: supported }
+  safe-refactor: { capability: safe-refactor, state: canonical, codex: supported, gemini: supported }
+  save: { capability: session-save, state: canonical, codex: supported, gemini: supported }
+  scope-router: { capability: scope-router, state: canonical, codex: supported, gemini: supported }
+  surgical-patch: { capability: surgical-patch, state: canonical, codex: supported, gemini: supported }
+  verify-and-stop: { capability: verify-and-stop, state: canonical, codex: supported, gemini: supported }
+companions:
+  harness-grill-with-docs: [scope-router]
+  investigate-first: [cavecrew]
+  lean-build: [cavecrew, caveman-explore]
+  migration: [cavecrew]
+  safe-refactor: [cavecrew]
+  surgical-patch: [cavecrew]

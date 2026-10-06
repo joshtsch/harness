@@ -1,0 +1,29 @@
+version: 1
+capabilities:
+  agent-system-audit: { intent: audit agent setup or a session, inputs: [session evidence], output: review candidates, authority: suggest, verification: evidence linked to each candidate }
+  cavecrew: { intent: delegate bounded code work, inputs: [task, repository], output: delegated findings or patch, authority: modify, verification: inspect delegated result }
+  caveman: { intent: use concise conversational prose, inputs: [session], output: concise prose, authority: observe, verification: preserve technical meaning, kind: mode }
+  caveman-commit: { intent: draft a commit message, inputs: [change], output: conventional commit message, authority: suggest, verification: match change intent }
+  caveman-compress: { intent: compress agent memory, inputs: [memory file], output: compressed memory, authority: modify, verification: preserve facts and structure }
+  caveman-discover: { intent: identify LLM workflows, inputs: [repository], output: workflow inventory, authority: suggest, verification: compare callsites }
+  caveman-evidence-review: { intent: review Caveman evidence, inputs: [Caveman report], output: evidence findings, authority: observe, verification: cite observed traces }
+  caveman-explore: { intent: orient in a repository, inputs: [repository question], output: cited paths, authority: observe, verification: path and line citations }
+  caveman-help: { intent: explain Caveman commands, inputs: [question], output: command guidance, authority: observe, verification: match installed commands }
+  caveman-learn: { intent: apply an approved Caveman learning fix, inputs: [report, approval], output: measured edit, authority: modify, verification: compare measured result }
+  caveman-manage: { intent: inspect a Caveman experiment, inputs: [experiment], output: safe action proposal, authority: suggest, verification: check experiment state }
+  caveman-optimize: { intent: evaluate a Caveman optimization candidate, inputs: [observation, approval], output: paired evaluation, authority: modify, verification: compare baseline and candidate }
+  caveman-review: { intent: review code concisely, inputs: [diff], output: actionable findings, authority: observe, verification: check locations }
+  caveman-setup: { intent: connect LLM calls to Caveman, inputs: [repository], output: instrumented calls, authority: modify, verification: run one request }
+  caveman-stats: { intent: report Caveman usage, inputs: [session report], output: usage summary, authority: observe, verification: use recorded counts }
+  domain-modeling: { intent: sharpen domain vocabulary and decisions, inputs: [domain discussion], output: glossary or ADR, authority: modify, verification: terms and decisions match the conversation }
+  grilling: { intent: stress-test a design, inputs: [idea], output: resolved decision tree, authority: suggest, verification: user confirms the decisions }
+  harness-grill-with-docs: { intent: interview on a harness design, inputs: [idea], output: resolved decisions and domain docs, authority: modify, verification: user confirms understanding }
+  initialize-llm-wiki: { intent: initialize a topic wiki, inputs: [topic, destination], output: wiki scaffold, authority: modify, verification: check links and markers }
+  investigate-first: { intent: diagnose an ambiguous failure, triggers: [diagnose, investigate, intermittent, unknown cause], inputs: [failure evidence], output: ranked diagnosis, authority: observe, verification: reproduce or corroborate cause, group: work-shape }
+  lean-build: { intent: build a new feature, triggers: [feature, new behavior, integration], inputs: [request, repository], output: working feature, authority: modify, verification: exercise acceptance path, group: work-shape }
+  migration: { intent: migrate data or interfaces, triggers: [migration, migrate, schema upgrade], inputs: [current and target contract], output: reversible transition, authority: modify, verification: compatibility and rollback proof, group: work-shape }
+  safe-refactor: { intent: restructure without behavior change, triggers: [refactor, restructure, extraction], inputs: [code boundary], output: refactored code, authority: modify, verification: preservation checks, group: work-shape }
+  session-save: { intent: save or hand off the live session, triggers: [save, hand off session, resume session], inputs: [live conversation, current session state], output: portable encrypted checkpoint, authority: modify, verification: remote save status confirmed }
+  scope-router: { intent: classify work ownership, inputs: [idea, repository inventory], output: scope memo, authority: suggest, verification: inspect ownership boundaries }
+  surgical-patch: { intent: fix a narrow bug, triggers: [bug, regression, fix], inputs: [failure, repository], output: focused fix, authority: modify, verification: regression proof, group: work-shape }
+  verify-and-stop: { intent: verify existing work, triggers: [verify, validate, completion check], inputs: [acceptance conditions], output: verification result, authority: observe, verification: run focused checks, group: work-shape }

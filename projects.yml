@@ -1,0 +1,8 @@
+defaults:
+  default_branch: main
+  setup_script: scripts/setup.sh
+  issue_tracker:
+    type: github
+
+# Add installation-specific projects to ignored projects.local.yml.
+projects: {}

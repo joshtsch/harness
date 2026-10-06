@@ -1,0 +1,8 @@
+{
+  "context": {
+    "fileName": ["AGENTS.md"]
+  },
+  "skills": {
+    "disabled": ["cavecrew", "caveman-explore", "grill-with-docs"]
+  }
+}

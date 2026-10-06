@@ -1,0 +1,17 @@
+plugins:
+  - name: ponytail
+    marketplace: ponytail
+    source: DietrichGebert/ponytail
+    install:
+      - codex plugin marketplace add DietrichGebert/ponytail
+      - codex plugin add ponytail@ponytail
+  - name: vercel
+    marketplace: openai-curated-remote
+    source: vercel/vercel-plugin
+    install:
+      - codex plugin add vercel@openai-curated-remote
+  - name: supabase
+    marketplace: openai-curated-remote
+    source: supabase/supabase-plugin
+    install:
+      - codex plugin add supabase@openai-curated-remote
