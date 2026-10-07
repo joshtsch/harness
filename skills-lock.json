@@ -53,13 +53,13 @@
       "source": "JuliusBrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-help/SKILL.md",
-      "computedHash": "b5757ca455c4c7af2c1a2abf2e55619e9cc7c085622058d0172c60cb658af90b"
+      "computedHash": "8b03b0526c2c96f9b44dfde8f2d0063351ec9bbfa946de7a6316c96f6024ca75"
     },
     "caveman-learn": {
       "source": "JuliusBrussee/caveman",
       "sourceType": "github",
       "skillPath": "skills/caveman-learn/SKILL.md",
-      "computedHash": "7af5a39ccea7b778581938662422ffce01df4271fb5403a63953794748210e93"
+      "computedHash": "d25fd3ece9b571e1cffd93ca2594ab1919471b27b9c1589fc1c8b7e9c7d6071b"
     },
     "caveman-manage": {
       "source": "JuliusBrussee/caveman",
@@ -151,6 +151,12 @@
       "skillPath": "skills/safe-refactor/SKILL.md",
       "computedHash": "9df34a21a7a2c18ce13dbbe4a3f66b4e91df9e4bc33c1c9da8a80261583367ec"
     },
+    "scope-router": {
+      "source": "joshtsch/skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/scope-router/SKILL.md",
+      "computedHash": "dd2c2155947dc1504f8f047ce7221e4e863bf6479b562df68c7cc28ed65cca29"
+    },
     "save": {
       "source": "joshtsch/skills",
       "sourceUrl": "https://github.com/joshtsch/skills.git",
@@ -158,12 +164,6 @@
       "sourceType": "github",
       "skillPath": ".agents/skills/save/SKILL.md",
       "computedHash": "a01acc4da9db4a55df800c7d29efe88e1675c28da060f2fed22bdfb359a5e66d"
-    },
-    "scope-router": {
-      "source": "joshtsch/skills",
-      "sourceType": "github",
-      "skillPath": ".agents/skills/scope-router/SKILL.md",
-      "computedHash": "dd2c2155947dc1504f8f047ce7221e4e863bf6479b562df68c7cc28ed65cca29"
     },
     "surgical-patch": {
       "source": "JuliusBrussee/caveman",
