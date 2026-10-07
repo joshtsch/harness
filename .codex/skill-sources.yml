@@ -3,3 +3,7 @@ sources:
     repository: mattpocock/skills
     installer: pnpm dlx skills add mattpocock/skills
     scope: project
+  - name: impeccable
+    repository: pbakaus/impeccable
+    installer: pnpm dlx skills add pbakaus/impeccable --skill impeccable --agent codex gemini-cli --yes
+    scope: project
