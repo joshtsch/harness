@@ -20,6 +20,7 @@ skills:
   grill-with-docs: { capability: harness-grill-with-docs, state: available, requires: [grilling, domain-modeling], codex: supported, gemini: degraded }
   grilling: { capability: grilling, state: canonical, codex: supported, gemini: supported }
   harness-grill-with-docs: { capability: harness-grill-with-docs, state: canonical, requires: [grill-with-docs, grilling, domain-modeling], codex: supported, gemini: degraded }
+  impeccable: { capability: ui-design, state: canonical, codex: supported, gemini: supported }
   initialize-llm-wiki: { capability: initialize-llm-wiki, state: canonical, codex: supported, gemini: degraded }
   investigate-first: { capability: investigate-first, state: canonical, codex: supported, gemini: supported }
   lean-build: { capability: lean-build, state: canonical, codex: supported, gemini: supported }
@@ -32,7 +33,7 @@ skills:
 companions:
   harness-grill-with-docs: [scope-router]
   investigate-first: [cavecrew]
-  lean-build: [cavecrew, caveman-explore]
+  lean-build: [cavecrew, caveman-explore, ui-design]
   migration: [cavecrew]
   safe-refactor: [cavecrew]
-  surgical-patch: [cavecrew]
+  surgical-patch: [cavecrew, ui-design]

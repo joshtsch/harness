@@ -30,6 +30,7 @@ The scope decision must consider data boundaries and authentication boundaries, 
 - **Attio** — CRM context and relationship workflows through the public API by default.
 - **Granola** — meeting notes, decisions, action items, and transcripts through the public API by default, within the API key's access scope.
 - **Stitch** — design exploration and design-to-code context from Google Stitch when the connected account has access.
+- **Impeccable** — project-local UI design guidance, shaping, critique, and polish through the `ui-design` capability.
 - **Caveman** — project-local Codex skills for concise agent communication and workflow helpers. `pnpm dlx skills` tracks the installation in `skills-lock.json`.
 
 Attio, Granola, and Stitch retain **harness/org-level** MCP registrations. Attio and Granola use the API workflow below by default; their MCP registrations remain available as fallbacks. Project-specific CRM mappings, such as a project's Attio record or workspace context, belong in that project's `projects.yml` entry; they should not be inferred from the global registration.
@@ -122,6 +123,39 @@ The manifest records identity, source, and installation instructions; it does no
 contain credentials or plugin output.
 
 Caveman's proxy is a separate, optional runtime and is not installed by this harness.
+
+## Impeccable installation
+
+[pbakaus/impeccable](https://github.com/pbakaus/impeccable) is an approved
+external skill source. Install its single `impeccable` skill project-locally:
+
+```sh
+pnpm dlx skills add pbakaus/impeccable --skill impeccable --agent codex gemini-cli --yes
+pnpm capabilities check
+```
+
+Track the installation in `skills-lock.json` and `.codex/skill-sources.yml`.
+The installed guidance and launcher stay ignored under `.agents/skills/`.
+Harness initialization restores them with the existing skills installer.
+Codex and Gemini use the shared project-local skill. Restart the agent session
+if the new skill does not appear.
+
+This installs the skill without Impeccable's native hooks. Automatic edit
+detectors are not enabled; follow the upstream manual detector guidance during
+UI verification. Hook installation is separate project configuration work.
+
+The bundled launcher runs a native engine. If no matching engine is available,
+it downloads a versioned engine into `~/.impeccable/bin/` on first use and checks
+its SHA-256 hash. That cache does not make the skill installation user-wide.
+Network or execution restrictions can prevent the launcher from running.
+In that case, report the failure before the next tool call, read the target's
+existing `PRODUCT.md` and `DESIGN.md` directly, and continue permitted planning
+or editing. Never claim runtime or detector verification that did not run.
+
+Live iteration additionally needs a target dev server and browser support.
+It is optional and is not exercised by skill installation. Keep its temporary
+output inside the target worktree and out of tracked files. See
+[UI design routing](agent-roles.md#ui-design-routing) for ownership and precedence.
 
 ## Host prerequisites
 

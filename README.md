@@ -255,9 +255,14 @@ Backup validates the merged configuration before encrypting the complete local
 file into the harness-scoped Bitwarden secure record `projects-config`.
 
 The agent-facing wiki lives in [`docs/llm-wiki-harness/`](docs/llm-wiki-harness/). Custom skills are authored in [joshtsch/skills](https://github.com/joshtsch/skills).
-Approved external skills sources, including [mattpocock/skills](https://github.com/mattpocock/skills),
+Approved external skills sources, including [mattpocock/skills](https://github.com/mattpocock/skills)
+and [pbakaus/impeccable](https://github.com/pbakaus/impeccable),
 are recorded in `.codex/skill-sources.yml`. Use `pnpm dlx skills` for pushed
 skills; use `pnpm link:skill` for local testing.
+
+Impeccable is the default for UI shaping, critique, and polish. See
+[UI design routing](docs/agents/agent-roles.md#ui-design-routing) and
+[installation details](docs/agents/tooling.md#impeccable-installation).
 
 ## Prompt/session optimization adapter
 

@@ -2,12 +2,13 @@
 
 **Summary**: Table of contents for harness knowledge and cross-project information.
 **Sources**: ../../../AGENTS.md
-**Last updated**: October 6, 2026
+**Last updated**: October 7, 2026
 
 Wiki covers harness workflow, project boundaries, and shared cross-project knowledge.
 
 ## Related pages
 
+- [Impeccable UI design routing](../../agents/agent-roles.md#ui-design-routing)
 - [[log]]
 - [[code-graph-intelligence]]
 - [Attio and Granola API workflow](../../agents/tooling.md#api-access-and-fallback)

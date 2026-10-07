@@ -18,6 +18,7 @@ capabilities:
   domain-modeling: { intent: sharpen domain vocabulary and decisions, inputs: [domain discussion], output: glossary or ADR, authority: modify, verification: terms and decisions match the conversation }
   grilling: { intent: stress-test a design, inputs: [idea], output: resolved decision tree, authority: suggest, verification: user confirms the decisions }
   harness-grill-with-docs: { intent: interview on a harness design, inputs: [idea], output: resolved decisions and domain docs, authority: modify, verification: user confirms understanding }
+  ui-design: { intent: shape critique and polish frontend interfaces, inputs: [UI request, target worktree, product and design context], output: design direction findings or refined UI, authority: modify, verification: inspect target UI for accessibility responsiveness and requested design outcomes }
   initialize-llm-wiki: { intent: initialize a topic wiki, inputs: [topic, destination], output: wiki scaffold, authority: modify, verification: check links and markers }
   investigate-first: { intent: diagnose an ambiguous failure, triggers: [diagnose, investigate, intermittent, unknown cause], inputs: [failure evidence], output: ranked diagnosis, authority: observe, verification: reproduce or corroborate cause, group: work-shape }
   lean-build: { intent: build a new feature, triggers: [feature, new behavior, integration], inputs: [request, repository], output: working feature, authority: modify, verification: exercise acceptance path, group: work-shape }

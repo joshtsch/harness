@@ -85,6 +85,11 @@ unresolved or unsupported routes fail closed.
   `raw` path and authored synthesis to its `pages` path. Use
   `docs/llm-wiki-harness/` only for harness knowledge. If coverage is unclear or
   more than one child wiki matches, ask which one; do not silently choose.
+- Use Impeccable (`ui-design`) by default for UI shaping, critique, and polish.
+  For UI implementation, retain the work-shape primary route and include
+  `ui-design` as a companion of `lean-build` or `surgical-patch`.
+  Follow [UI design routing](docs/agents/agent-roles.md#ui-design-routing) for
+  project context, tool boundaries, and runtime limits.
 - Use Ponytail for code generation.
 - Use `/implement` to manage the development loop.
 - Use `/code-review` to determine readiness for review. It runs the required review
