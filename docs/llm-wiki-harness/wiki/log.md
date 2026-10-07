@@ -10,6 +10,8 @@
 
 - October 6, 2026: Recorded fresh publication snapshot and private historical archive in [ADR-0012](../../adr/0012-public-repository-hygiene.md). Private history stays outside the public repository.
 
+- October 6, 2026: Publication authorized through locked Terraform state. Persist visibility in HCP; apply visibility-only run after merge requests close. See [release checklist](../../public-release-checklist.md).
+
 ## Related pages
 
 - [[index]]

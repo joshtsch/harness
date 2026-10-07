@@ -43,7 +43,9 @@ from an audited publication snapshot of final `main`.
   history to the new remote; initialize the development home from a fresh clone.
 - Create the replacement privately for staging. Audit all exported content and
   the initial commit, run repository quality gates and two-axis review, then
-  verify an independent clone before the final user-controlled visibility change.
+  verify an independent clone before publication. After user authorization and
+  resolution of all open merge requests, persist the public visibility setting
+  in HCP and apply the reviewed visibility-only Terraform run. Verify no drift.
 - Enable and verify GitHub private vulnerability reporting after publication.
   Before then, security reports use the repository owner's private GitHub
   contact path described in `SECURITY.md`.

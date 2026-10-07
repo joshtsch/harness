@@ -55,10 +55,21 @@ resource, or changes the continuation backend.
 After pushing and verifying one audited initial commit on the fresh repository's
 `main`, set the HCP Terraform variable `archive_private_repository` to `true`,
 review the archive-only plan, and apply it. Archival makes historical code and
-tracker records read-only. The final visibility change remains user-controlled;
-after publication, set `public_repository_visibility` to `public` in the same
-workspace and verify that the plan has no drift. Persist these settings in HCP;
-do not rely on a one-run override that a later default plan would undo.
+tracker records read-only.
+
+After the user authorizes publication and every open merge request is resolved,
+set the HCP Terraform variable `public_repository_visibility` to `public`.
+Review an applyable plan: its only action must update
+`github_repository.public_harness` from private to public. Apply that exact run,
+verify anonymous access, and confirm a subsequent plan has no drift. Keep the
+archive private and archived, with no continuation backend changes. Persist both
+settings in HCP; a one-run override would let a later default plan undo them.
+
+After publication, enable and verify private vulnerability reporting. The pinned
+GitHub provider 6.13.0 does not represent this setting, so use the narrow GitHub
+REST API fallback: `PUT /repos/joshtsch/harness/private-vulnerability-reporting`,
+then verify `GET` on the same endpoint returns `enabled: true`. Reassess provider
+coverage before changing this setting in future.
 
 Create the active development clone with fresh Git metadata. Move required ignored
 installation state separately; never repoint the historical clone at the fresh

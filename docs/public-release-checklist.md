@@ -36,7 +36,7 @@ stays private. See [ADR-0012](adr/0012-public-repository-hygiene.md) for the dec
 
 ## Publication
 
-- [ ] User confirms the exact reviewed publication snapshot and final visibility change.
-- [ ] User changes the fresh repository's visibility to public; reconcile Terraform's `public_repository_visibility` with that setting.
+- [ ] User authorizes publication of the reviewed snapshot through Terraform; resolve all open merge requests first.
+- [ ] Persist `public_repository_visibility = public` in HCP, review a plan that only updates the fresh repository from private to public, and apply that exact run. Verify a subsequent plan has no drift.
 - [ ] Enable and verify GitHub private vulnerability reporting.
 - [ ] Verify an unauthenticated public clone and tracker pages; confirm the historical archive is inaccessible without authorization.
