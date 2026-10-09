@@ -1,5 +1,5 @@
-import { mkdir, stat as defaultStat } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, realpath as defaultRealpath, stat as defaultStat } from "node:fs/promises";
+import { join, resolve } from "node:path";
 
 export interface WorktreeProject {
   name: string;
@@ -20,11 +20,14 @@ interface WorktreeOptions {
   issueKey: string;
   ticketTitle: string;
   attempt?: number;
+  branch?: string;
+  base?: string;
   refresh?: boolean;
   onRefresh?: () => Promise<void>;
   run: CommandRunner;
   stat?: (path: string) => Promise<unknown>;
   mkdir?: (path: string, options: { recursive: true }) => Promise<unknown>;
+  realpath?: (path: string) => Promise<string>;
 }
 
 export interface WorktreeResult {
@@ -32,6 +35,7 @@ export interface WorktreeResult {
   branch: string;
   name: string;
   path: string;
+  base: string;
 }
 
 function slug(value: string): string {
@@ -48,7 +52,7 @@ async function verifyDefaultBranch(project: WorktreeProject, run: CommandRunner,
   const prefix = ["-C", project.path];
   if (refresh) {
     await onRefresh?.();
-    const fetch = await run("git", [...prefix, "fetch", "origin", project.defaultBranch]);
+    const fetch = await run("git", [...prefix, "fetch", "--prune", "origin"]);
     if (fetch.code !== 0) throw new Error(`failed to fetch ${project.defaultBranch}: ${fetch.stderr || fetch.stdout}`);
   }
 
@@ -72,9 +76,40 @@ async function verifyDefaultBranch(project: WorktreeProject, run: CommandRunner,
   }
 }
 
+async function hasRef(projectPath: string, ref: string, run: CommandRunner): Promise<boolean> {
+  const result = await run("git", ["-C", projectPath, "rev-parse", "--verify", "--quiet", `${ref}^{commit}`]);
+  if (result.code === 0) return true;
+  if (result.code === 1) return false;
+  throw new Error(`failed to inspect ref ${ref}: ${result.stderr || result.stdout}`);
+}
+
+export async function readWorktreeBase(projectPath: string, branch: string, run: CommandRunner): Promise<string | undefined> {
+  const result = await run("git", ["-C", projectPath, "config", "--get", `branch.${branch}.harness-base`]);
+  if (result.code === 1) return undefined;
+  if (result.code !== 0 || !result.stdout.trim().startsWith("origin/")) throw new Error(`invalid or unreadable recorded base for ${branch}`);
+  const base = result.stdout.trim();
+  const valid = await run("git", ["check-ref-format", "--branch", base.slice("origin/".length)]);
+  if (valid.code !== 0) throw new Error(`invalid recorded base for ${branch}`);
+  if (!await hasRef(projectPath, `refs/remotes/${base}`, run)) throw new Error(`recorded base ${base} is unavailable on origin; do not fall back to the default branch`);
+  return base;
+}
+
 export async function createProjectWorktree(project: WorktreeProject, options: WorktreeOptions): Promise<WorktreeResult> {
-  await verifyDefaultBranch(project, options.run, options.refresh, options.onRefresh);
   const name = worktreeName(options.issueKey, options.ticketTitle, options.attempt);
+  const branch = options.branch ?? name;
+  const baseBranch = options.base?.replace(/^origin\//, "") ?? project.defaultBranch;
+  for (const value of [branch, baseBranch]) {
+    const valid = await options.run("git", ["check-ref-format", "--branch", value]);
+    if (valid.code !== 0 || value.startsWith("-") || value.includes("@{")) throw new Error(`invalid branch name: ${value}`);
+  }
+  if (branch === baseBranch) throw new Error("worktree branch must differ from its base");
+  if (branch === project.defaultBranch) throw new Error("worktree branch must not be the default branch");
+  await verifyDefaultBranch(project, options.run, options.refresh, options.onRefresh);
+  const recordedBase = await readWorktreeBase(project.path, branch, options.run);
+  if (recordedBase && options.base && recordedBase !== `origin/${baseBranch}`) throw new Error(`requested base conflicts with recorded base ${recordedBase}`);
+  const base = recordedBase ?? `origin/${baseBranch}`;
+  if (base === `origin/${branch}`) throw new Error("worktree branch must differ from its recorded base");
+  if (!await hasRef(project.path, `refs/remotes/${base}`, options.run)) throw new Error(`base ${base} is unavailable on origin`);
   const path = join(options.worktreesDirectory, project.name, name);
   const stat = options.stat ?? defaultStat;
   let exists = true;
@@ -85,15 +120,43 @@ export async function createProjectWorktree(project: WorktreeProject, options: W
     exists = false;
   }
 
+  const localExists = await hasRef(project.path, `refs/heads/${branch}`, options.run);
+  const remoteExists = await hasRef(project.path, `refs/remotes/origin/${branch}`, options.run);
   if (exists) {
     const result = await options.run("git", ["-C", path, "rev-parse", "--show-toplevel"]);
-    if (result.code !== 0) throw new Error(`${path} already exists and is not a Git worktree`);
-    return { action: "existing", branch: name, name, path };
+    const current = await options.run("git", ["-C", path, "symbolic-ref", "--short", "HEAD"]);
+    const source = await options.run("git", ["-C", project.path, "rev-parse", "--path-format=absolute", "--git-common-dir"]);
+    const common = await options.run("git", ["-C", path, "rev-parse", "--path-format=absolute", "--git-common-dir"]);
+    if (result.code !== 0 || !result.stdout.trim() || current.code !== 0 || current.stdout.trim() !== branch || source.code !== 0 || !source.stdout.trim() || common.code !== 0 || !common.stdout.trim()) {
+      throw new Error(`${path} already exists but is not the requested worktree for ${branch}`);
+    }
+    const realpath = options.realpath ?? defaultRealpath;
+    if (await realpath(resolve(result.stdout.trim())) !== await realpath(path) || await realpath(source.stdout.trim()) !== await realpath(common.stdout.trim())) {
+      throw new Error(`${path} already exists but is not the requested worktree for ${branch}`);
+    }
   }
-
-  const parent = join(options.worktreesDirectory, project.name);
-  await (options.mkdir ?? mkdir)(parent, { recursive: true });
-  const result = await options.run("git", ["-C", project.path, "worktree", "add", "-b", name, path, project.defaultBranch]);
-  if (result.code !== 0) throw new Error(`failed to create worktree ${name}: ${result.stderr || result.stdout}`);
-  return { action: "created", branch: name, name, path };
+  if (remoteExists) {
+    if (!localExists) {
+      const track = await options.run("git", ["-C", project.path, "branch", "--track", branch, `origin/${branch}`]);
+      if (track.code !== 0) throw new Error(`failed to track origin/${branch}: ${track.stderr || track.stdout}`);
+    } else {
+      const upstream = await options.run("git", ["-C", project.path, "for-each-ref", "--format=%(upstream)", `refs/heads/${branch}`]);
+      if (upstream.code !== 0) throw new Error(`failed to inspect upstream for ${branch}`);
+      if (upstream.stdout.trim() && upstream.stdout.trim() !== `refs/remotes/origin/${branch}`) throw new Error(`branch ${branch} tracks a different upstream`);
+      if (!upstream.stdout.trim()) {
+        const track = await options.run("git", ["-C", project.path, "branch", `--set-upstream-to=origin/${branch}`, branch]);
+        if (track.code !== 0) throw new Error(`failed to track origin/${branch}: ${track.stderr || track.stdout}`);
+      }
+    }
+  }
+  if (!exists) {
+    const parent = join(options.worktreesDirectory, project.name);
+    await (options.mkdir ?? mkdir)(parent, { recursive: true });
+    const args = localExists || remoteExists ? [path, branch] : ["-b", branch, path, base];
+    const result = await options.run("git", ["-C", project.path, "worktree", "add", ...args]);
+    if (result.code !== 0) throw new Error(`failed to create worktree ${name}: ${result.stderr || result.stdout}`);
+  }
+  const record = await options.run("git", ["-C", project.path, "config", `branch.${branch}.harness-base`, base]);
+  if (record.code !== 0) throw new Error(`failed to record base for ${branch}: ${record.stderr || record.stdout}`);
+  return { action: exists ? "existing" : "created", branch, name, path, base };
 }

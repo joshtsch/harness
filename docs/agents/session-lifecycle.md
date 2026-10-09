@@ -5,7 +5,7 @@
 2. Resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed.
 3. Clone missing projects. Existing clones are not fetched or altered unless the operation explicitly requests it.
 4. Run project bootstrap setup when needed, then fetch the configured remote and verify the configured default branch is clean and matches its remote-tracking default branch exactly: neither branch is ahead or behind.
-5. Create one deterministic branch and worktree per `{project, issue, branch}` tuple under `.worktrees/`. Include the issue key and normalized ticket title in bounded, filesystem-safe names. Use an explicit attempt suffix for parallel retries.
+5. Create one deterministic worktree per `{project, issue, branch}` tuple under `.worktrees/`. Create an issue-derived branch or attach the selected existing branch. Include the issue key and normalized ticket title in bounded, filesystem-safe worktree names. Use an explicit attempt suffix for parallel retries.
 6. Run worktree setup and harness-owned verification. Required multi-project sessions fail closed if a selected project cannot be prepared; partial operation requires an explicit opt-in.
 7. Work across the participating worktrees. Record transient session, project, issue, worktree, handoff, and recovery state in ignored `docs/.scratch/`.
 
@@ -82,3 +82,29 @@ Interrupted operations must preserve partial state and resume where safe. If scr
 ## Harness changes
 
 For harness changes, follow the branch, verification, review, and merge-request workflow in [contributing.md](contributing.md).
+
+## Worktree branches and bases
+
+`pnpm worktree` accepts `--branch <branch>` and `--base <origin-branch>`.
+The worktree path still comes from issue identity and title. A selected existing
+remote branch gets an origin upstream; a local branch is attached without
+resetting its commits. A local branch with a different upstream is refused when
+the same branch also exists on origin. Default branches are never attached as
+session worktrees.
+
+The base defaults to the project's default branch for an unrecorded branch.
+An explicit base can select another feature branch for stacked work. The harness
+stores the base as `origin/<branch>` in `branch.<branch>.harness-base` in the
+project's shared Git configuration. Reuse reads it and rejects conflicting
+`--base` values. Legacy worktrees without a recorded base adopt the selected
+base only after their path, repository, and checked-out branch are verified.
+
+`--refresh` runs `git fetch --prune origin` before branch/base validation. Without
+it, validation uses cached remote-tracking refs. `readWorktreeBase` reads the
+recorded value and verifies that its origin ref still exists; callers needing
+fresh evidence must fetch with pruning first. A missing recorded base is an
+error, never permission to fall back to the default branch. Creation and reuse
+reject a base equal to the worktree branch.
+
+If creation fails after a tracking branch or worktree was created, preserve it
+and retry after addressing the error. No cleanup or branch reset is automatic.

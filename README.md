@@ -61,6 +61,22 @@ clones or creates worktrees. For untracked work, use
 an issue in the configured tracker first; implementation sessions do not have
 an exploratory bypass.
 
+Create a worktree for a new or existing branch with:
+
+```sh
+pnpm worktree --refresh --branch feature/follow-up --base feature/first-change <project> <issue-key> "Follow-up change"
+```
+
+`--branch` selects the branch; without it, the issue key and title determine the
+name. An existing origin branch is tracked, and an existing local branch keeps
+its commits. `--base` accepts an origin branch name, optionally prefixed with
+`origin/`, and defaults to the project's default branch for new worktrees.
+The harness records it as `branch.<branch>.harness-base` in the project's Git
+configuration. Reuse reads that value and refuses a conflicting explicit base.
+`--refresh` fetches origin with pruning so deleted bases are detected. Without
+refresh, checks use the available remote-tracking refs. See
+[branch and base lifecycle](docs/agents/session-lifecycle.md#worktree-branches-and-bases).
+
 Before opening that issue, classify every repository the session may modify and
 register durable projects in `projects.yml` or ignored `projects.local.yml`.
 This includes durable external skill-source repositories; one-off dependencies
