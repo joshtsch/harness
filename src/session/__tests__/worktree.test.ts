@@ -41,7 +41,7 @@ describe("createProjectWorktree", () => {
       base: "origin/main",
     });
     expect(mkdir).toHaveBeenCalledWith("/workspace/.worktrees/example-project", { recursive: true });
-    expect(run).toHaveBeenCalledWith("git", ["-C", project.path, "worktree", "add", "-b", "issue-123-add-login", "/workspace/.worktrees/example-project/issue-123-add-login", "origin/main"]);
+    expect(run).toHaveBeenCalledWith("git", ["-C", project.path, "worktree", "add", "--no-track", "-b", "issue-123-add-login", "/workspace/.worktrees/example-project/issue-123-add-login", "origin/main"]);
     expect(run).not.toHaveBeenCalledWith("git", ["-C", project.path, "fetch", "origin", "main"]);
   });
 

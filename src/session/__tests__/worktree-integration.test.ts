@@ -89,6 +89,14 @@ describe("worktree branches and bases with real Git", () => {
     expect(await readWorktreeBase(project.path, result.branch, run)).toBe("origin/main");
   });
 
+  it("keeps a new branch untracked until its own origin branch exists", async () => {
+    const result = await createProjectWorktree(project, options());
+    expect((await run("git", ["-C", result.path, "rev-parse", "--abbrev-ref", "@{upstream}"])).code).not.toBe(0);
+    await git("-C", result.path, "push", "origin", result.branch);
+    await expect(createProjectWorktree(project, options())).resolves.toMatchObject({ action: "existing", branch: result.branch, base: "origin/main" });
+    expect(await git("-C", result.path, "rev-parse", "--abbrev-ref", "@{upstream}")).toBe(`origin/${result.branch}`);
+  });
+
   it("refuses a different branch or unrelated repository at the existing path", async () => {
     const result = await createProjectWorktree(project, options());
     await expect(createProjectWorktree(project, { ...options(), branch: "feature/existing" })).rejects.toThrow("not the requested worktree");

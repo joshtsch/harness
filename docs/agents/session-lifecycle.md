@@ -87,7 +87,9 @@ For harness changes, follow the branch, verification, review, and merge-request 
 
 `pnpm worktree` accepts `--branch <branch>` and `--base <origin-branch>`.
 The worktree path still comes from issue identity and title. A selected existing
-remote branch gets an origin upstream; a local branch is attached without
+remote branch gets an origin upstream. A newly created branch does not track its
+base; after publication, reuse can attach its own origin upstream. A local
+branch is attached without
 resetting its commits. A local branch with a different upstream is refused when
 the same branch also exists on origin. Default branches are never attached as
 session worktrees.
@@ -95,7 +97,7 @@ session worktrees.
 The base defaults to the project's default branch for an unrecorded branch.
 An explicit base can select another feature branch for stacked work. The harness
 stores the base as `origin/<branch>` in `branch.<branch>.harness-base` in the
-project's shared Git configuration. Reuse reads it and rejects conflicting
+project’s shared Git configuration. Reuse reads it and rejects conflicting
 `--base` values. Legacy worktrees without a recorded base adopt the selected
 base only after their path, repository, and checked-out branch are verified.
 

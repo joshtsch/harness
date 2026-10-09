@@ -152,7 +152,7 @@ export async function createProjectWorktree(project: WorktreeProject, options: W
   if (!exists) {
     const parent = join(options.worktreesDirectory, project.name);
     await (options.mkdir ?? mkdir)(parent, { recursive: true });
-    const args = localExists || remoteExists ? [path, branch] : ["-b", branch, path, base];
+    const args = localExists || remoteExists ? [path, branch] : ["--no-track", "-b", branch, path, base];
     const result = await options.run("git", ["-C", project.path, "worktree", "add", ...args]);
     if (result.code !== 0) throw new Error(`failed to create worktree ${name}: ${result.stderr || result.stdout}`);
   }
