@@ -55,7 +55,8 @@ infrastructure workspace.
 
 A fallback may be needed when no maintained provider covers an operation,
 when a provider cannot represent the required setting safely, or for a
-one-time recovery operation. Complete the coverage gate even for recovery;
+one-time recovery operation that Terraform cannot perform safely. Complete
+the coverage gate even for recovery;
 one unsupported step does not exempt the rest of a workflow.
 
 Before a fallback write:
@@ -65,7 +66,7 @@ Before a fallback write:
    recovery or reconciliation plan. Choose the narrowest supported action.
 2. Check whether the user has already explicitly authorized that exact fallback
    and scope. If so, proceed without asking again. Otherwise, present the
-   prepared action and reason Terraform cannot perform it, and obtain an
+   prepared action and reason Terraform cannot perform it safely, and obtain an
    explicit fallback decision before executing. General permission to provision
    infrastructure does not by itself select a non-Terraform fallback.
 3. After execution, verify the resulting resource state and record a redacted
