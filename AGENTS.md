@@ -27,7 +27,10 @@ Never commit secrets, credentials, raw MCP output, or PII; follow [Secrets and P
 - For Attio or Granola work, default to the public APIs. Read [API access and fallback](docs/agents/tooling.md#api-access-and-fallback) before selecting a tool or reporting an access blocker.
 - For every code or operational change, assess the affected authoritative documentation and update it in the same change. This may include `README.md`, `AGENTS.md`, skills, and project docs, according to ownership. Do not defer required documentation updates; before handoff, verify docs match the changed behavior or record in the handoff why no documentation change is warranted.
 - Whenever you introduce or change environment variables, update the affected repository's `.env.example` in the same change. Include each variable's name, a safe default or empty placeholder, and comments explaining required versus optional settings. Never put credentials or machine-specific identifiers in the example file.
-- For infrastructure management, attempt Terraform first whenever a maintained provider/resource can represent the change. Require remote state and locking for shared infrastructure; document an explicit fallback when Terraform cannot manage the target.
+- Before selecting any infrastructure write tool (including MCP, API, CLI, or
+  dashboard), complete the [Terraform coverage gate](docs/agents/infrastructure.md#terraform-coverage-gate).
+  Use Terraform for supported changes, remote state and locking for shared
+  infrastructure, and an explicitly authorized fallback for unsupported operations.
 - Deploy Next.js applications through Vercel. Use the approved Vercel plugin and document any explicitly approved exception.
 - Install skills without a native plugin through `pnpm dlx skills` in its
   project-local scope; never install those skills globally. Native plugins are the
