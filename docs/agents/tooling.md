@@ -25,6 +25,14 @@ For every accepted tool, determine its relationship to configured projects:
 
 The scope decision must consider data boundaries and authentication boundaries, not only technical availability. A tool may be globally available while still being project-level in how its records, workspace, account, or permissions are selected.
 
+## Infrastructure tool selection
+
+For infrastructure writes, complete the
+[Terraform coverage gate](infrastructure.md#terraform-coverage-gate) before
+selecting a tool. Connector availability, plugin guidance, and a signed-in
+dashboard do not establish a fallback. Use this gate for provisioning,
+configuration changes, and recovery operations.
+
 ## Current tools
 
 - **Attio** — CRM context and relationship workflows through the public API by default.
