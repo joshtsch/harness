@@ -100,6 +100,15 @@ unresolved or unsupported routes fail closed.
 - Use `/code-review` to determine readiness for review. It runs the required review
   and creates the change request when the branch is ready.
 
+## User action prompts
+
+When a user-facing response leaves an action, decision, or choice for the user,
+end that response with a concise prompt to choose one of 1–3 numbered, concrete
+options. Include `Other` as a free-text option, and put the recommended option
+first when there is one. Use an interactive choice prompt when available;
+otherwise write the options in the response. Omit the prompt when no user action
+remains. Do not interrupt authorized work with unnecessary choices.
+
 ## Merge-request gate
 
 Before opening a merge request for harness changes:
