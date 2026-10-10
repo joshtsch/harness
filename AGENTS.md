@@ -10,7 +10,7 @@ Never commit secrets, credentials, raw MCP output, or PII; follow [Secrets and P
 
 - The harness owns orchestration, not project code.
 - Child repositories live under ignored `projects/` and retain independent remotes, branches, and Git history.
-- Child-project work happens only in harness-managed `.worktrees/` directories.
+- Child-project work happens only in harness-managed worktrees outside the harness tree. See [worktree root configuration](docs/agents/project-configuration.md#worktree-root).
 - Harness changes happen on a feature branch, never directly on the default branch.
 - A harness change must pass code review before its merge request is opened.
 - Do not modify a child project's main/default branch or its main clone as part of normal session work.

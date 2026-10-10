@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createRequire } from "node:module";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -51,11 +51,12 @@ describe("worktree branches and bases with real Git", () => {
     project = { name: "example-project", path: join(root, "projects", "example-project"), defaultBranch: "main" };
     await git("clone", remote, project.path);
   });
-  afterEach(async () => { await rm(root, { recursive: true, force: true }); });
-  const options = () => ({ worktreesDirectory: join(root, "worktrees"), issueKey: "13", ticketTitle: "Track branches", run });
+  afterEach(async () => { await rm(root, { recursive: true, force: true }); await rm(root + "-worktrees", { recursive: true, force: true }); });
+  const options = () => ({ harnessRoot: root, worktreesDirectory: root + "-worktrees", issueKey: "13", ticketTitle: "Track branches", run });
 
   it("tracks an existing remote branch and reads its configured stacked base", async () => {
     const result = await createProjectWorktree(project, { ...options(), branch: "feature/existing", base: "feature/base" });
+    expect(await git("-C", result.path, "config", "--get", "harness.root")).toBe(await realpath(root));
     expect(await git("-C", result.path, "rev-parse", "--abbrev-ref", "@{upstream}")).toBe("origin/feature/existing");
     expect(await readWorktreeBase(project.path, result.branch, run)).toBe("origin/feature/base");
     expect(await git("-C", result.path, "rev-parse", "HEAD")).toBe(await git("-C", seed, "rev-parse", "feature/existing"));
@@ -131,8 +132,8 @@ describe("worktree branches and bases with real Git", () => {
 
   it("passes branch and base options through the CLI", async () => {
     await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\nprojects:\n  example-project:\n    remote: ${join(root, "origin.git")}\n`);
-    await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/create-worktree.ts"), "--branch", "feature/existing", "--base", "feature/base", "example-project", "13", "CLI tracking"], { cwd: root, env });
+    await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/create-worktree.ts"), "--branch", "feature/existing", "--base", "feature/base", "example-project", "13", "CLI tracking"], { cwd: root, env: { ...env, HARNESS_WORKTREE_ROOT: root + "-worktrees" } });
     expect(await readWorktreeBase(project.path, "feature/existing", run)).toBe("origin/feature/base");
-    expect(await git("-C", join(root, ".worktrees", "example-project", "13-cli-tracking"), "rev-parse", "--abbrev-ref", "@{upstream}")).toBe("origin/feature/existing");
+    expect(await git("-C", join(root + "-worktrees", "example-project", "13-cli-tracking"), "rev-parse", "--abbrev-ref", "@{upstream}")).toBe("origin/feature/existing");
   });
 });
