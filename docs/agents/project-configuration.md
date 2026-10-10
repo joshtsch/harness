@@ -46,6 +46,8 @@ External tools must be classified by scope before they are added. Shared tools b
 
 ## Worktree root
 
+The location decision is recorded in [ADR-0002](../adr/0002-isolated-deterministic-worktrees.md#external-root-amendment--october-9-2026).
+
 `HARNESS_WORKTREE_ROOT` is an optional machine-local process environment setting.
 Unset or blank uses the sibling `<harness-folder>-worktrees/` of the physical
 harness directory. An absolute path is used directly; a relative path resolves
