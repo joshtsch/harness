@@ -20,6 +20,33 @@ not session failures.
 The setup lifecycle enables the hook by default. Set `HARNESS_OPTIMIZATION_ENABLED=0`
 to disable collection and persistence for a session; setup completion is unaffected.
 
+## Initialization and project clones
+
+Run `pnpm init:harness [--provider codex|gemini] [--clone-projects]` from the
+harness root. Initialization checks prerequisites, then validates the merged
+`projects.yml` and local overlay before inspecting or cloning any project.
+Project inspection does not require environment variables for unrelated tool
+mappings. Dependency restoration and provider-specific verification follow the
+project stage.
+
+Without `--clone-projects`, each configured project is reported as `existing`,
+`missing`, or `failed`. Missing clones are allowed and the command prints the
+restore invocation. Inspection performs no clone, fetch, setup script, branch
+change, or worktree creation. An empty configuration reports `none configured`.
+
+With `--clone-projects`, missing projects are cloned into ignored `projects/`
+and reported as `cloned`. Existing repository roots, including dirty clones,
+are preserved and reported as `existing`. Directories belonging to another
+repository are rejected rather than mistaken for a project clone.
+
+All configured projects receive a result even when a clone or inspection fails.
+Failures report safe status without remote URLs or raw command output, then
+initialization exits nonzero before restoring dependencies. Check repository
+access and destination paths locally. Failed or partial destinations are
+preserved; inspect and repair them before retrying. Successful clones are reused
+on retry. Initialization never deletes destinations or refreshes existing
+clones; selected session setup owns the subsequent lifecycle.
+
 ## Session goal and agent context
 
 Run `pnpm setup:session --goal "Expected outcome" <projects> <issue-number>`.

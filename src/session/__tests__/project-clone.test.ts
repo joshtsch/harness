@@ -26,7 +26,7 @@ describe("ensureProjectClone", () => {
   });
 
   it("does not alter an existing Git repository", async () => {
-    const run = vi.fn<CommandRunner>().mockResolvedValue({ code: 0, stdout: ".git", stderr: "" });
+    const run = vi.fn<CommandRunner>().mockResolvedValue({ code: 0, stdout: "true\n", stderr: "" });
     const stat = vi.fn().mockResolvedValue({});
     const mkdir = vi.fn();
 
@@ -34,7 +34,7 @@ describe("ensureProjectClone", () => {
       action: "existing",
       path: "/workspace/projects/example-project",
     });
-    expect(run).toHaveBeenCalledWith("git", ["-C", "/workspace/projects/example-project", "rev-parse", "--git-dir"]);
+    expect(run).toHaveBeenCalledWith("git", ["-C", "/workspace/projects/example-project", "rev-parse", "--is-inside-work-tree", "--show-prefix"]);
     expect(mkdir).not.toHaveBeenCalled();
   });
 

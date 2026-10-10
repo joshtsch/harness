@@ -57,6 +57,15 @@ that each command is available; it does not unlock Bitwarden or contact an
 account. `pnpm init:harness` runs the same check before other initialization
 stages, and `pnpm setup:session` runs it before resolving the session issue.
 
+Initialization also validates the merged project configuration and reports each
+clone as `existing` or `missing`. Plain init leaves project repositories
+unchanged and shows a restore command when clones are missing. Run
+`pnpm init:harness --clone-projects` to clone all missing configured projects
+into ignored `projects/`; add `--provider gemini` when using Gemini.
+Existing clones are preserved. Failed clones or invalid destinations are
+reported per project and make initialization exit nonzero. See
+[clone restoration and retries](docs/agents/session-lifecycle.md#initialization-and-project-clones).
+
 Start an issue-bound session with `pnpm setup:session --goal "Expected outcome" <project> <issue-number>`.
 Both `pnpm worktree` and `pnpm setup:session` default to the sibling
 `<harness-folder>-worktrees/`. Set `HARNESS_WORKTREE_ROOT` in the process
