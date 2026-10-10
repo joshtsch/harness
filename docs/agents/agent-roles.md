@@ -76,8 +76,9 @@ pnpm capabilities route codex codebase-architecture
 ```
 
 The review produces an HTML report and candidate list. It does not implement a
-candidate; take a selected opportunity through the design and implementation
-workflow.
+candidate. Its required `codebase-design` skill supplies the shared architecture
+vocabulary and design method. Take a selected opportunity through the design and
+implementation workflow.
 
 ## Precedence
 

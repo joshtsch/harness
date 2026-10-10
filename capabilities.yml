@@ -2,6 +2,7 @@ version: 1
 capabilities:
   agent-system-audit: { intent: audit agent setup or a session, inputs: [session evidence], output: review candidates, authority: suggest, verification: evidence linked to each candidate }
   codebase-architecture: { intent: find deepening opportunities in a codebase, inputs: [repository, domain context, recent change history], output: ranked architecture candidates and HTML report, authority: suggest, verification: evidence linked to each candidate }
+  codebase-design: { intent: design deep modules and interfaces, inputs: [module, interface, design constraints], output: interface alternatives and design rationale, authority: suggest, verification: compare alternatives against the stated constraints }
   cavecrew: { intent: delegate bounded code work, inputs: [task, repository], output: delegated findings or patch, authority: modify, verification: inspect delegated result }
   caveman: { intent: use concise conversational prose, inputs: [session], output: concise prose, authority: observe, verification: preserve technical meaning, kind: mode }
   caveman-commit: { intent: draft a commit message, inputs: [change], output: conventional commit message, authority: suggest, verification: match change intent }
