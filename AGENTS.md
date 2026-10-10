@@ -103,11 +103,14 @@ unresolved or unsupported routes fail closed.
 ## User action prompts
 
 When a user-facing response leaves an action, decision, or choice for the user,
-end that response with a concise prompt to choose one of 1–3 numbered, concrete
-options. Include `Other` as a free-text option, and put the recommended option
-first when there is one. Use an interactive choice prompt when available;
-otherwise write the options in the response. Omit the prompt when no user action
-remains. Do not interrupt authorized work with unnecessary choices.
+end that response with a concise AskUser prompt. Use the provider's interactive
+choice tool when available; in Codex, use `request_user_input_async`. Offer one to
+three concise choices, put the recommended choice first, and leave the prompt's
+free-text `Other` field available. Include enough context in the prompt title for
+the choice to make sense on its own. If interactive input is unavailable, write
+one to three numbered choices and an explicit `Other` text-entry option. Omit the
+prompt when no user action remains. Do not interrupt authorized work with
+unnecessary choices.
 
 ## Merge-request gate
 
