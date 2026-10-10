@@ -41,7 +41,7 @@ describe("session startup with real Git", () => {
     project = { name: "example-project", path: join(root, "projects", "example-project"), defaultBranch: "main" };
     await git("clone", remote, project.path);
   });
-  afterEach(async () => { await rm(root, { recursive: true, force: true }); });
+  afterEach(async () => { await rm(root, { recursive: true, force: true }); await rm(root + "-worktrees", { recursive: true, force: true }); });
   async function advanceRemote(): Promise<string> {
     await writeFile(join(seed, "remote-change"), "updated\n");
     await git("-C", seed, "add", ".");
@@ -97,7 +97,7 @@ describe("session startup with real Git", () => {
     for (const command of ["pnpm", "npx", "codex", "age", "bw"]) await writeFile(join(bin, command), "#!/bin/sh\nprintf 'fixture-version\\n'\n", { mode: 0o755 });
     await writeFile(join(bin, "gh"), '#!/bin/sh\nprintf \'{"number":12,"title":"Refresh session"}\\n\'\n', { mode: 0o755 });
     const goal = "Prove safe session startup";
-    const result = await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/setup-session.ts"), "--goal", goal, "example-project", "12"], { cwd: root, env: { ...env, PATH: `${bin}:${env.PATH}` } });
+    const result = await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/setup-session.ts"), "--goal", goal, "example-project", "12"], { cwd: root, env: { ...env, HARNESS_WORKTREE_ROOT: root + "-worktrees", PATH: `${bin}:${env.PATH}` } });
     expect(result.stdout).toContain("example-project: updated");
     const sessionRoot = join(root, "docs/.scratch/setup/12-refresh-session");
     const manifest = JSON.parse(await readFile(join(sessionRoot, "session.json"), "utf8"));
