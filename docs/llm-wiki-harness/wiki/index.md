@@ -22,4 +22,7 @@ Wiki covers harness workflow, project boundaries, and shared cross-project knowl
 - [Worktree branches and recorded bases](../../agents/session-lifecycle.md#worktree-branches-and-bases)
 
 - [Repository Terraform workspace management](../../../infrastructure/hcp/README.md#repository-workspaces)
+
+- [Repository intake](../../agents/repository-intake.md)
+
 - [Initialization and project clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones)

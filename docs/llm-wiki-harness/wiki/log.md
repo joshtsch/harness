@@ -24,6 +24,8 @@
 
 - October 9, 2026: Indexed [repository Terraform workspace management](../../../infrastructure/hcp/README.md#repository-workspaces). Inputs, adoption, and recovery stay in authoritative infrastructure guide. No existing workspace article needed revision.
 
+- October 9, 2026: Indexed [repository intake](../../agents/repository-intake.md). Register before provisioning; adopt or clone before implementation. Policy stays in agent docs.
+
 - October 9, 2026: Indexed [initialization clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones). Plain init reports missing clones; explicit opt-in restores them. Existing repositories preserved.
 
 ## Related pages
