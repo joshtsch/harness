@@ -11,6 +11,12 @@ For repository creation or adoption, complete [Repository intake](repository-int
 6. Run worktree setup and harness-owned verification. Required multi-project sessions fail closed if a selected project cannot be prepared; partial operation requires an explicit opt-in.
 7. Work across the participating worktrees. Record transient session, project, issue, worktree, handoff, and recovery state in ignored `docs/.scratch/`.
 
+The preparation flow in `src/session/session-preparation.ts` owns phase order
+and per-Project state. The `scripts/setup-session.ts` entry point resolves inputs
+and supplies runtime adapters. Test phase order, failures, and manifest updates
+in `src/session/__tests__/session-preparation.test.ts`. The
+`session-start-integration.test.ts` test covers the CLI wiring.
+
 At finalization, the harness emits one `SessionFinalization` value after worktrees,
 artifacts, and observed state are complete. It contains only traceable references,
 structured events, feedback, and validation results; it never contains raw prompts,
