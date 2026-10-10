@@ -5,7 +5,7 @@ project work complete.
 
 Harness changes are developed on feature branches, never directly on `main`.
 
-1. Run the repository-scope gate before creating any issue, branch, or worktree. Inventory every repository the session may modify, classify each ownership boundary, and register every durable project in `projects.yml` or `projects.local.yml` before continuing.
+1. Run the [repository-scope gate](repository-intake.md) before provisioning any repository or creating any issue, branch, or worktree. Inventory every repository the session may modify, classify each ownership boundary, and register every durable project in `projects.yml` or `projects.local.yml` before continuing.
 2. Create or identify the originating issue in the classified repository. Record its repository and number in the work notes.
 3. Fetch `origin/main`, then fast-forward the local `main` to it. Stop if the local branch has diverged or contains uncommitted changes.
 4. Create a feature branch using the repository's `codex/` branch convention when working through Codex, and include the issue number when the provider supports it.

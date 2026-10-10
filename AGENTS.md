@@ -17,12 +17,14 @@ Never commit secrets, credentials, raw MCP output, or PII; follow [Secrets and P
 - Treat `projects.yml` as the canonical public configuration source. Permit the
   ignored `projects.local.yml` overlay for installation-specific private project
   metadata; validate the merged configuration and never commit the local file.
-- Before opening an issue, creating a branch, or creating a worktree, inventory
+- Before provisioning a repository, opening an issue, creating a branch, or
+  creating a worktree, inventory
   every repository the session may modify and classify it as an existing
   project, new project, harness change, external dependency/skill source, or
   temporary checkout. Register every durable project in the appropriate
   project configuration first; use the harness-managed clone/worktree for
-  subsequent work.
+  subsequent work. For repository creation or adoption, follow
+  [Repository intake](docs/agents/repository-intake.md) before selecting write tools.
 - When the user asks to install or configure an MCP server, use the Codex project configuration at `.codex/config.toml` for this harness (or the target project's `.codex/config.toml` for a child-project-only server). Use `~/.codex/config.toml` only when the user explicitly requests user-wide scope. Do not add new MCP servers to `.mcp.json`; that format is for portable/plugin packaging, not native Codex project configuration. Migrate existing `.mcp.json` entries when touching MCP setup.
 - For Attio or Granola work, default to the public APIs. Read [API access and fallback](docs/agents/tooling.md#api-access-and-fallback) before selecting a tool or reporting an access blocker.
 - For every code or operational change, assess the affected authoritative documentation and update it in the same change. This may include `README.md`, `AGENTS.md`, skills, and project docs, according to ownership. Do not defer required documentation updates; before handoff, verify docs match the changed behavior or record in the handoff why no documentation change is warranted.

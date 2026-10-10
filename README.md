@@ -206,10 +206,16 @@ session audit. The storage, encryption, lifecycle, and retry rules are in
 The database contract tests live under `supabase/tests/database/`; run them
 with `supabase test db` against the local Supabase stack (Docker required).
 
-Create a new minimal GitHub project with
-`pnpm create:project <name> --public` or `pnpm create:project <name> --private`.
-Use `--dry-run` to validate without side effects, or `--resume` after an
-interrupted creation.
+For repository creation or adoption, follow [Repository intake](docs/agents/repository-intake.md).
+Register and validate the project first, then provision or clone it through the
+harness lifecycle. Keep implementation in a managed worktree.
+
+`pnpm create:project` is a legacy command: it creates the GitHub repository through
+`gh`, pushes an initial default branch, and registers the project afterward. It
+does not implement the current registration-first or Terraform provisioning
+policy. Do not use its live or resume paths for new work until those gaps are
+resolved. Its `--dry-run` performs validation without provisioning; it does not
+prove that the live path meets policy.
 
 ## Secure records
 

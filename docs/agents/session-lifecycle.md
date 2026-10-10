@@ -1,5 +1,7 @@
 # Session and Worktree Lifecycle
 
+For repository creation or adoption, complete [Repository intake](repository-intake.md) first.
+
 0. Run the repository-scope gate: inventory every repository the session may modify, classify each boundary, and register every durable project before opening issues or creating branches/worktrees.
 1. Validate `projects.yml` and its permitted local overlay, then resolve the selected projects.
 2. Resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed.
