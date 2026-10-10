@@ -5,8 +5,8 @@ import { promisify } from "node:util";
 import { resolve } from "node:path";
 import { loadProjectsConfig, loadSessionContext, type SessionContext } from "../src/project-config.js";
 import { resolveIssue, type ResolvedIssue } from "../src/issue-tracker.js";
-import { parseSessionArgs } from "../src/session/index.js";
-import { prepareSession, type PreparationFailure, type PreparationProjectState, createSessionManifest, type SetupCommandRunner } from "../src/session/index.js";
+import { parseSessionArgs, resolveWorktreeRoot } from "../src/session/index.js";
+import { prepareSession, type PreparationFailure, type PreparationProjectState, createSessionManifest, renderSessionInstructions, type SetupCommandRunner } from "../src/session/index.js";
 import { createSessionFinalizer, runSessionFinalizationHook, type SessionFinalizationStatus } from "../src/session/index.js";
 import { createSessionOptimizationHook } from "../src/optimization/index.js";
 import { recordSetupEvent } from "../src/session/project-setup.js";
@@ -14,9 +14,9 @@ import { prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisi
 
 const executeFile = promisify(execFile);
 const args = process.argv.slice(2);
-const refresh = args.includes("--refresh");
 const input = parseSessionArgs(args);
 const harnessRoot = resolve(".");
+const worktreesDirectory = await resolveWorktreeRoot(harnessRoot);
 await verifyPrerequisites(prerequisitesForProvider(process.env.HARNESS_AGENT_PROVIDER ?? "codex"));
 const { projectList } = input;
 const projects = await loadProjectsConfig(resolve("projects.yml"));
@@ -38,11 +38,13 @@ const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").
 const sessionId = `${slug(issueKey)}-${slug(title)}`.slice(0, 96).replace(/-+$/g, "");
 const sessionDirectory = resolve("docs/.scratch/setup", sessionId);
 await mkdir(sessionDirectory, { recursive: true });
+await writeFile(resolve(sessionDirectory, "AGENTS.md"), renderSessionInstructions({ issueKey, purpose: title, goal: input.goal }), "utf8");
 const session: SessionContext = await loadSessionContext(harnessRoot, sessionId);
 const writeManifest = async (status: string, states: Record<string, PreparationProjectState>, failure?: PreparationFailure) => {
   await writeFile(resolve(sessionDirectory, "session.json"), JSON.stringify(createSessionManifest(session, {
     issueKey,
     purpose: title,
+    goal: input.goal,
     issue: { key: issue.key, number: issue.number, repository: issue.repository },
     projects: states,
     status,
@@ -100,13 +102,13 @@ try {
   result = await prepareSession({
     selected: selected as NonNullable<(typeof selected)[number]>[],
     projectsDirectory: resolve("projects"),
-    worktreesDirectory: resolve(".worktrees"),
+    worktreesDirectory,
     issueKey,
     purpose: title,
     harnessRoot,
     session,
     logDirectory: resolve("docs/.scratch/setup"),
-    refresh,
+    onProjectRefresh: (project, result) => console.log(`${project}: ${result.status}${result.reason ? ` (${result.reason})` : ""}`),
     run,
     writeManifest,
   });
@@ -118,3 +120,4 @@ try {
 await finalizeSession("success");
 
 for (const worktree of result.worktrees) console.log(`${worktree.action}: ${worktree.path}`);
+console.log(`Session instructions: ${resolve(sessionDirectory, "AGENTS.md")}`);

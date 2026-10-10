@@ -52,6 +52,7 @@ describe("provider integrations", () => {
       const manifest = createSessionManifest(session, {
         issueKey: "66",
         purpose: "Give session context one owner",
+        goal: "Prove context resolution",
         issue: { key: "66", number: 66, repository: "example/repo" },
         projects: {},
         status: "complete",

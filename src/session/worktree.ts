@@ -1,5 +1,6 @@
 import { mkdir, realpath as defaultRealpath, stat as defaultStat } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { resolveWorktreeRoot } from "./worktree-root.js";
 
 export interface WorktreeProject {
   name: string;
@@ -16,6 +17,7 @@ export interface CommandResult {
 export type CommandRunner = (command: string, args: string[]) => Promise<CommandResult>;
 
 interface WorktreeOptions {
+  harnessRoot: string;
   worktreesDirectory: string;
   issueKey: string;
   ticketTitle: string;
@@ -96,6 +98,8 @@ export async function readWorktreeBase(projectPath: string, branch: string, run:
 
 export async function createProjectWorktree(project: WorktreeProject, options: WorktreeOptions): Promise<WorktreeResult> {
   const name = worktreeName(options.issueKey, options.ticketTitle, options.attempt);
+  const directory = await resolveWorktreeRoot(options.harnessRoot, options.worktreesDirectory);
+  const path = await resolveWorktreeRoot(options.harnessRoot, join(directory, project.name, name));
   const branch = options.branch ?? name;
   const baseBranch = options.base?.replace(/^origin\//, "") ?? project.defaultBranch;
   for (const value of [branch, baseBranch]) {
@@ -110,7 +114,8 @@ export async function createProjectWorktree(project: WorktreeProject, options: W
   const base = recordedBase ?? `origin/${baseBranch}`;
   if (base === `origin/${branch}`) throw new Error("worktree branch must differ from its recorded base");
   if (!await hasRef(project.path, `refs/remotes/${base}`, options.run)) throw new Error(`base ${base} is unavailable on origin`);
-  const path = join(options.worktreesDirectory, project.name, name);
+  const discovery = await options.run("git", ["-C", project.path, "config", "harness.root", await defaultRealpath(options.harnessRoot)]);
+  if (discovery.code !== 0) throw new Error("failed to record owning harness");
   const stat = options.stat ?? defaultStat;
   let exists = true;
   try {
@@ -150,7 +155,7 @@ export async function createProjectWorktree(project: WorktreeProject, options: W
     }
   }
   if (!exists) {
-    const parent = join(options.worktreesDirectory, project.name);
+    const parent = join(directory, project.name);
     await (options.mkdir ?? mkdir)(parent, { recursive: true });
     const args = localExists || remoteExists ? [path, branch] : ["--no-track", "-b", branch, path, base];
     const result = await options.run("git", ["-C", project.path, "worktree", "add", ...args]);

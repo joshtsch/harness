@@ -14,6 +14,10 @@
 
 - October 7, 2026: Indexed [Impeccable UI design routing](../../agents/agent-roles.md#ui-design-routing). Installation and policy stay in agent docs.
 
+- October 9, 2026: Indexed [session goal and startup refresh](../../agents/session-lifecycle.md#session-goal-and-agent-context). Goals live in session scratch context; unsafe default clones remain unchanged.
+
+- October 9, 2026: Indexed [external worktree configuration](../../agents/project-configuration.md#worktree-root) and [legacy migration](../../agents/session-lifecycle.md#existing-worktrees). Existing checkouts preserved; new worktrees resolve outside harness.
+
 - October 9, 2026: Indexed [worktree branch and base lifecycle](../../agents/session-lifecycle.md#worktree-branches-and-bases). Existing branches retain commits; recorded bases govern stacked work. Policy stays in agent docs.
 
 - October 9, 2026: Indexed [initialization plugin checks](../../agents/tooling.md#skills-and-plugins). Capture permits 8 MiB per output stream; failure diagnostics omit inventory contents.
@@ -21,6 +25,8 @@
 - October 9, 2026: Indexed [repository Terraform workspace management](../../../infrastructure/hcp/README.md#repository-workspaces). Inputs, adoption, and recovery stay in authoritative infrastructure guide. No existing workspace article needed revision.
 
 - October 9, 2026: Indexed [repository intake](../../agents/repository-intake.md). Register before provisioning; adopt or clone before implementation. Policy stays in agent docs.
+
+- October 9, 2026: Indexed [initialization clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones). Plain init reports missing clones; explicit opt-in restores them. Existing repositories preserved.
 
 ## Related pages
 

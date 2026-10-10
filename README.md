@@ -1,6 +1,6 @@
 # Personalized Agent Coding Harness
 
-This TypeScript harness coordinates agent sessions across independent Git repositories. Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated `.worktrees/`.
+This TypeScript harness coordinates agent sessions across independent Git repositories. Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated worktrees outside the harness tree.
 
 Start at the repository root and read [AGENTS.md](AGENTS.md) for workflow routing. Domain vocabulary lives in [CONTEXT.md](CONTEXT.md); durable workflow guidance lives under [docs/agents/](docs/agents/).
 
@@ -57,12 +57,39 @@ that each command is available; it does not unlock Bitwarden or contact an
 account. `pnpm init:harness` runs the same check before other initialization
 stages, and `pnpm setup:session` runs it before resolving the session issue.
 
-Start an issue-bound session with `pnpm setup:session <project> <issue-number>`.
+Initialization also validates the merged project configuration and reports each
+clone as `existing` or `missing`. Plain init leaves project repositories
+unchanged and shows a restore command when clones are missing. Run
+`pnpm init:harness --clone-projects` to clone all missing configured projects
+into ignored `projects/`; add `--provider gemini` when using Gemini.
+Existing clones are preserved. Failed clones or invalid destinations are
+reported per project and make initialization exit nonzero. See
+[clone restoration and retries](docs/agents/session-lifecycle.md#initialization-and-project-clones).
+
+Start an issue-bound session with `pnpm setup:session --goal "Expected outcome" <project> <issue-number>`.
+Both `pnpm worktree` and `pnpm setup:session` default to the sibling
+`<harness-folder>-worktrees/`. Set `HARNESS_WORKTREE_ROOT` in the process
+environment to choose another external root. See [configuration](docs/agents/project-configuration.md#worktree-root)
+and [existing worktree migration](docs/agents/session-lifecycle.md#existing-worktrees).
 Set `HARNESS_AGENT_PROVIDER=gemini` to check Gemini CLI during setup.
 The harness resolves the issue title through the configured tracker before it
 clones or creates worktrees. For untracked work, use
 an issue in the configured tracker first; implementation sessions do not have
 an exploratory bypass.
+
+Session startup fetches participating clean default clones and fast-forwards
+them when safe. It reports each as `updated`, `current`, or `skipped` with a
+reason. Dirty, ahead, divergent, and nondefault clones are preserved; a skipped
+clone stops preparation before bootstrap or worktree creation.
+`--refresh` remains accepted for older invocations; refresh now happens on every
+session start. Standalone `pnpm worktree` still requires an explicit refresh.
+
+The required goal is distinct from the issue-derived purpose. Supply one line
+of at most 1000 characters without secrets or PII. The goal is stored in
+`docs/.scratch/setup/<session-id>/session.json` and the adjacent generated
+`AGENTS.md`. Load that session file alongside the harness and project instructions
+when starting agent work; the manifest points to it and successful setup prints
+its path. Project-owned `AGENTS.md` files are preserved.
 
 Create a worktree for a new or existing branch with:
 

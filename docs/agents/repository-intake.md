@@ -32,12 +32,13 @@ Choose the path from observed state:
 | Remote does not exist | Register its planned identity, then follow the provisioning bootstrap below. |
 
 Existing clones retain their contents and history. Verify their identity before
-reuse. Keep normal implementation in the project's managed `.worktrees/` checkout.
+reuse. Keep normal implementation in the project's managed checkout under the
+[external worktree root](project-configuration.md#worktree-root).
 
 For a new remote, complete the [Terraform coverage gate](infrastructure.md#terraform-coverage-gate)
 after registration and before selecting a provisioning write tool. Prepare and
-review configuration in the owning repository's bootstrap checkout under
-`.worktrees/`, with remote state and locking. Establish the remote through
+review configuration in the owning repository's isolated bootstrap checkout
+outside the harness tree, with remote state and locking. Establish the remote through
 Terraform for supported operations. Registration of a planned remote does not
 require that it already exist.
 

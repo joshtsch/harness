@@ -87,6 +87,8 @@ names as redacted selection output. After a capability is actually used, run
 event under ignored `docs/.scratch/`. The event contains only timestamp,
 provider, capability, mode/task kind, companion, and skill names; it contains
 no prompt or transcript. The same command records a mode after it is used.
+Initialization also [reports project clone availability](session-lifecycle.md#initialization-and-project-clones);
+`--clone-projects` opts into restoring missing clones before dependency restoration.
 An installed `available` skill can serve as a canonical skill's dependency but
 cannot be selected as a primary route. Follow the task-choice and mode-routing
 rules in [Agent role routing](../../AGENTS.md#agent-role-routing).

@@ -14,8 +14,15 @@ Wiki covers harness workflow, project boundaries, and shared cross-project knowl
 - [Attio and Granola API workflow](../../agents/tooling.md#api-access-and-fallback)
 - [Harness initialization plugin checks](../../agents/tooling.md#skills-and-plugins)
 - [Fresh public repository decision](../../adr/0012-public-repository-hygiene.md)
+- [Session goal and safe startup refresh](../../agents/session-lifecycle.md#session-goal-and-agent-context)
+
+- [External worktree root](../../agents/project-configuration.md#worktree-root)
+- [Existing worktree migration](../../agents/session-lifecycle.md#existing-worktrees)
+
 - [Worktree branches and recorded bases](../../agents/session-lifecycle.md#worktree-branches-and-bases)
 
 - [Repository Terraform workspace management](../../../infrastructure/hcp/README.md#repository-workspaces)
 
 - [Repository intake](../../agents/repository-intake.md)
+
+- [Initialization and project clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones)
