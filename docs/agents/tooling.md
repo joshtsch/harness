@@ -122,6 +122,9 @@ scope must remain explicit:
   route native plugins through `pnpm dlx skills`.
 - For Codex sessions, `pnpm init:harness` verifies every manifest entry with `codex plugin list` and fails
   with the exact installation commands for any missing plugin.
+  Inventory capture is bounded at 8 MiB per stdout/stderr stream. Larger output
+  fails verification; reduce the inventory output before retrying. Command
+  failures report status or availability without reproducing plugin output.
 - `pnpm init:harness` restores project skills with `pnpm dlx skills` and verifies every
   entry in `skills-lock.json` has an installed `.agents/skills/<name>/SKILL.md`.
 - Ponytail and Vercel are approved harness-level plugins and are listed in

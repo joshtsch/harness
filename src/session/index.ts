@@ -12,3 +12,4 @@ export * from "./continuation-retry-queue.js";
 export * from "./supabase-continuation-store.js";
 export * from "./projects-local-projection.js";
 export * from "./worktree.js";
+export * from "./worktree-root.js";

@@ -17,8 +17,19 @@ One coordinated unit of work involving one or more configured projects and a sha
 _Avoid_: Run, task (when referring to the whole coordination unit)
 
 **Worktree**:
-An isolated checkout of one project created for a session, stored under the harness `.worktrees/` directory.
+An isolated checkout of one project created for a session, stored under the configured external worktree root.
 _Avoid_: Clone, checkout (when referring to the isolated session workspace)
+
+**Worktree root**:
+The external directory containing managed project worktrees. Defaults to a sibling named `<harness-folder>-worktrees`; configured roots must resolve outside the harness tree.
+
+**Worktree base**:
+The branch against which a worktree's changes are intended to be integrated and assessed for merge status.
+_Avoid_: Upstream (which identifies the branch receiving pushes)
+
+**Stacked work**:
+Work whose base is another feature branch rather than the project's default branch. Each branch retains its own base relationship.
+_Avoid_: Shared branch, nested repository
 
 **Issue**:
 A record in a project's configured issue tracker that provides identity and context for tracked work.
@@ -27,6 +38,10 @@ _Avoid_: Ticket (except when naming a provider's terminology)
 **Purpose**:
 The short human-readable explanation of what a session or worktree is for.
 _Avoid_: Description (when identity or naming is intended)
+
+**Session goal**:
+The explicit outcome the user wants one session to achieve, distinct from its issue-derived purpose.
+_Avoid_: Issue title, completion status
 
 **Change request**:
 A provider-neutral proposal to integrate a project branch into its target branch, such as a GitHub pull request or GitLab merge request.

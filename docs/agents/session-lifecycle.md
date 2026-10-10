@@ -2,10 +2,10 @@
 
 0. Run the repository-scope gate: inventory every repository the session may modify, classify each boundary, and register every durable project before opening issues or creating branches/worktrees.
 1. Validate `projects.yml` and its permitted local overlay, then resolve the selected projects.
-2. Resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed.
-3. Clone missing projects. Existing clones are not fetched or altered unless the operation explicitly requests it.
-4. Run project bootstrap setup when needed, then fetch the configured remote and verify the configured default branch is clean and matches its remote-tracking default branch exactly: neither branch is ahead or behind.
-5. Create one deterministic branch and worktree per `{project, issue, branch}` tuple under `.worktrees/`. Include the issue key and normalized ticket title in bounded, filesystem-safe names. Use an explicit attempt suffix for parallel retries.
+2. Require an explicit `--goal` and resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed. Store the goal in the session manifest and adjacent generated `AGENTS.md`.
+3. Clone missing projects. At session start, inspect each participating default clone, fetch clean default checkouts with pruning, and fast-forward only when the local branch is an ancestor of its fetched origin branch. Preserve dirty, ahead, divergent, detached, and nondefault checkouts.
+4. Report every prepared clone as `updated`, `current`, or `skipped` with a reason; record those outcomes in the manifest and events. If any clone is skipped, stop before bootstrap or worktree creation. Otherwise run project bootstrap setup when needed and verify the default branch is clean and exactly matches its remote-tracking branch.
+5. Create one deterministic worktree per `{project, issue, branch}` tuple under the [external worktree root](project-configuration.md#worktree-root). Create an issue-derived branch or attach the selected existing branch. Include the issue key and normalized ticket title in bounded, filesystem-safe names. Use an explicit attempt suffix for parallel retries.
 6. Run worktree setup and harness-owned verification. Required multi-project sessions fail closed if a selected project cannot be prepared; partial operation requires an explicit opt-in.
 7. Work across the participating worktrees. Record transient session, project, issue, worktree, handoff, and recovery state in ignored `docs/.scratch/`.
 
@@ -46,6 +46,27 @@ access and destination paths locally. Failed or partial destinations are
 preserved; inspect and repair them before retrying. Successful clones are reused
 on retry. Initialization never deletes destinations or refreshes existing
 clones; selected session setup owns the subsequent lifecycle.
+
+## Session goal and agent context
+
+Run `pnpm setup:session --goal "Expected outcome" <projects> <issue-number>`.
+The goal must be a non-empty single line of at most 1000 characters. The existing
+sensitive-content scanner rejects likely secrets or PII; callers must still
+review goal text because pattern checks cannot prove it safe.
+The purpose comes from the resolved issue title; a goal is supplied separately.
+
+The manifest and generated session instructions live under
+`docs/.scratch/setup/<session-id>/`. The manifest's `agentInstructions` field
+points to the adjacent `AGENTS.md`, and successful setup prints its path.
+Load that file alongside harness and project instructions before agent work.
+It records intent and does not replace project-owned instructions or grant
+authority. Setup never rewrites a project's tracked `AGENTS.md`.
+
+Session start always refreshes safe default clones. The legacy `--refresh` flag
+is accepted without an extra fetch. This exception permits synchronization,
+never implementation in the default clone. Standalone worktree creation retains
+its explicit refresh behavior. Fetch and fast-forward failures are reported as
+skipped; bootstrap does not run on skipped clones.
 
 ## Portable continuation
 
@@ -106,6 +127,55 @@ Setup validates optional session tool metadata and records only its tool names i
 
 Interrupted operations must preserve partial state and resume where safe. If scratch metadata is lost, reconstruct what can be inferred from Git and worktree state and report unknown tracker relationships rather than deleting anything.
 
+## Existing worktrees
+
+Changing the root does not move or remove existing worktrees. Legacy `.worktrees/`
+remains ignored. Inventory every project's registered checkouts with
+`git -C projects/<project> worktree list --porcelain`; Git registrations preserve
+discovery across root changes. New creation uses only the configured external
+root. If the same branch is still checked out at an old location, Git refuses a
+duplicate; resolve the location before retrying.
+
+When explicitly authorized to relocate a worktree, stop its active sessions,
+record its branch and status, and create the destination parent outside the
+harness. Run `git -C projects/<project> worktree move <old-path> <new-path>`.
+Verify registration, branch, and status at the new path. Preserve dirty and
+untracked files; do not replace a failed move with removal/recreation. Git may
+refuse locked or submodule worktrees; resolve that condition separately.
+
+Update local session references to the moved path before resuming. To roll back,
+stop affected sessions and use the same Git move command with reversed paths;
+restore those session references. Unmoved legacy worktrees remain available for
+existing sessions, but all newly created worktrees must use the external root.
+
 ## Harness changes
 
 For harness changes, follow the branch, verification, review, and merge-request workflow in [contributing.md](contributing.md).
+
+## Worktree branches and bases
+
+`pnpm worktree` accepts `--branch <branch>` and `--base <origin-branch>`.
+The worktree path still comes from issue identity and title. A selected existing
+remote branch gets an origin upstream. A newly created branch does not track its
+base; after publication, reuse can attach its own origin upstream. A local
+branch is attached without
+resetting its commits. A local branch with a different upstream is refused when
+the same branch also exists on origin. Default branches are never attached as
+session worktrees.
+
+The base defaults to the project's default branch for an unrecorded branch.
+An explicit base can select another feature branch for stacked work. The harness
+stores the base as `origin/<branch>` in `branch.<branch>.harness-base` in the
+project’s shared Git configuration. Reuse reads it and rejects conflicting
+`--base` values. Legacy worktrees without a recorded base adopt the selected
+base only after their path, repository, and checked-out branch are verified.
+
+`--refresh` runs `git fetch --prune origin` before branch/base validation. Without
+it, validation uses cached remote-tracking refs. `readWorktreeBase` reads the
+recorded value and verifies that its origin ref still exists; callers needing
+fresh evidence must fetch with pruning first. A missing recorded base is an
+error, never permission to fall back to the default branch. Creation and reuse
+reject a base equal to the worktree branch.
+
+If creation fails after a tracking branch or worktree was created, preserve it
+and retry after addressing the error. No cleanup or branch reset is automatic.
