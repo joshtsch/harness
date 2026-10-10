@@ -26,7 +26,6 @@ const options: SessionPreparationOptions = {
   worktreesDirectory: "/workspace/.worktrees",
   issueKey: "39",
   purpose: "Extract session preparation",
-  goal: "Prove session preparation behavior",
   harnessRoot: "/workspace",
   session,
   logDirectory: "/workspace/docs/.scratch/setup",
@@ -67,7 +66,7 @@ describe("prepareSession", () => {
     expect(createSessionManifest(session, {
       issueKey: "39",
       purpose: options.purpose,
-      goal: options.goal,
+      goal: "Prove session preparation behavior",
       issue: { key: "39", number: 39, repository: "example/repo" },
       projects: result.states,
       status: "complete",

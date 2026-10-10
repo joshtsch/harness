@@ -104,7 +104,6 @@ try {
     worktreesDirectory: resolve(".worktrees"),
     issueKey,
     purpose: title,
-    goal: input.goal,
     harnessRoot,
     session,
     logDirectory: resolve("docs/.scratch/setup"),

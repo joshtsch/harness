@@ -37,7 +37,6 @@ export interface SessionPreparationOptions {
   worktreesDirectory: string;
   issueKey: string;
   purpose: string;
-  goal: string;
   harnessRoot: string;
   session: SessionContext;
   logDirectory: string;
