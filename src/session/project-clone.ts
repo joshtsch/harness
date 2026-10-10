@@ -42,7 +42,7 @@ function defaultRun(command: string, args: string[]): Promise<CommandResult> {
     }));
 }
 
-export async function ensureProjectClone(project: ProjectDefinition, options: CloneOptions): Promise<ProjectClone> {
+export async function inspectProjectClone(project: ProjectDefinition, options: CloneOptions): Promise<ProjectClone | null> {
   const projectPath = join(options.projectsDirectory, project.name);
   const stat = options.stat ?? defaultStat;
   const run = options.run ?? defaultRun;
@@ -55,11 +55,18 @@ export async function ensureProjectClone(project: ProjectDefinition, options: Cl
   }
 
   if (exists) {
-    const result = await run("git", ["-C", projectPath, "rev-parse", "--git-dir"]);
-    if (result.code !== 0) throw new Error(`${projectPath} already exists and is not a Git repository`);
+    const result = await run("git", ["-C", projectPath, "rev-parse", "--is-inside-work-tree", "--show-prefix"]);
+    if (result.code !== 0 || result.stdout.trim() !== "true") throw new Error(`${projectPath} already exists and is not a Git repository root`);
     return { action: "existing", path: projectPath };
   }
+  return null;
+}
 
+export async function ensureProjectClone(project: ProjectDefinition, options: CloneOptions): Promise<ProjectClone> {
+  const existing = await inspectProjectClone(project, options);
+  if (existing) return existing;
+  const projectPath = join(options.projectsDirectory, project.name);
+  const run = options.run ?? defaultRun;
   await (options.mkdir ?? mkdir)(options.projectsDirectory, { recursive: true });
   const result = await run("git", ["clone", project.remote, projectPath]);
   if (result.code !== 0) throw new Error(`failed to clone ${project.name}: ${result.stderr || result.stdout}`);

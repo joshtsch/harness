@@ -14,3 +14,4 @@ Wiki covers harness workflow, project boundaries, and shared cross-project knowl
 - [Attio and Granola API workflow](../../agents/tooling.md#api-access-and-fallback)
 - [Fresh public repository decision](../../adr/0012-public-repository-hygiene.md)
 - [Repository Terraform workspace management](../../../infrastructure/hcp/README.md#repository-workspaces)
+- [Initialization and project clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones)

@@ -5,15 +5,25 @@ import { loadRequiredPlugins, verifyRequiredPlugins } from "../src/codex-plugins
 import { verifyProjectSkills } from "../src/project-skills.js";
 import { loadCapabilityPolicy, verifyCapabilityInventory } from "../src/capability-policy.js";
 import { verifyGeminiProjectSkills } from "../src/gemini-skills.js";
-import { parseAgentProviderArgs, prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisites.js";
+import { prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisites.js";
+import { initializeProjects, parseInitializationArgs } from "../src/initialization-projects.js";
 
 const repoRoot = resolve(import.meta.dirname, "..");
 const execFileAsync = promisify(execFile);
-const provider = parseAgentProviderArgs(process.argv.slice(2), "Usage: pnpm init:harness [--provider codex|gemini]");
+const { provider, cloneProjects } = parseInitializationArgs(process.argv.slice(2));
 
 async function run(): Promise<void> {
   const stages: Array<[string, () => Promise<void>]> = [
     ["prerequisites", async () => verifyPrerequisites(prerequisitesForProvider(provider))],
+    ["projects", async () => {
+      const projects = await initializeProjects(repoRoot, cloneProjects);
+      if (projects.length === 0) console.log("projects: none configured");
+      for (const project of projects) console.log(`project: ${project.name}: ${project.status}`);
+      const missing = projects.filter((project) => project.status === "missing").length;
+      if (missing > 0) console.log(`projects: ${missing} missing; restore with pnpm init:harness --clone-projects${provider === "gemini" ? " --provider gemini" : ""}`);
+      const failed = projects.filter((project) => project.status === "failed").length;
+      if (failed > 0) throw new Error(`${failed} project(s) failed; check repository access and destination paths. Existing paths are preserved; repair partial clones before retrying.`);
+    }],
     ["project skills", async () => {
       await execFileAsync("pnpm", ["dlx", "skills", "experimental_install"], { cwd: repoRoot });
       await verifyProjectSkills(repoRoot, resolve(repoRoot, "skills-lock.json"));
