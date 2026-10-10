@@ -10,7 +10,7 @@ const project: WorktreeProject = {
 function runnerFor(results: Record<string, { code: number; stdout?: string; stderr?: string }>): CommandRunner {
   return vi.fn(async (command, args) => {
     const key = [command, ...args].join(" ");
-    const result = results[key] ?? { code: 0, stdout: "", stderr: "" };
+    const result = results[key] ?? (args.includes("--get") || (args.includes("--verify") && args.at(-1) !== "refs/remotes/origin/main^{commit}") ? { code: 1 } : { code: 0, stdout: "", stderr: "" });
     return { code: result.code, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   });
 }
@@ -38,8 +38,10 @@ describe("createProjectWorktree", () => {
       branch: "issue-123-add-login",
       name: "issue-123-add-login",
       path: "/workspace/.worktrees/example-project/issue-123-add-login",
+      base: "origin/main",
     });
     expect(mkdir).toHaveBeenCalledWith("/workspace/.worktrees/example-project", { recursive: true });
+    expect(run).toHaveBeenCalledWith("git", ["-C", project.path, "worktree", "add", "--no-track", "-b", "issue-123-add-login", "/workspace/.worktrees/example-project/issue-123-add-login", "origin/main"]);
     expect(run).not.toHaveBeenCalledWith("git", ["-C", project.path, "fetch", "origin", "main"]);
   });
 
@@ -66,11 +68,14 @@ describe("createProjectWorktree", () => {
       "git -C /workspace/projects/example-project rev-parse main": { code: 0, stdout: "abc\n" },
       "git -C /workspace/projects/example-project rev-parse origin/main": { code: 0, stdout: "abc\n" },
       "git -C /workspace/.worktrees/example-project/issue-123-add-login rev-parse --show-toplevel": { code: 0, stdout: "/workspace/.worktrees/example-project/issue-123-add-login\n" },
+      "git -C /workspace/.worktrees/example-project/issue-123-add-login symbolic-ref --short HEAD": { code: 0, stdout: "issue-123-add-login\n" },
+      "git -C /workspace/projects/example-project rev-parse --path-format=absolute --git-common-dir": { code: 0, stdout: "/workspace/projects/example-project/.git\n" },
+      "git -C /workspace/.worktrees/example-project/issue-123-add-login rev-parse --path-format=absolute --git-common-dir": { code: 0, stdout: "/workspace/projects/example-project/.git\n" },
     });
     const existingStat = vi.fn().mockResolvedValue({});
 
     await expect(createProjectWorktree(project, {
-      worktreesDirectory: "/workspace/.worktrees", run, stat: existingStat, mkdir: vi.fn(), issueKey: "issue-123", ticketTitle: "Add login",
+      worktreesDirectory: "/workspace/.worktrees", run, stat: existingStat, realpath: async (path) => path, mkdir: vi.fn(), issueKey: "issue-123", ticketTitle: "Add login",
     })).resolves.toMatchObject({ action: "existing", name: "issue-123-add-login" });
 
     const missingStat = vi.fn().mockRejectedValue(Object.assign(new Error("missing"), { code: "ENOENT" }));
@@ -101,7 +106,7 @@ describe("createProjectWorktree", () => {
       onRefresh,
     })).rejects.toThrow("default branch main is not clean");
     expect(onRefresh).toHaveBeenCalledOnce();
-    expect(run).toHaveBeenCalledWith("git", ["-C", project.path, "fetch", "origin", "main"]);
+    expect(run).toHaveBeenCalledWith("git", ["-C", project.path, "fetch", "--prune", "origin"]);
   });
 
   it("reports missing remote refs without fetching", async () => {
