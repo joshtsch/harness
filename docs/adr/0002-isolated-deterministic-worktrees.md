@@ -1,6 +1,6 @@
 # Isolated Deterministic Worktrees
 
-All child-project work is performed in harness-managed worktrees, never in a project's main clone or default branch. Worktree and branch names are deterministic from project and issue identity plus a normalized ticket title, with explicit suffixes for parallel attempts. The original internal `.worktrees/` location is superseded by the amendment below.
+All child-project work is performed in harness-managed worktrees, never in a project's main clone or default branch. Worktree names and newly generated branch names are deterministic from project and issue identity plus a normalized ticket title, with explicit suffixes for parallel attempts. An explicitly selected existing branch can be attached while preserving the issue-derived worktree name. The original internal `.worktrees/` location is superseded by the amendment below.
 
 ## Consequences
 

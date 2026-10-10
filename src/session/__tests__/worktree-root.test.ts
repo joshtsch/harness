@@ -50,8 +50,12 @@ describe("managed worktree root", () => {
     await execute("git", ["-C", clone, "worktree", "add", "-b", "legacy", legacy, "main"]);
     await writeFile(join(legacy, "untracked.txt"), "preserve me\n");
     const run: CommandRunner = async (command, args) => {
-      const { stdout, stderr } = await execute(command, args);
-      return { code: 0, stdout, stderr };
+      try {
+        const { stdout, stderr } = await execute(command, args);
+        return { code: 0, stdout, stderr };
+      } catch (error: any) {
+        return { code: typeof error.code === "number" ? error.code : 1, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
+      }
     };
     const root = await resolveWorktreeRoot(harness, join(directory, "custom"));
     const options = { harnessRoot: harness, worktreesDirectory: root, issueKey: "9", ticketTitle: "External root", run };

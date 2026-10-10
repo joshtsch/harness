@@ -23,6 +23,14 @@ _Avoid_: Clone, checkout (when referring to the isolated session workspace)
 **Worktree root**:
 The external directory containing managed project worktrees. Defaults to a sibling named `<harness-folder>-worktrees`; configured roots must resolve outside the harness tree.
 
+**Worktree base**:
+The branch against which a worktree's changes are intended to be integrated and assessed for merge status.
+_Avoid_: Upstream (which identifies the branch receiving pushes)
+
+**Stacked work**:
+Work whose base is another feature branch rather than the project's default branch. Each branch retains its own base relationship.
+_Avoid_: Shared branch, nested repository
+
 **Issue**:
 A record in a project's configured issue tracker that provides identity and context for tracked work.
 _Avoid_: Ticket (except when naming a provider's terminology)
