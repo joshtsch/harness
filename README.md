@@ -1,6 +1,6 @@
 # Personalized Agent Coding Harness
 
-This TypeScript harness coordinates agent sessions across independent Git repositories. Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated `.worktrees/`.
+This TypeScript harness coordinates agent sessions across independent Git repositories. Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated worktrees outside the harness tree.
 
 Start at the repository root and read [AGENTS.md](AGENTS.md) for workflow routing. Domain vocabulary lives in [CONTEXT.md](CONTEXT.md); durable workflow guidance lives under [docs/agents/](docs/agents/).
 
@@ -55,6 +55,10 @@ account. `pnpm init:harness` runs the same check before other initialization
 stages, and `pnpm setup:session` runs it before resolving the session issue.
 
 Start an issue-bound session with `pnpm setup:session <project> <issue-number>`.
+Both `pnpm worktree` and `pnpm setup:session` default to the sibling
+`<harness-folder>-worktrees/`. Set `HARNESS_WORKTREE_ROOT` in the process
+environment to choose another external root. See [configuration](docs/agents/project-configuration.md#worktree-root)
+and [existing worktree migration](docs/agents/session-lifecycle.md#existing-worktrees).
 Set `HARNESS_AGENT_PROVIDER=gemini` to check Gemini CLI during setup.
 The harness resolves the issue title through the configured tracker before it
 clones or creates worktrees. For untracked work, use

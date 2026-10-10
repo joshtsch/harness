@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 import { resolve } from "node:path";
 import { loadProjectsConfig } from "../src/project-config.js";
-import { ensureProjectClone, createProjectWorktree, recordSetupEvent, runProjectSetup, verifyProjectReady } from "../src/session/index.js";
+import { ensureProjectClone, createProjectWorktree, recordSetupEvent, runProjectSetup, verifyProjectReady, resolveWorktreeRoot } from "../src/session/index.js";
 
 const args = process.argv.slice(2);
 const refresh = args.includes("--refresh");
@@ -19,6 +19,8 @@ if (!projectName || !issueKey || !ticketTitle) {
     console.error(`Unknown project: ${projectName}`);
     process.exitCode = 1;
   } else {
+    const harnessRoot = resolve(".");
+    const worktreesDirectory = await resolveWorktreeRoot(harnessRoot);
     const clone = await ensureProjectClone(configured, { projectsDirectory: resolve("projects") });
     const bootstrapOptions = {
       projectRoot: clone.path,
@@ -30,7 +32,7 @@ if (!projectName || !issueKey || !ticketTitle) {
     };
     await runProjectSetup(configured, "bootstrap", bootstrapOptions);
     const result = await createProjectWorktree({ name: configured.name, path: clone.path, defaultBranch: configured.defaultBranch }, {
-      worktreesDirectory: resolve(".worktrees"), issueKey, ticketTitle,
+      harnessRoot, worktreesDirectory, issueKey, ticketTitle,
       refresh,
       onRefresh: () => recordSetupEvent(bootstrapOptions, { type: "clone-refresh-requested", project: configured.name }),
       run: async (command, args) => {

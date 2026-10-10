@@ -1,5 +1,6 @@
-import { mkdir, stat as defaultStat } from "node:fs/promises";
+import { mkdir, realpath, stat as defaultStat } from "node:fs/promises";
 import { join } from "node:path";
+import { resolveWorktreeRoot } from "./worktree-root.js";
 
 export interface WorktreeProject {
   name: string;
@@ -16,6 +17,7 @@ export interface CommandResult {
 export type CommandRunner = (command: string, args: string[]) => Promise<CommandResult>;
 
 interface WorktreeOptions {
+  harnessRoot: string;
   worktreesDirectory: string;
   issueKey: string;
   ticketTitle: string;
@@ -73,9 +75,12 @@ async function verifyDefaultBranch(project: WorktreeProject, run: CommandRunner,
 }
 
 export async function createProjectWorktree(project: WorktreeProject, options: WorktreeOptions): Promise<WorktreeResult> {
-  await verifyDefaultBranch(project, options.run, options.refresh, options.onRefresh);
   const name = worktreeName(options.issueKey, options.ticketTitle, options.attempt);
-  const path = join(options.worktreesDirectory, project.name, name);
+  const directory = await resolveWorktreeRoot(options.harnessRoot, options.worktreesDirectory);
+  const path = await resolveWorktreeRoot(options.harnessRoot, join(directory, project.name, name));
+  await verifyDefaultBranch(project, options.run, options.refresh, options.onRefresh);
+  const discovery = await options.run("git", ["-C", project.path, "config", "harness.root", await realpath(options.harnessRoot)]);
+  if (discovery.code !== 0) throw new Error("failed to record owning harness");
   const stat = options.stat ?? defaultStat;
   let exists = true;
   try {
@@ -91,7 +96,7 @@ export async function createProjectWorktree(project: WorktreeProject, options: W
     return { action: "existing", branch: name, name, path };
   }
 
-  const parent = join(options.worktreesDirectory, project.name);
+  const parent = join(directory, project.name);
   await (options.mkdir ?? mkdir)(parent, { recursive: true });
   const result = await options.run("git", ["-C", project.path, "worktree", "add", "-b", name, path, project.defaultBranch]);
   if (result.code !== 0) throw new Error(`failed to create worktree ${name}: ${result.stderr || result.stdout}`);

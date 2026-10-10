@@ -5,7 +5,7 @@
 2. Resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed.
 3. Clone missing projects. Existing clones are not fetched or altered unless the operation explicitly requests it.
 4. Run project bootstrap setup when needed, then fetch the configured remote and verify the configured default branch is clean and matches its remote-tracking default branch exactly: neither branch is ahead or behind.
-5. Create one deterministic branch and worktree per `{project, issue, branch}` tuple under `.worktrees/`. Include the issue key and normalized ticket title in bounded, filesystem-safe names. Use an explicit attempt suffix for parallel retries.
+5. Create one deterministic branch and worktree per `{project, issue, branch}` tuple under the [external worktree root](project-configuration.md#worktree-root). Include the issue key and normalized ticket title in bounded, filesystem-safe names. Use an explicit attempt suffix for parallel retries.
 6. Run worktree setup and harness-owned verification. Required multi-project sessions fail closed if a selected project cannot be prepared; partial operation requires an explicit opt-in.
 7. Work across the participating worktrees. Record transient session, project, issue, worktree, handoff, and recovery state in ignored `docs/.scratch/`.
 
@@ -78,6 +78,27 @@ Setup validates optional session tool metadata and records only its tool names i
 9. After the change request is merged, explicitly verify the merged state before removing the worktree or local branch. Never implicitly push, merge, close issues, or delete worktrees.
 
 Interrupted operations must preserve partial state and resume where safe. If scratch metadata is lost, reconstruct what can be inferred from Git and worktree state and report unknown tracker relationships rather than deleting anything.
+
+## Existing worktrees
+
+Changing the root does not move or remove existing worktrees. Legacy `.worktrees/`
+remains ignored. Inventory every project's registered checkouts with
+`git -C projects/<project> worktree list --porcelain`; Git registrations preserve
+discovery across root changes. New creation uses only the configured external
+root. If the same branch is still checked out at an old location, Git refuses a
+duplicate; resolve the location before retrying.
+
+When explicitly authorized to relocate a worktree, stop its active sessions,
+record its branch and status, and create the destination parent outside the
+harness. Run `git -C projects/<project> worktree move <old-path> <new-path>`.
+Verify registration, branch, and status at the new path. Preserve dirty and
+untracked files; do not replace a failed move with removal/recreation. Git may
+refuse locked or submodule worktrees; resolve that condition separately.
+
+Update local session references to the moved path before resuming. To roll back,
+stop affected sessions and use the same Git move command with reversed paths;
+restore those session references. Unmoved legacy worktrees remain available for
+existing sessions, but all newly created worktrees must use the external root.
 
 ## Harness changes
 

@@ -44,6 +44,30 @@ CRM configuration is provider-neutral. A project may declare a CRM type, such as
 
 External tools must be classified by scope before they are added. Shared tools belong in the harness-level MCP configuration; project-specific providers, records, workspace/account mappings, permissions, or overrides belong in the relevant project entry. Temporary tools belong in ignored session state rather than durable configuration. Session tool metadata may contain only `tool_mappings`; resolution precedence is session mapping, project override, then inherited business-line mapping. Session mappings apply only to the loaded session and must contain stable target identifiers, never credentials or external records.
 
+## Worktree root
+
+`HARNESS_WORKTREE_ROOT` is an optional machine-local process environment setting.
+Unset or blank uses the sibling `<harness-folder>-worktrees/` of the physical
+harness directory. An absolute path is used directly; a relative path resolves
+from the physical harness root. The CLI does not load `.env` automatically.
+
+Both `pnpm worktree` and `pnpm setup:session` resolve this setting before
+preparing projects. Roots inside the harness, including the harness itself and
+symlink aliases, are rejected. Existing ancestors are resolved even when the
+target directory has not been created. Project-directory aliases into the
+harness are also rejected before worktree creation.
+
+Worktrees use `<root>/<project>/<issue-title>/`. Session manifests, setup
+environment (`HARNESS_WORKTREE_PATH`), and subsequent workflow commands use
+the actual external path. Creation records `harness.root` in the project clone's
+shared Git configuration; `git config --get harness.root` from a linked worktree
+finds its owning harness without walking parent directories. Relocating the
+harness requires rerunning creation/setup to refresh this pointer.
+
+See [existing worktrees](session-lifecycle.md#existing-worktrees) for preservation,
+discovery, migration, and rollback. Listing and pruning commands are tracked in
+issue #14; they must use this resolver when implemented.
+
 ## Project setup contract
 
 Every project owns `scripts/setup.sh` at its repository root. The script must be deterministic, idempotent, observable, and usable when the repository is opened in isolation. The harness invokes it from the project root with an explicit phase and standardized session metadata, including project name, issue identity, purpose, worktree path, and harness root.
