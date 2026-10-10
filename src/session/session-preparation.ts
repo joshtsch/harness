@@ -1,7 +1,7 @@
 import type { ProjectDefinition, SessionContext, WorkflowCommand } from "../project-config.js";
 import { ensureProjectClone, type ProjectClone } from "./project-clone.js";
 import { createProjectWorktree, type WorktreeProject, type WorktreeResult } from "./worktree.js";
-import { recordSetupEvent, runProjectCommands, runProjectSetupSession, verifyProjectReady, type SetupCommandRunner, type SetupSessionResult, type SetupStep, type SetupFailure, type VerificationOptions } from "./project-setup.js";
+import { recordSetupEvent, runProjectCommands, runProjectSetupSession, verifyProjectReady, type ProjectSetupOptions, type SetupCommandRunner, type SetupSessionResult, type SetupStep, type SetupFailure, type VerificationOptions } from "./project-setup.js";
 import { refreshProjectClone, type ProjectRefreshResult } from "./project-refresh.js";
 
 export type { ProjectClone } from "./project-clone.js";
@@ -64,6 +64,18 @@ export interface SessionPreparationResult {
   worktrees: WorktreeResult[];
 }
 
+interface ProjectPreparation {
+  project: ProjectDefinition;
+  state: PreparationProjectState;
+  clone?: ProjectClone;
+  setupOptions?: ProjectSetupOptions;
+  worktree?: WorktreeResult;
+}
+
+function projectStates(projects: ProjectPreparation[]): Record<string, PreparationProjectState> {
+  return Object.fromEntries(projects.map(({ project, state }) => [project.name, state]));
+}
+
 function defaultAdapters(options: SessionPreparationOptions): SessionPreparationAdapters {
   return {
     ensureClone: (project, projectsDirectory) => ensureProjectClone(project, { projectsDirectory, run: (command, args) => options.run(command, args, { cwd: options.harnessRoot, env: process.env }) }),
@@ -79,114 +91,111 @@ function defaultAdapters(options: SessionPreparationOptions): SessionPreparation
 
 export async function prepareSession(options: SessionPreparationOptions, adapters: SessionPreparationAdapters = defaultAdapters(options)): Promise<SessionPreparationResult> {
   if (!/^\d+$/.test(options.issueKey)) throw new Error("issue-bound session requires a tracker issue key");
-  const states: Record<string, PreparationProjectState> = Object.fromEntries(options.selected.map((project) => [project.name, { status: "pending" }]));
+  const projects: ProjectPreparation[] = options.selected.map((project) => ({ project, state: { status: "pending" } }));
+  const writeManifest = (status: string, failure?: PreparationFailure) => adapters.writeManifest(status, projectStates(projects), failure);
   const eventOptions = { logDirectory: options.logDirectory, sessionId: options.session.sessionId };
-  const failSession = async (project: string, stage: string, error: unknown): Promise<never> => {
-    states[project] = { ...states[project], status: "failed", stage, error: String(error) };
+  const failSession = async (preparation: ProjectPreparation, stage: string, error: unknown): Promise<never> => {
+    const project = preparation.project.name;
+    preparation.state = { ...preparation.state, status: "failed", stage, error: String(error) };
     await adapters.recordEvent(eventOptions, { type: "session-failed", project, stage, error: String(error) });
-    await adapters.writeManifest("failed", states, { project, stage, error });
+    await writeManifest("failed", { project, stage, error });
     throw error;
   };
-  const clones: ProjectClone[] = [];
 
-  for (const project of options.selected) {
+  for (const preparation of projects) {
+    const { project } = preparation;
     try {
       const clone = await adapters.ensureClone(project, options.projectsDirectory);
-      clones.push(clone);
-      states[project.name] = { status: "clone-ready", path: clone.path };
-      await adapters.writeManifest("running", states);
+      preparation.clone = clone;
+      preparation.setupOptions = { projectRoot: clone.path, issueKey: options.issueKey, purpose: options.purpose, harnessRoot: options.harnessRoot, sessionId: options.session.sessionId, logDirectory: options.logDirectory, run: options.run };
+      preparation.state = { status: "clone-ready", path: clone.path };
+      await writeManifest("running");
       await adapters.recordEvent(eventOptions, { type: "clone-ready", project: project.name, path: clone.path });
     } catch (error) {
-      await failSession(project.name, "clone", error);
+      await failSession(preparation, "clone", error);
     }
   }
 
-  const common = options.selected.map((project, index) => ({
-    project,
-    options: { projectRoot: clones[index].path, issueKey: options.issueKey, purpose: options.purpose, harnessRoot: options.harnessRoot, sessionId: options.session.sessionId, logDirectory: options.logDirectory, run: options.run },
-  }));
-  for (let index = 0; index < options.selected.length; index += 1) {
-    const project = options.selected[index];
-    const result = await adapters.refreshClone({ name: project.name, path: clones[index].path, defaultBranch: project.defaultBranch });
-    states[project.name] = { ...states[project.name], refresh: result };
+  for (const preparation of projects) {
+    const { project, clone } = preparation;
+    const result = await adapters.refreshClone({ name: project.name, path: clone!.path, defaultBranch: project.defaultBranch });
+    preparation.state = { ...preparation.state, refresh: result };
     options.onProjectRefresh?.(project.name, result);
     await adapters.recordEvent(eventOptions, { type: "project-refresh", project: project.name, ...result });
-    await adapters.writeManifest("running", states);
+    await writeManifest("running");
   }
-  const skipped = options.selected.find((project) => states[project.name].refresh?.status === "skipped");
-  if (skipped) await failSession(skipped.name, "refresh", new Error(`project ${skipped.name} skipped: ${states[skipped.name].refresh?.reason}`));
+  const skipped = projects.find(({ state }) => state.refresh?.status === "skipped");
+  if (skipped) await failSession(skipped, "refresh", new Error(`project ${skipped.project.name} skipped: ${skipped.state.refresh?.reason}`));
 
-  for (const { project, options: setupOptions } of common) {
+  for (const preparation of projects) {
+    const { project, setupOptions } = preparation;
     try {
-      await adapters.runSetupSession([{ project, phase: "bootstrap", options: setupOptions }]);
+      await adapters.runSetupSession([{ project, phase: "bootstrap", options: setupOptions! }]);
     } catch (error) {
-      await failSession(project.name, "bootstrap", error);
+      await failSession(preparation, "bootstrap", error);
     }
   }
 
-  const worktrees: WorktreeResult[] = [];
-  for (let index = 0; index < options.selected.length; index += 1) {
-    const project = options.selected[index]!;
+  for (const preparation of projects) {
+    const { project, clone } = preparation;
     try {
-      const worktree = await adapters.createWorktree({ name: project.name, path: clones[index].path, defaultBranch: project.defaultBranch }, {
+      preparation.worktree = await adapters.createWorktree({ name: project.name, path: clone!.path, defaultBranch: project.defaultBranch }, {
         worktreesDirectory: options.worktreesDirectory,
         harnessRoot: options.harnessRoot,
         issueKey: options.issueKey,
         ticketTitle: options.purpose,
         refresh: false,
-        run: async (command, args) => options.run(command, args, { cwd: clones[index].path, env: process.env }),
+        run: async (command, args) => options.run(command, args, { cwd: clone!.path, env: process.env }),
       });
-      worktrees.push(worktree);
     } catch (error) {
-      await failSession(project.name, "worktree", error);
+      await failSession(preparation, "worktree", error);
     }
-    const worktree = worktrees[index]!;
+    const worktree = preparation.worktree!;
     await adapters.recordEvent(eventOptions, { type: "worktree-ready", project: project.name, path: worktree.path, branch: worktree.branch });
-    states[project.name] = { ...states[project.name], status: "worktree-ready", path: worktree.path, branch: worktree.branch };
-    await adapters.writeManifest("running", states);
+    preparation.state = { ...preparation.state, status: "worktree-ready", path: worktree.path, branch: worktree.branch };
+    await writeManifest("running");
   }
 
-  for (let index = 0; index < common.length; index += 1) {
-    const { project, options: setupOptions } = common[index]!;
-    const worktree = worktrees[index]!;
+  for (const preparation of projects) {
+    const { project, setupOptions, worktree } = preparation;
     try {
-      await adapters.runSetupSession([{ project, phase: "worktree", options: { ...setupOptions, worktreePath: worktree.path } }]);
+      await adapters.runSetupSession([{ project, phase: "worktree", options: { ...setupOptions!, worktreePath: worktree!.path } }]);
     } catch (error) {
-      await failSession(project.name, "worktree", error);
+      await failSession(preparation, "worktree", error);
     }
-    states[project.name] = { ...states[project.name], status: "setup-complete", path: worktree.path, branch: worktree.branch };
-    await adapters.writeManifest("running", states);
+    preparation.state = { ...preparation.state, status: "setup-complete", path: worktree!.path, branch: worktree!.branch };
+    await writeManifest("running");
   }
 
-  for (let index = 0; index < worktrees.length; index += 1) {
-    const project = options.selected[index]!;
-    const worktree = worktrees[index]!;
+  for (const preparation of projects) {
+    const { project, setupOptions, worktree } = preparation;
     try {
-      await adapters.verifyProject(worktree.path, options.run);
+      await adapters.verifyProject(worktree!.path, options.run);
       const optionalFailures = await adapters.runCommands([...project.verification, ...project.workflows], {
         project,
-        worktreePath: worktree.path,
-        options: common[index]!.options,
+        worktreePath: worktree!.path,
+        options: setupOptions!,
         run: options.run,
       });
       if (optionalFailures.length > 0) {
-        states[project.name] = { ...states[project.name], optionalFailures: optionalFailures.map(({ error }) => String(error)) };
-        await adapters.writeManifest("running", states);
+        preparation.state = { ...preparation.state, optionalFailures: optionalFailures.map(({ error }) => String(error)) };
+        await writeManifest("running");
       }
     } catch (error) {
-      await failSession(project.name, "verification", error);
+      await failSession(preparation, "verification", error);
     }
-    await adapters.recordEvent(eventOptions, { type: "verification-complete", project: project.name, path: worktree.path });
-    states[project.name] = {
-      ...states[project.name],
+    await adapters.recordEvent(eventOptions, { type: "verification-complete", project: project.name, path: worktree!.path });
+    preparation.state = {
+      ...preparation.state,
       status: "verified",
-      path: worktree.path,
-      branch: worktree.branch,
-      ...(states[project.name]?.optionalFailures ? { optionalFailures: states[project.name].optionalFailures } : {}),
+      path: worktree!.path,
+      branch: worktree!.branch,
+      ...(preparation.state.optionalFailures ? { optionalFailures: preparation.state.optionalFailures } : {}),
     };
-    await adapters.writeManifest("running", states);
+    await writeManifest("running");
   }
 
+  const states = projectStates(projects);
   await adapters.writeManifest("complete", states);
-  return { states, worktrees };
+  return { states, worktrees: projects.map(({ worktree }) => worktree!) };
 }
