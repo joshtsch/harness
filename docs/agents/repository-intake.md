@@ -29,24 +29,26 @@ Choose the path from observed state:
 | Registered project with a managed clone | Reuse the clone and enter session setup. |
 | Existing remote without registration | Register and validate it, then clone through the harness. |
 | Registered project with a missing clone | Run `pnpm clone <project-name>` from the harness root. |
-| Remote does not exist | Register its planned identity, then follow the provisioning bootstrap below. |
+| GitHub remote does not exist | Register and validate its planned identity, then create it with `gh repo create`. |
+| Other remote does not exist | Register its planned identity, then follow that provider's provisioning policy. |
 
 Existing clones retain their contents and history. Verify their identity before
 reuse. Keep normal implementation in the project's managed checkout under the
 [external worktree root](project-configuration.md#worktree-root).
 
-For a new remote, complete the [Terraform coverage gate](infrastructure.md#terraform-coverage-gate)
-after registration and before selecting a provisioning write tool. Prepare and
-review configuration in the owning repository's isolated bootstrap checkout
-outside the harness tree, with remote state and locking. Establish the remote through
-Terraform for supported operations. Registration of a planned remote does not
-require that it already exist.
+For a new GitHub repository, register and validate its planned identity, then
+use `gh repo create` for repository creation. Repository creation is part of
+project intake; Terraform is not the repository-provisioning path. Run the
+[Terraform coverage gate](infrastructure.md#terraform-coverage-gate) for
+separate infrastructure resources needed by the project, such as hosting,
+databases, or shared platform workspaces. Registration of a planned remote does
+not require that it already exist.
 
-Bootstrap is limited to repository metadata, the setup contract, and infrastructure
-configuration needed to establish the remote and its initial default branch.
-Record its purpose and recovery state in scratch while the new tracker is
-unavailable. Once the remote exists, create its originating issue before feature
-implementation. Establish the managed clone under `projects/`, then enter
+Bootstrap is limited to repository metadata and the setup contract needed to
+establish the remote and its initial default branch. Record the operation and
+recovery state in scratch while the new tracker is unavailable. Once the remote
+exists, establish its managed clone under `projects/`, then create its
+originating issue before feature implementation. Enter
 [Session and worktree lifecycle](session-lifecycle.md) for setup, an issue-bound
 worktree, implementation, verification, review, and a change request. Requested
 feature content, including a PR template, belongs in that worktree.
@@ -60,8 +62,8 @@ provides no authorization to bypass registration, use a different provisioning
 transport, or edit a main clone.
 
 Check a helper's actual behavior against this workflow before using its write
-path. The legacy `pnpm create:project` provisions with GitHub CLI and registers
-only after pushing; its live and resume paths do not meet this workflow. Keep
-provisioning on the Terraform path until the helper supports it. Follow the
-infrastructure policy's explicit fallback process only for documented unsupported
-operations or safe recovery; missing access is not a coverage gap.
+path. The legacy `pnpm create:project` registers only after pushing; its live
+and resume paths do not meet this workflow. Register and validate first, create
+the repository with `gh repo create`, and then clone through the harness. Follow
+the infrastructure policy for separate infrastructure resources; missing access
+is not a coverage gap.

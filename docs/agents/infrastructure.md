@@ -7,6 +7,11 @@ storage, databases, networking, and similar durable resources. Apply this
 policy before choosing MCP, API, CLI, or dashboard writes, including writes
 suggested by a plugin or skill. Read-only inspection may use those tools.
 
+Creating a GitHub repository is project intake, not infrastructure provisioning.
+Use `gh repo create` after registering and validating the project; apply this
+Terraform policy to separate infrastructure resources the project needs.
+See [repository intake](repository-intake.md#prepare-the-repository).
+
 ## Terraform coverage gate
 
 Complete these steps before selecting an infrastructure write tool:
