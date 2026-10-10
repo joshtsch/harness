@@ -2,6 +2,7 @@ import type { ProjectDefinition, SessionContext, WorkflowCommand } from "../proj
 import { ensureProjectClone, type ProjectClone } from "./project-clone.js";
 import { createProjectWorktree, type WorktreeProject, type WorktreeResult } from "./worktree.js";
 import { recordSetupEvent, runProjectCommands, runProjectSetupSession, verifyProjectReady, type SetupCommandRunner, type SetupSessionResult, type SetupStep, type SetupFailure, type VerificationOptions } from "./project-setup.js";
+import { refreshProjectClone, type ProjectRefreshResult } from "./project-refresh.js";
 
 export type { ProjectClone } from "./project-clone.js";
 
@@ -10,9 +11,9 @@ export interface PreparationProjectState {
   path?: string;
   branch?: string;
   optionalFailures?: string[];
-  refreshRequested?: boolean;
   stage?: string;
   error?: string;
+  refresh?: ProjectRefreshResult;
 }
 
 export interface PreparationFailure {
@@ -36,16 +37,18 @@ export interface SessionPreparationOptions {
   worktreesDirectory: string;
   issueKey: string;
   purpose: string;
+  goal: string;
   harnessRoot: string;
   session: SessionContext;
   logDirectory: string;
-  refresh: boolean;
+  onProjectRefresh?: (project: string, result: ProjectRefreshResult) => void;
   run: SetupCommandRunner;
   writeManifest: (status: string, states: Record<string, PreparationProjectState>, failure?: PreparationFailure) => Promise<void>;
 }
 
 export interface SessionPreparationAdapters {
   ensureClone: (project: ProjectDefinition, projectsDirectory: string) => Promise<ProjectClone>;
+  refreshClone: (project: WorktreeProject) => Promise<ProjectRefreshResult>;
   runSetupSession: (steps: SetupStep[]) => Promise<SetupSessionResult>;
   createWorktree: (project: WorktreeProject, options: WorktreePreparationOptions) => Promise<WorktreeResult>;
   verifyProject: (path: string, run: SetupCommandRunner) => Promise<void>;
@@ -64,6 +67,7 @@ export interface SessionPreparationResult {
 function defaultAdapters(options: SessionPreparationOptions): SessionPreparationAdapters {
   return {
     ensureClone: (project, projectsDirectory) => ensureProjectClone(project, { projectsDirectory, run: (command, args) => options.run(command, args, { cwd: options.harnessRoot, env: process.env }) }),
+    refreshClone: (project) => refreshProjectClone(project, (command, args) => options.run(command, args, { cwd: project.path, env: process.env })),
     runSetupSession: runProjectSetupSession,
     createWorktree: createProjectWorktree,
     verifyProject: verifyProjectReady,
@@ -101,6 +105,17 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
     project,
     options: { projectRoot: clones[index].path, issueKey: options.issueKey, purpose: options.purpose, harnessRoot: options.harnessRoot, sessionId: options.session.sessionId, logDirectory: options.logDirectory, run: options.run },
   }));
+  for (let index = 0; index < options.selected.length; index += 1) {
+    const project = options.selected[index];
+    const result = await adapters.refreshClone({ name: project.name, path: clones[index].path, defaultBranch: project.defaultBranch });
+    states[project.name] = { ...states[project.name], refresh: result };
+    options.onProjectRefresh?.(project.name, result);
+    await adapters.recordEvent(eventOptions, { type: "project-refresh", project: project.name, ...result });
+    await adapters.writeManifest("running", states);
+  }
+  const skipped = options.selected.find((project) => states[project.name].refresh?.status === "skipped");
+  if (skipped) await failSession(skipped.name, "refresh", new Error(`project ${skipped.name} skipped: ${states[skipped.name].refresh?.reason}`));
+
   for (const { project, options: setupOptions } of common) {
     try {
       await adapters.runSetupSession([{ project, phase: "bootstrap", options: setupOptions }]);
@@ -117,12 +132,7 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
         worktreesDirectory: options.worktreesDirectory,
         issueKey: options.issueKey,
         ticketTitle: options.purpose,
-        refresh: options.refresh,
-        onRefresh: async () => {
-          states[project.name] = { ...states[project.name], refreshRequested: true };
-          await adapters.recordEvent(eventOptions, { type: "clone-refresh-requested", project: project.name });
-          await adapters.writeManifest("running", states);
-        },
+        refresh: false,
         run: async (command, args) => options.run(command, args, { cwd: clones[index].path, env: process.env }),
       });
       worktrees.push(worktree);
@@ -131,7 +141,7 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
     }
     const worktree = worktrees[index]!;
     await adapters.recordEvent(eventOptions, { type: "worktree-ready", project: project.name, path: worktree.path, branch: worktree.branch });
-    states[project.name] = { status: "worktree-ready", path: worktree.path, branch: worktree.branch };
+    states[project.name] = { ...states[project.name], status: "worktree-ready", path: worktree.path, branch: worktree.branch };
     await adapters.writeManifest("running", states);
   }
 
@@ -143,7 +153,7 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
     } catch (error) {
       await failSession(project.name, "worktree", error);
     }
-    states[project.name] = { status: "setup-complete", path: worktree.path, branch: worktree.branch };
+    states[project.name] = { ...states[project.name], status: "setup-complete", path: worktree.path, branch: worktree.branch };
     await adapters.writeManifest("running", states);
   }
 
@@ -167,6 +177,7 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
     }
     await adapters.recordEvent(eventOptions, { type: "verification-complete", project: project.name, path: worktree.path });
     states[project.name] = {
+      ...states[project.name],
       status: "verified",
       path: worktree.path,
       branch: worktree.branch,

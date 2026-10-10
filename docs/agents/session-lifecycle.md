@@ -2,9 +2,9 @@
 
 0. Run the repository-scope gate: inventory every repository the session may modify, classify each boundary, and register every durable project before opening issues or creating branches/worktrees.
 1. Validate `projects.yml` and its permitted local overlay, then resolve the selected projects.
-2. Resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed.
-3. Clone missing projects. Existing clones are not fetched or altered unless the operation explicitly requests it.
-4. Run project bootstrap setup when needed, then fetch the configured remote and verify the configured default branch is clean and matches its remote-tracking default branch exactly: neither branch is ahead or behind.
+2. Require an explicit `--goal` and resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed. Store the goal in the session manifest and adjacent generated `AGENTS.md`.
+3. Clone missing projects. At session start, inspect each participating default clone, fetch clean default checkouts with pruning, and fast-forward only when the local branch is an ancestor of its fetched origin branch. Preserve dirty, ahead, divergent, detached, and nondefault checkouts.
+4. Report every prepared clone as `updated`, `current`, or `skipped` with a reason; record those outcomes in the manifest and events. If any clone is skipped, stop before bootstrap or worktree creation. Otherwise run project bootstrap setup when needed and verify the default branch is clean and exactly matches its remote-tracking branch.
 5. Create one deterministic branch and worktree per `{project, issue, branch}` tuple under `.worktrees/`. Include the issue key and normalized ticket title in bounded, filesystem-safe names. Use an explicit attempt suffix for parallel retries.
 6. Run worktree setup and harness-owned verification. Required multi-project sessions fail closed if a selected project cannot be prepared; partial operation requires an explicit opt-in.
 7. Work across the participating worktrees. Record transient session, project, issue, worktree, handoff, and recovery state in ignored `docs/.scratch/`.
@@ -19,6 +19,27 @@ not session failures.
 
 The setup lifecycle enables the hook by default. Set `HARNESS_OPTIMIZATION_ENABLED=0`
 to disable collection and persistence for a session; setup completion is unaffected.
+
+## Session goal and agent context
+
+Run `pnpm setup:session --goal "Expected outcome" <projects> <issue-number>`.
+The goal must be a non-empty single line of at most 1000 characters. The existing
+sensitive-content scanner rejects likely secrets or PII; callers must still
+review goal text because pattern checks cannot prove it safe.
+The purpose comes from the resolved issue title; a goal is supplied separately.
+
+The manifest and generated session instructions live under
+`docs/.scratch/setup/<session-id>/`. The manifest's `agentInstructions` field
+points to the adjacent `AGENTS.md`, and successful setup prints its path.
+Load that file alongside harness and project instructions before agent work.
+It records intent and does not replace project-owned instructions or grant
+authority. Setup never rewrites a project's tracked `AGENTS.md`.
+
+Session start always refreshes safe default clones. The legacy `--refresh` flag
+is accepted without an extra fetch. This exception permits synchronization,
+never implementation in the default clone. Standalone worktree creation retains
+its explicit refresh behavior. Fetch and fast-forward failures are reported as
+skipped; bootstrap does not run on skipped clones.
 
 ## Portable continuation
 

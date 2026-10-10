@@ -49,3 +49,10 @@ External tools must be classified by scope before they are added. Shared tools b
 Every project owns `scripts/setup.sh` at its repository root. The script must be deterministic, idempotent, observable, and usable when the repository is opened in isolation. The harness invokes it from the project root with an explicit phase and standardized session metadata, including project name, issue identity, purpose, worktree path, and harness root.
 
 The harness owns worktree preparation and verification policy. Project setup remains project-owned so each repository can choose its own language, package manager, and tooling.
+
+Session startup owns default-clone synchronization before bootstrap. It fetches
+and fast-forwards only clean, safely comparable default branches; it records
+`updated`, `current`, or `skipped` and refuses setup when a participating clone
+is skipped. The explicit session goal and agent instructions are saved beside
+the session manifest. Project setup scripts do not need to rewrite `AGENTS.md`
+to receive session intent. See [session lifecycle](session-lifecycle.md#session-goal-and-agent-context).

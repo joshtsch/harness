@@ -28,6 +28,10 @@ _Avoid_: Ticket (except when naming a provider's terminology)
 The short human-readable explanation of what a session or worktree is for.
 _Avoid_: Description (when identity or naming is intended)
 
+**Session goal**:
+The explicit outcome the user wants one session to achieve, distinct from its issue-derived purpose.
+_Avoid_: Issue title, completion status
+
 **Change request**:
 A provider-neutral proposal to integrate a project branch into its target branch, such as a GitHub pull request or GitLab merge request.
 _Avoid_: MR, PR (in shared workflow language)

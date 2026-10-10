@@ -54,12 +54,26 @@ that each command is available; it does not unlock Bitwarden or contact an
 account. `pnpm init:harness` runs the same check before other initialization
 stages, and `pnpm setup:session` runs it before resolving the session issue.
 
-Start an issue-bound session with `pnpm setup:session <project> <issue-number>`.
+Start an issue-bound session with `pnpm setup:session --goal "Expected outcome" <project> <issue-number>`.
 Set `HARNESS_AGENT_PROVIDER=gemini` to check Gemini CLI during setup.
 The harness resolves the issue title through the configured tracker before it
 clones or creates worktrees. For untracked work, use
 an issue in the configured tracker first; implementation sessions do not have
 an exploratory bypass.
+
+Session startup fetches participating clean default clones and fast-forwards
+them when safe. It reports each as `updated`, `current`, or `skipped` with a
+reason. Dirty, ahead, divergent, and nondefault clones are preserved; a skipped
+clone stops preparation before bootstrap or worktree creation.
+`--refresh` remains accepted for older invocations; refresh now happens on every
+session start. Standalone `pnpm worktree` still requires an explicit refresh.
+
+The required goal is distinct from the issue-derived purpose. Supply one line
+of at most 1000 characters without secrets or PII. The goal is stored in
+`docs/.scratch/setup/<session-id>/session.json` and the adjacent generated
+`AGENTS.md`. Load that session file alongside the harness and project instructions
+when starting agent work; the manifest points to it and successful setup prints
+its path. Project-owned `AGENTS.md` files are preserved.
 
 Before opening that issue, classify every repository the session may modify and
 register durable projects in `projects.yml` or ignored `projects.local.yml`.
