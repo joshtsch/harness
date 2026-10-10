@@ -99,6 +99,10 @@ plugin-bundled skills have separate installation and enablement controls.
 Skills and plugins are dependencies of the harness workflow, but their installation
 scope must remain explicit:
 
+- When a requested skill is missing from the project inventory, check
+  `.codex/skill-sources.yml` before reporting it unavailable. A skill package or
+  repository is not a native plugin; use the listed project-local installer and
+  then add the skill to capability policy when it should be routable.
 - Install skills without their own plugin through `pnpm dlx skills` using its
   project-local mode. Do not install those skills globally. Native plugins are the
   exception and use the Codex/plugin installer described by `.codex/plugins.yml`.
@@ -107,7 +111,8 @@ scope must remain explicit:
   `pnpm dlx skills experimental_install` during harness initialization.
 - `joshtsch/skills` is the canonical authoring repository for custom skills. After a
   skill is pushed there, install it into this harness with `pnpm dlx skills`.
-- `mattpocock/skills` is an approved external skill source. Install it with
+- `mattpocock/skills` is an approved external skill source, not a native Codex
+  plugin. Install it with
   `pnpm dlx skills`, and keep it in
   `.codex/skill-sources.yml`, not `.codex/plugins.yml`, because the repository does
   not currently ship a native Codex plugin. Install selected skills project-locally
