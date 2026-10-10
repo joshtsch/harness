@@ -1,6 +1,6 @@
 # Personalized Agent Coding Harness
 
-This TypeScript harness coordinates agent sessions across independent Git repositories. Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated `.worktrees/`.
+This TypeScript harness coordinates agent sessions across independent Git repositories. Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated worktrees outside the harness tree.
 
 Start at the repository root and read [AGENTS.md](AGENTS.md) for workflow routing. Domain vocabulary lives in [CONTEXT.md](CONTEXT.md); durable workflow guidance lives under [docs/agents/](docs/agents/).
 
@@ -26,6 +26,9 @@ from a skill subdirectory in the Skills CLI. The approved Codex plugins are
 `ponytail@ponytail`, `vercel@openai-curated-remote`, and
 `supabase@openai-curated-remote`. Installed plugin identifiers must match the
 manifest; initialization reports installation guidance when one is missing.
+Plugin inventories can use up to 8 MiB per stdout/stderr stream. Larger output
+fails verification with a bounded-capture diagnostic; command failures do not
+reproduce inventory contents. See [tooling guidance](docs/agents/tooling.md#skills-and-plugins).
 The policy lives in `capabilities.yml` and
 `agent-policy.yml`; it records one canonical project skill per capability and
 explicit Codex and Gemini support. Inspect a route with
@@ -55,6 +58,10 @@ account. `pnpm init:harness` runs the same check before other initialization
 stages, and `pnpm setup:session` runs it before resolving the session issue.
 
 Start an issue-bound session with `pnpm setup:session --goal "Expected outcome" <project> <issue-number>`.
+Both `pnpm worktree` and `pnpm setup:session` default to the sibling
+`<harness-folder>-worktrees/`. Set `HARNESS_WORKTREE_ROOT` in the process
+environment to choose another external root. See [configuration](docs/agents/project-configuration.md#worktree-root)
+and [existing worktree migration](docs/agents/session-lifecycle.md#existing-worktrees).
 Set `HARNESS_AGENT_PROVIDER=gemini` to check Gemini CLI during setup.
 The harness resolves the issue title through the configured tracker before it
 clones or creates worktrees. For untracked work, use
@@ -74,6 +81,22 @@ of at most 1000 characters without secrets or PII. The goal is stored in
 `AGENTS.md`. Load that session file alongside the harness and project instructions
 when starting agent work; the manifest points to it and successful setup prints
 its path. Project-owned `AGENTS.md` files are preserved.
+
+Create a worktree for a new or existing branch with:
+
+```sh
+pnpm worktree --refresh --branch feature/follow-up --base feature/first-change <project> <issue-key> "Follow-up change"
+```
+
+`--branch` selects the branch; without it, the issue key and title determine the
+name. An existing origin branch is tracked, and an existing local branch keeps
+its commits. `--base` accepts an origin branch name, optionally prefixed with
+`origin/`, and defaults to the project's default branch for new worktrees.
+The harness records it as `branch.<branch>.harness-base` in the project's Git
+configuration. Reuse reads that value and refuses a conflicting explicit base.
+`--refresh` fetches origin with pruning so deleted bases are detected. Without
+refresh, checks use the available remote-tracking refs. See
+[branch and base lifecycle](docs/agents/session-lifecycle.md#worktree-branches-and-bases).
 
 Before opening that issue, classify every repository the session may modify and
 register durable projects in `projects.yml` or ignored `projects.local.yml`.

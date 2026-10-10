@@ -23,6 +23,7 @@ export interface PreparationFailure {
 }
 
 export interface WorktreePreparationOptions {
+  harnessRoot: string;
   worktreesDirectory: string;
   issueKey: string;
   ticketTitle: string;
@@ -129,6 +130,7 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
     try {
       const worktree = await adapters.createWorktree({ name: project.name, path: clones[index].path, defaultBranch: project.defaultBranch }, {
         worktreesDirectory: options.worktreesDirectory,
+        harnessRoot: options.harnessRoot,
         issueKey: options.issueKey,
         ticketTitle: options.purpose,
         refresh: false,

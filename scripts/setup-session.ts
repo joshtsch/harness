@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 import { resolve } from "node:path";
 import { loadProjectsConfig, loadSessionContext, type SessionContext } from "../src/project-config.js";
 import { resolveIssue, type ResolvedIssue } from "../src/issue-tracker.js";
-import { parseSessionArgs } from "../src/session/index.js";
+import { parseSessionArgs, resolveWorktreeRoot } from "../src/session/index.js";
 import { prepareSession, type PreparationFailure, type PreparationProjectState, createSessionManifest, renderSessionInstructions, type SetupCommandRunner } from "../src/session/index.js";
 import { createSessionFinalizer, runSessionFinalizationHook, type SessionFinalizationStatus } from "../src/session/index.js";
 import { createSessionOptimizationHook } from "../src/optimization/index.js";
@@ -16,6 +16,7 @@ const executeFile = promisify(execFile);
 const args = process.argv.slice(2);
 const input = parseSessionArgs(args);
 const harnessRoot = resolve(".");
+const worktreesDirectory = await resolveWorktreeRoot(harnessRoot);
 await verifyPrerequisites(prerequisitesForProvider(process.env.HARNESS_AGENT_PROVIDER ?? "codex"));
 const { projectList } = input;
 const projects = await loadProjectsConfig(resolve("projects.yml"));
@@ -101,7 +102,7 @@ try {
   result = await prepareSession({
     selected: selected as NonNullable<(typeof selected)[number]>[],
     projectsDirectory: resolve("projects"),
-    worktreesDirectory: resolve(".worktrees"),
+    worktreesDirectory,
     issueKey,
     purpose: title,
     harnessRoot,

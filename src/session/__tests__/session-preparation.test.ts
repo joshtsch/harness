@@ -38,7 +38,7 @@ function dependencies(overrides: Partial<SessionPreparationDependencies> = {}): 
     ensureClone: vi.fn(async (): Promise<ProjectClone> => ({ action: "existing", path: "/workspace/projects/example-project" })),
     refreshClone: vi.fn(async () => ({ status: "current" as const })),
     runSetupSession: vi.fn(async () => ({ results: [], optionalFailures: [] })),
-    createWorktree: vi.fn(async (): Promise<WorktreeResult> => ({ action: "created", branch: "issue-39-extract-session-preparation", name: "issue-39-extract-session-preparation", path: "/workspace/.worktrees/example-project/issue-39-extract-session-preparation" })),
+    createWorktree: vi.fn(async (): Promise<WorktreeResult> => ({ action: "created", branch: "issue-39-extract-session-preparation", name: "issue-39-extract-session-preparation", path: "/workspace/.worktrees/example-project/issue-39-extract-session-preparation", base: "origin/main" })),
     verifyProject: vi.fn(async () => undefined),
     runCommands: vi.fn(async () => []),
     recordEvent: vi.fn(async () => undefined),
@@ -116,7 +116,7 @@ describe("prepareSession", () => {
 
   it("supports rerun with existing clone and worktree", async () => {
     const deps = dependencies({
-      createWorktree: vi.fn(async (): Promise<WorktreeResult> => ({ action: "existing", branch: "issue-39-extract-session-preparation", name: "issue-39-extract-session-preparation", path: "/workspace/.worktrees/example-project/issue-39-extract-session-preparation" })),
+      createWorktree: vi.fn(async (): Promise<WorktreeResult> => ({ action: "existing", branch: "issue-39-extract-session-preparation", name: "issue-39-extract-session-preparation", path: "/workspace/.worktrees/example-project/issue-39-extract-session-preparation", base: "origin/main" })),
     });
 
     await prepareSession(options, deps);
