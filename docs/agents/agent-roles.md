@@ -66,6 +66,19 @@ produces code during implementation, Caveman shapes conversational prose, Humani
 polishes human-facing prose, and `/code-review` owns the final readiness and
 change-request handoff.
 
+## Codebase architecture review
+
+For a read-only survey of architectural deepening opportunities, route the
+`codebase-architecture` capability before invoking its canonical skill:
+
+```sh
+pnpm capabilities route codex codebase-architecture
+```
+
+The review produces an HTML report and candidate list. It does not implement a
+candidate; take a selected opportunity through the design and implementation
+workflow.
+
 ## Precedence
 
 Technical skills produce and verify content first. Use `/humanizer` only after that

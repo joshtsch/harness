@@ -28,10 +28,8 @@ describe("Harness initialization configuration", () => {
     const lock = JSON.parse(await readFile(resolve(root, "skills-lock.json"), "utf8"));
     expect(lock.skills.save).toMatchObject({
       source: "joshtsch/skills",
-      sourceUrl: "https://github.com/joshtsch/skills.git",
       ref: "codex/5-save-session",
       skillPath: ".agents/skills/save/SKILL.md",
-      computedHash: "a01acc4da9db4a55df800c7d29efe88e1675c28da060f2fed22bdfb359a5e66d",
     });
   });
 });

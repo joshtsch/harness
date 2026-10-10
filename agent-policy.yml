@@ -2,6 +2,7 @@ version: 1
 providers: [codex, gemini]
 skills:
   agent-system-audit: { capability: agent-system-audit, state: canonical, codex: supported, gemini: supported }
+  improve-codebase-architecture: { capability: codebase-architecture, state: canonical, codex: supported, gemini: supported }
   cavecrew: { capability: cavecrew, state: canonical, codex: degraded, gemini: unavailable }
   caveman: { capability: caveman, state: canonical, codex: supported, gemini: supported }
   caveman-commit: { capability: caveman-commit, state: canonical, codex: supported, gemini: supported }
