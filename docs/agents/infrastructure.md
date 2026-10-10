@@ -49,7 +49,9 @@ Before changing shared infrastructure:
 
 The shared `platform-bootstrap` workspace is a control-plane exception: it
 manages HCP Terraform workspaces themselves and is not a repository's
-infrastructure workspace.
+infrastructure workspace. Follow its
+[repository workspace inputs and adoption guide](../../infrastructure/hcp/README.md#repository-workspaces)
+when preparing state ownership for a registered project.
 
 ## Unsupported operations and recovery
 

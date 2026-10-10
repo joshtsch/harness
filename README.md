@@ -26,6 +26,9 @@ from a skill subdirectory in the Skills CLI. The approved Codex plugins are
 `ponytail@ponytail`, `vercel@openai-curated-remote`, and
 `supabase@openai-curated-remote`. Installed plugin identifiers must match the
 manifest; initialization reports installation guidance when one is missing.
+Plugin inventories can use up to 8 MiB per stdout/stderr stream. Larger output
+fails verification with a bounded-capture diagnostic; command failures do not
+reproduce inventory contents. See [tooling guidance](docs/agents/tooling.md#skills-and-plugins).
 The policy lives in `capabilities.yml` and
 `agent-policy.yml`; it records one canonical project skill per capability and
 explicit Codex and Gemini support. Inspect a route with

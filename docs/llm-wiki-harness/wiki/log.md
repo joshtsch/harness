@@ -16,6 +16,10 @@
 
 - October 9, 2026: Indexed [worktree branch and base lifecycle](../../agents/session-lifecycle.md#worktree-branches-and-bases). Existing branches retain commits; recorded bases govern stacked work. Policy stays in agent docs.
 
+- October 9, 2026: Indexed [initialization plugin checks](../../agents/tooling.md#skills-and-plugins). Capture permits 8 MiB per output stream; failure diagnostics omit inventory contents.
+
+- October 9, 2026: Indexed [repository Terraform workspace management](../../../infrastructure/hcp/README.md#repository-workspaces). Inputs, adoption, and recovery stay in authoritative infrastructure guide. No existing workspace article needed revision.
+
 ## Related pages
 
 - [[index]]

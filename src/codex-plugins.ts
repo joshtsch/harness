@@ -65,10 +65,15 @@ export function missingRequiredPlugins(required: RequiredPlugin[], pluginListOut
 export async function verifyRequiredPlugins(required: RequiredPlugin[]): Promise<void> {
   let output: string;
   try {
-    const result = await execFileAsync("codex", ["plugin", "list"]);
+    const result = await execFileAsync("codex", ["plugin", "list"], { maxBuffer: 8 * 1024 * 1024 });
     output = `${result.stdout}\n${result.stderr}`;
   } catch (error) {
-    const details = error instanceof Error ? error.message : String(error);
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+    const details = code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER"
+      ? "inventory exceeds the 8 MiB per-stream capture limit"
+      : typeof code === "number"
+        ? `codex plugin list exited with status ${code}`
+        : code === "ENOENT" ? "codex executable is unavailable" : "codex plugin list failed";
     throw new Error(`Unable to inspect Codex plugins: ${details}`);
   }
 
