@@ -29,7 +29,6 @@ const options: SessionPreparationOptions = {
   harnessRoot: "/workspace",
   session,
   logDirectory: "/workspace/docs/.scratch/setup",
-  refresh: false,
   run: vi.fn(async () => ({ code: 0, stdout: "", stderr: "" })),
   writeManifest: vi.fn(async () => undefined),
 };
@@ -37,6 +36,7 @@ const options: SessionPreparationOptions = {
 function dependencies(overrides: Partial<SessionPreparationDependencies> = {}): SessionPreparationDependencies {
   return {
     ensureClone: vi.fn(async (): Promise<ProjectClone> => ({ action: "existing", path: "/workspace/projects/example-project" })),
+    refreshClone: vi.fn(async () => ({ status: "current" as const })),
     runSetupSession: vi.fn(async () => ({ results: [], optionalFailures: [] })),
     createWorktree: vi.fn(async (): Promise<WorktreeResult> => ({ action: "created", branch: "issue-39-extract-session-preparation", name: "issue-39-extract-session-preparation", path: "/workspace/.worktrees/example-project/issue-39-extract-session-preparation", base: "origin/main" })),
     verifyProject: vi.fn(async () => undefined),
@@ -66,6 +66,7 @@ describe("prepareSession", () => {
     expect(createSessionManifest(session, {
       issueKey: "39",
       purpose: options.purpose,
+      goal: "Prove session preparation behavior",
       issue: { key: "39", number: 39, repository: "example/repo" },
       projects: result.states,
       status: "complete",
@@ -140,5 +141,15 @@ describe("prepareSession", () => {
       "example-project:worktree",
       "night-owls:worktree",
     ]);
+  });
+
+  it("reports every project refresh before refusing to bootstrap a skipped clone", async () => {
+    const report = vi.fn();
+    const deps = dependencies({ refreshClone: vi.fn(async (selected) => selected.name === project.name ? { status: "skipped" as const, reason: "working tree is dirty" } : { status: "updated" as const }) });
+    await expect(prepareSession({ ...options, selected: [project, { ...project, name: "second" }], onProjectRefresh: report }, deps)).rejects.toThrow("skipped");
+    expect(report.mock.calls).toEqual([[project.name, { status: "skipped", reason: "working tree is dirty" }], ["second", { status: "updated" }]]);
+    expect(deps.runSetupSession).not.toHaveBeenCalled();
+    expect(deps.createWorktree).not.toHaveBeenCalled();
+    expect(deps.writeManifest).toHaveBeenLastCalledWith("failed", expect.objectContaining({ [project.name]: expect.objectContaining({ refresh: { status: "skipped", reason: "working tree is dirty" }, stage: "refresh" }), second: expect.objectContaining({ refresh: { status: "updated" } }) }), expect.anything());
   });
 });

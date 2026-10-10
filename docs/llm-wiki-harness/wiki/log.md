@@ -14,6 +14,8 @@
 
 - October 7, 2026: Indexed [Impeccable UI design routing](../../agents/agent-roles.md#ui-design-routing). Installation and policy stay in agent docs.
 
+- October 9, 2026: Indexed [session goal and startup refresh](../../agents/session-lifecycle.md#session-goal-and-agent-context). Goals live in session scratch context; unsafe default clones remain unchanged.
+
 - October 9, 2026: Indexed [external worktree configuration](../../agents/project-configuration.md#worktree-root) and [legacy migration](../../agents/session-lifecycle.md#existing-worktrees). Existing checkouts preserved; new worktrees resolve outside harness.
 
 - October 9, 2026: Indexed [worktree branch and base lifecycle](../../agents/session-lifecycle.md#worktree-branches-and-bases). Existing branches retain commits; recorded bases govern stacked work. Policy stays in agent docs.

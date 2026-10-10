@@ -13,7 +13,7 @@ Never commit secrets, credentials, raw MCP output, or PII; follow [Secrets and P
 - Child-project work happens only in harness-managed worktrees outside the harness tree. See [worktree root configuration](docs/agents/project-configuration.md#worktree-root).
 - Harness changes happen on a feature branch, never directly on the default branch.
 - A harness change must pass code review before its merge request is opened.
-- Do not modify a child project's main/default branch or its main clone as part of normal session work.
+- Keep implementation out of child-project main/default branches and main clones. Session startup may fetch and fast-forward a clean default clone under [Session and worktree lifecycle](docs/agents/session-lifecycle.md); preserve dirty, ahead, divergent, and nondefault checkouts.
 - Treat `projects.yml` as the canonical public configuration source. Permit the
   ignored `projects.local.yml` overlay for installation-specific private project
   metadata; validate the merged configuration and never commit the local file.

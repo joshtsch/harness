@@ -6,6 +6,10 @@ All child-project work is performed in harness-managed worktrees, never in a pro
 
 The harness must verify the default branch is fetched, current with its remote, and clean before creating a worktree, and must make cleanup explicit and recoverable.
 
+Session startup may synchronize a clean default clone by fetching and
+fast-forwarding before setup. Dirty or divergent clones are preserved; all
+implementation stays in worktrees.
+
 ## External root amendment — October 9, 2026
 
 New worktrees live outside the harness tree so independent project code stays
