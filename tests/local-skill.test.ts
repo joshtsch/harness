@@ -1,12 +1,19 @@
-import { mkdtemp, mkdir, readlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readlink, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { installHarnessSkills, loadHarnessSkillNames } from "../src/local-skill.js";
+
+const roots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
 
 describe("tracked harness skills", () => {
   it("discovers skills and links them into the provider skill directory idempotently", async () => {
     const root = await mkdtemp(resolve(tmpdir(), "harness-local-skills-"));
+    roots.push(root);
     const source = resolve(root, "harness-skills");
     const skill = resolve(source, "knowledge-routing");
     await mkdir(skill, { recursive: true });
@@ -20,6 +27,7 @@ describe("tracked harness skills", () => {
 
   it("rejects mismatched skill names and conflicting destinations", async () => {
     const root = await mkdtemp(resolve(tmpdir(), "harness-local-skills-"));
+    roots.push(root);
     const skill = resolve(root, "harness-skills", "knowledge-routing");
     await mkdir(skill, { recursive: true });
     await writeFile(resolve(skill, "SKILL.md"), "---\nname: other-name\n---\n");
