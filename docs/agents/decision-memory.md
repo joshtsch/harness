@@ -15,10 +15,11 @@ a POSIX filesystem; Windows ACL verification is not implemented.
 The store is local plaintext; it is not encrypted or synchronized. Do not store
 credentials, PII, transcripts, or project implementation details.
 
-Writers use an exclusive lock. A live lock causes the write to fail safely; an
-old lock is cleared only after its recorded process is confirmed gone. If a
-lock file is malformed, inspect it and verify no writer is active before
-removing it.
+Writers publish complete lock metadata atomically and hold the exclusive lock
+across read, validation, and write. A live lock causes the write to fail safely.
+Stale and malformed locks are never reclaimed automatically. Inspect the lock,
+verify its recorded process is gone, then remove it before retrying. This avoids
+removing a replacement lock held by another writer.
 
 Each record has an ID, category, user scope, optional business-line, project and
 environment scope, a preference, confidence, confirmation provenance, and a
@@ -30,14 +31,14 @@ scope is `local`.
 List all records, or filter by category:
 
 ```sh
-pnpm decision-memory list
-pnpm decision-memory list --category worktree-location
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory list
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory list --category worktree-location
 ```
 
 Retrieve only records applicable to the current context:
 
 ```sh
-pnpm decision-memory get --category worktree-location --user local \
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory get --category worktree-location --user local \
   --project harness --business-line harness --environment development
 ```
 
@@ -46,9 +47,11 @@ record path only after confirming that the project record exists and explains
 the difference:
 
 ```sh
-pnpm decision-memory get --category worktree-location --user local \
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory get --category worktree-location --user local \
   --project harness --business-line harness --environment development \
-  --project-actual /worktrees/harness --decision-record docs/adr/0001-worktrees.md
+  --project-actual /worktrees/harness \
+  --project-root /absolute/path/to/project \
+  --decision-record /absolute/path/to/docs/decisions/worktree-location.md
 ```
 
 Unspecified scope fields do not match records scoped to those fields. Among
@@ -82,25 +85,54 @@ Prepare a reviewed JSON file outside the repository. Example fields:
 Review the exact value with the user before writing it:
 
 ```sh
-pnpm decision-memory record --input /path/to/preference.json --confirm
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory record --input /path/to/preference.json --confirm
 ```
 
 Replacing a record requires both its existing ID and a fresh confirmation:
 
 ```sh
-pnpm decision-memory record --input /path/to/preference.json \
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory record --input /path/to/preference.json \
   --replace-id worktree-root --confirm
 ```
 
 Remove one record only after reviewing its ID:
 
 ```sh
-pnpm decision-memory forget --id worktree-root --confirm
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory forget --id worktree-root --confirm
 ```
 
 The command refuses duplicate IDs or category/scope pairs without explicit
 replacement. Repeated behavior is not consent. Do not promote memory into policy
 or project configuration automatically.
+
+## Record a project override rationale
+
+Project overrides belong in project-owned documentation, not in the local user
+memory store. Follow the destination convention in the project's instructions;
+when none exists, use `docs/decisions/<category>.md`. Keep one discoverable
+record per decision and include:
+
+```markdown
+# <Decision title>
+
+- Category: <category>
+- Scope: user=<id>; businessLine=<id>; project=<id>; environment=<id>
+- Preferred pattern: <user-scoped preference or shared default>
+- Actual pattern: <project configuration>
+- Reason: <user-confirmed rationale>
+- Date: <YYYY-MM-DD>
+- Deciding authority: <user, team, or named project role>
+- Configuration reference: <path and setting>
+```
+
+Draft the rationale and show the exact proposed project change to the user.
+Create or update the project record only after the user confirms the rationale
+and any configuration change. Never infer the reason from the observed setting.
+When checking a deviation, pass the verified record's absolute path using
+`--decision-record` and its project checkout using `--project-root`. The CLI
+only treats a record as documented when it is inside that project, matches the
+current project scope, and records the retrieved preferred pattern and actual
+configuration. A path alone does not establish documentation.
 
 The `worktree-location` skill is the first category skill. See
 `harness-skills/worktree-location/SKILL.md` for its activation and precedence

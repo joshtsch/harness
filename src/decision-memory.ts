@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { lstat, mkdir, open, readFile, rename, rm, chmod } from "node:fs/promises";
+import { lstat, mkdir, open, readFile, rename, rm, chmod, link, type FileHandle } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -39,7 +39,7 @@ export interface DecisionMemoryQuery {
 
 export interface ProjectDecisionContext {
   actualProjectValue: string;
-  decisionRecord?: string;
+  decisionRecord?: { path: string; verified: true };
 }
 
 export type DecisionDeviation =
@@ -147,34 +147,38 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
       ...record,
       provenance: { authority: "user-confirmed", confirmedAt: new Date().toISOString(), source: "explicit-user-confirmation" },
     };
-    const current = await this.list();
-    const existingById = current.find((candidate) => candidate.id === confirmedRecord.id);
-    const sameScope = current.find((candidate) => candidate.id !== confirmedRecord.id
-      && candidate.category === confirmedRecord.category && scopesEqual(candidate.scope, confirmedRecord.scope));
+    await this.withWriteLock(async () => {
+      const current = await this.list();
+      const existingById = current.find((candidate) => candidate.id === confirmedRecord.id);
+      const sameScope = current.find((candidate) => candidate.id !== confirmedRecord.id
+        && candidate.category === confirmedRecord.category && scopesEqual(candidate.scope, confirmedRecord.scope));
 
-    if (options.replaceId) {
-      const target = current.find((candidate) => candidate.id === options.replaceId);
-      if (!target || target.id !== confirmedRecord.id) throw new Error("replacement target must match the existing record id");
-      if (target.category !== confirmedRecord.category || !scopesEqual(target.scope, confirmedRecord.scope)) {
-        throw new Error("replacement must keep the existing category and scope");
+      if (options.replaceId) {
+        const target = current.find((candidate) => candidate.id === options.replaceId);
+        if (!target || target.id !== confirmedRecord.id) throw new Error("replacement target must match the existing record id");
+        if (target.category !== confirmedRecord.category || !scopesEqual(target.scope, confirmedRecord.scope)) {
+          throw new Error("replacement must keep the existing category and scope");
+        }
+      } else if (existingById || sameScope) {
+        throw new Error("an existing record requires explicit replacement");
       }
-    } else if (existingById || sameScope) {
-      throw new Error("an existing record requires explicit replacement");
-    }
 
-    const next = options.replaceId
-      ? current.map((candidate) => candidate.id === options.replaceId ? confirmedRecord : candidate)
-      : [...current, confirmedRecord];
-    await this.writeDocument(next);
+      const next = options.replaceId
+        ? current.map((candidate) => candidate.id === options.replaceId ? confirmedRecord : candidate)
+        : [...current, confirmedRecord];
+      await this.writeDocumentUnlocked(next);
+    });
   }
 
   async forget(id: string, options: { confirmed: boolean }): Promise<void> {
     assertSupportedPlatform();
     if (!options.confirmed) throw new Error("removing decision memory requires explicit user confirmation");
     if (!identifierPattern.test(id)) throw new Error("invalid decision memory id");
-    const current = await this.list();
-    if (!current.some((record) => record.id === id)) throw new Error("decision memory record was not found");
-    await this.writeDocument(current.filter((record) => record.id !== id));
+    await this.withWriteLock(async () => {
+      const current = await this.list();
+      if (!current.some((record) => record.id === id)) throw new Error("decision memory record was not found");
+      await this.writeDocumentUnlocked(current.filter((record) => record.id !== id));
+    });
   }
 
   private async assertSecureDirectory(create: boolean): Promise<void> {
@@ -188,15 +192,21 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
     }
   }
 
-  private async writeDocument(records: DecisionMemoryRecord[]): Promise<void> {
+  private async withWriteLock<T>(operation: () => Promise<T>): Promise<T> {
     await this.assertSecureDirectory(true);
     const lockPath = `${this.filePath}.lock`;
     const lock = await acquireWriteLock(lockPath);
+    try {
+      return await operation();
+    } finally {
+      await lock.close();
+      await rm(lockPath, { force: true });
+    }
+  }
 
+  private async writeDocumentUnlocked(records: DecisionMemoryRecord[]): Promise<void> {
     const temporaryPath = join(this.directory, `.decision-memory-${randomUUID()}.tmp`);
     try {
-      await lock.writeFile(JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() }), "utf8");
-      await lock.sync();
       const temporary = await open(temporaryPath, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600);
       try {
         await temporary.writeFile(JSON.stringify({ version: schemaVersion, records }, null, 2), "utf8");
@@ -207,8 +217,6 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
       await rename(temporaryPath, this.filePath);
     } finally {
       await rm(temporaryPath, { force: true });
-      await lock.close();
-      await rm(lockPath, { force: true });
     }
   }
 }
@@ -281,7 +289,7 @@ function assessDeviation(preference: string, project?: ProjectDecisionContext): 
   if (!project) return { status: "not-assessed" };
   if (project.actualProjectValue === preference) return { status: "none", actual: project.actualProjectValue };
   return project.decisionRecord
-    ? { status: "documented", actual: project.actualProjectValue, decisionRecord: project.decisionRecord }
+    ? { status: "documented", actual: project.actualProjectValue, decisionRecord: project.decisionRecord.path }
     : { status: "undocumented", actual: project.actualProjectValue };
 }
 
@@ -309,13 +317,35 @@ function isMissing(error: unknown): boolean {
   return (error as NodeJS.ErrnoException).code === "ENOENT";
 }
 
-async function acquireWriteLock(path: string) {
+async function acquireWriteLock(path: string): Promise<FileHandle> {
+  const temporaryPath = join(dirname(path), `.decision-memory-lock-${randomUUID()}.tmp`);
+  const temporary = await open(temporaryPath, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600);
+  let published = false;
+  let closed = false;
   try {
-    return await open(path, "wx", 0o600);
+    await temporary.writeFile(JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() }), "utf8");
+    await temporary.sync();
+    try {
+      await link(temporaryPath, path);
+    } catch (error) {
+      await temporary.close();
+      closed = true;
+      await rm(temporaryPath, { force: true });
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      return await inspectExistingLock(path);
+    }
+    published = true;
+    await rm(temporaryPath);
+    return temporary;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    if (published) await rm(path, { force: true });
+    if (!closed) await temporary.close().catch(() => undefined);
+    await rm(temporaryPath, { force: true });
+    throw error;
   }
+}
 
+async function inspectExistingLock(path: string): Promise<FileHandle> {
   try {
     const [info, contents] = await Promise.all([lstat(path), readFile(path, "utf8")]);
     if (info.isSymbolicLink() || unsafeMode(info.mode) || !ownedByCurrentUser(info.uid)) throw new Error("decision memory lock permissions are unsafe");
@@ -326,12 +356,11 @@ async function acquireWriteLock(path: string) {
     }
     const oldEnough = Date.now() - Date.parse(lock.createdAt) > 60_000;
     if (!oldEnough || processIsAlive(lock.pid)) throw new Error("decision memory is being updated; retry after the other write completes");
-    await rm(path);
+    throw new Error("decision memory lock is stale; verify no writer is active, then remove the lock file before retrying");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return acquireWriteLock(path);
     throw error;
   }
-  return acquireWriteLock(path);
 }
 
 function processIsAlive(pid: number): boolean {

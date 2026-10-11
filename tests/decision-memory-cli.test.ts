@@ -34,7 +34,7 @@ async function fixture() {
     cwd: repoRoot,
     env: { ...process.env, HOME: home },
   });
-  return { home, input, run };
+  return { root, home, input, run };
 }
 
 describe.skipIf(process.platform === "win32")("decision-memory CLI", () => {
@@ -56,5 +56,82 @@ describe.skipIf(process.platform === "win32")("decision-memory CLI", () => {
     await run(["record", "--input", input, "--confirm"]);
     const result = await run(["list", "--category", "deployment"]);
     expect(JSON.parse(result.stdout)).toEqual([]);
+  });
+
+  it("reports a deviation as documented only when the absolute project record verifies", async () => {
+    const { root, input, run } = await fixture();
+    await run(["record", "--input", input, "--confirm"]);
+    const projectRoot = join(root, "project");
+    await mkdir(projectRoot);
+    const recordPath = join(projectRoot, "project-decision.md");
+    await writeFile(recordPath, [
+      "- Category: worktree-location",
+      "- Scope: user=local; project=harness",
+      "- Preferred pattern: ~/worktrees",
+      "- Actual pattern: /project-worktrees",
+      "- Reason: The harness checkout runs on a constrained volume.",
+      "- Date: October 10, 2026",
+      "- Deciding authority: User",
+      "- Configuration reference: HARNESS_WORKTREE_ROOT in local setup",
+    ].join("\n"));
+
+    const args = ["get", "--category", "worktree-location", "--project", "harness", "--project-actual", "/project-worktrees"];
+    const verified = await run([...args, "--project-root", projectRoot, "--decision-record", recordPath]);
+    expect(JSON.parse(verified.stdout).deviation).toMatchObject({ status: "documented", decisionRecord: recordPath });
+
+    const unverified = await run([...args, "--project-root", projectRoot, "--decision-record", join(projectRoot, "missing.md")]);
+    expect(JSON.parse(unverified.stdout).deviation).toMatchObject({ status: "undocumented", actual: "/project-worktrees" });
+
+    await writeFile(recordPath, [
+      "- Category: worktree-location",
+      "- Scope: user=local; project=another-project",
+      "- Preferred pattern: ~/worktrees",
+      "- Actual pattern: /project-worktrees",
+      "- Reason: Another project needs a custom worktree root.",
+      "- Date: October 10, 2026",
+      "- Deciding authority: User",
+      "- Configuration reference: HARNESS_WORKTREE_ROOT in local setup",
+    ].join("\n"));
+    const wrongProject = await run([...args, "--project-root", projectRoot, "--decision-record", recordPath]);
+    expect(JSON.parse(wrongProject.stdout).deviation.status).toBe("undocumented");
+
+    await writeFile(recordPath, [
+      "- Category: worktree-location",
+      "- Scope: user=local; project=harness",
+      "- Preferred pattern: ~/another-worktrees",
+      "- Actual pattern: /project-worktrees",
+      "- Reason: This project needs a custom worktree root.",
+      "- Date: October 10, 2026",
+      "- Deciding authority: User",
+      "- Configuration reference: HARNESS_WORKTREE_ROOT in local setup",
+    ].join("\n"));
+    const wrongPreference = await run([...args, "--project-root", projectRoot, "--decision-record", recordPath]);
+    expect(JSON.parse(wrongPreference.stdout).deviation.status).toBe("undocumented");
+
+    await writeFile(recordPath, [
+      "- Category: worktree-location",
+      "- Preferred pattern: ~/worktrees",
+      "- Actual pattern: /project-worktrees",
+      "- Reason: This project needs a custom worktree root.",
+      "- Date: October 10, 2026",
+      "- Deciding authority: User",
+      "- Configuration reference: HARNESS_WORKTREE_ROOT in local setup",
+    ].join("\n"));
+    const missingScope = await run(["get", "--category", "worktree-location", "--project-root", projectRoot,
+      "--project-actual", "/project-worktrees", "--decision-record", recordPath]);
+    expect(JSON.parse(missingScope.stdout).deviation.status).not.toBe("documented");
+
+    await writeFile(join(root, "outside-project.md"), [
+      "- Category: worktree-location",
+      "- Scope: user=local; project=harness",
+      "- Preferred pattern: ~/worktrees",
+      "- Actual pattern: /project-worktrees",
+      "- Reason: This project needs a custom worktree root.",
+      "- Date: October 10, 2026",
+      "- Deciding authority: User",
+      "- Configuration reference: HARNESS_WORKTREE_ROOT in local setup",
+    ].join("\n"));
+    const outsideProject = await run([...args, "--project-root", projectRoot, "--decision-record", join(root, "outside-project.md")]);
+    expect(JSON.parse(outsideProject.stdout).deviation.status).toBe("undocumented");
   });
 });

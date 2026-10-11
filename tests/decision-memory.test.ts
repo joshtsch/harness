@@ -50,9 +50,9 @@ describe("decision memory resolution", () => {
   it("marks a project deviation documented only when a decision record is supplied", () => {
     const result = resolveDecisionMemory(query, [record("global", "~/worktrees")], { project: {
       actualProjectValue: "~/legacy-worktrees",
-      decisionRecord: "docs/adr/0001-worktree-root.md",
+      decisionRecord: { path: "/repo/docs/decisions/worktree-location.md", verified: true },
     } });
-    expect(result.deviation).toEqual({ status: "documented", actual: "~/legacy-worktrees", decisionRecord: "docs/adr/0001-worktree-root.md" });
+    expect(result.deviation).toEqual({ status: "documented", actual: "~/legacy-worktrees", decisionRecord: "/repo/docs/decisions/worktree-location.md" });
   });
 
   it("fails closed on conflicting preferences at the same scope", () => {
@@ -108,6 +108,32 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
     await expect(store.record(record("worktree-root", "~/other"), { confirmed: true })).rejects.toThrow("explicit replacement");
     await store.record(record("worktree-root", "~/other"), { confirmed: true, replaceId: "worktree-root" });
     await expect(store.list()).resolves.toMatchObject([{ preference: "~/other" }]);
+  });
+
+  it("does not overwrite a confirmed write when writers race", async () => {
+    const file = join(await fixture(), "state", "decision-memory.json");
+    const store = new LocalJsonDecisionMemoryStore(file);
+    const results = await Promise.allSettled([
+      store.record(record("first", "~/first", { project: "first" }), { confirmed: true }),
+      store.record(record("second", "~/second", { project: "second" }), { confirmed: true }),
+    ]);
+
+    const successfulWrites = results.filter((result) => result.status === "fulfilled").length;
+    await expect(store.list()).resolves.toHaveLength(successfulWrites);
+    expect(successfulWrites).toBeGreaterThan(0);
+  });
+
+  it("does not reclaim an abandoned lock automatically", async () => {
+    const file = join(await fixture(), "state", "decision-memory.json");
+    const store = new LocalJsonDecisionMemoryStore(file);
+    const lockPath = `${file}.lock`;
+    const deadPid = process.pid + 10_000;
+    const { mkdir, writeFile } = await import("node:fs/promises");
+    await mkdir(resolve(file, ".."), { recursive: true, mode: 0o700 });
+    await writeFile(lockPath, JSON.stringify({ pid: deadPid, createdAt: "2020-01-01T00:00:00.000Z" }), { mode: 0o600 });
+
+    await expect(store.record(record("worktree-root", "~/worktrees"), { confirmed: true })).rejects.toThrow("lock is stale");
+    await expect(readFile(lockPath, "utf8")).resolves.toContain(String(deadPid));
   });
 
   it("rejects likely sensitive values before writing them", async () => {
