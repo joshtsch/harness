@@ -27,7 +27,7 @@ describe("TypeScript package script launchers", () => {
       "scripts/continuation.ts",
     ]);
 
-    const serviceKey = "test-service-role-key";
+    const serviceKey = "fixture-key";
     const artifactContent = "PRIVATE_ARTIFACT_CONTENT_MARKER";
     const privateEventValue = "PRIVATE_EVENT_VALUE_MARKER";
     const mockFetch = `globalThis.fetch = async (input, init) => {
@@ -35,7 +35,7 @@ describe("TypeScript package script launchers", () => {
         throw new Error("unexpected continuation request");
       }
       const headers = new Headers(init?.headers);
-      if (headers.get("apikey") !== "test-service-role-key") throw new Error("unexpected API key");
+      if (headers.get("apikey") !== "fixture-key") throw new Error("unexpected API key");
       if (JSON.parse(String(init?.body)).p_state !== "active") throw new Error("unexpected list state");
       return new Response(JSON.stringify([{
         key: "sessions/test",
