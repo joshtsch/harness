@@ -3,6 +3,8 @@
 Use one authoritative surface for each kind of knowledge. Link related surfaces; do
 not copy the same decision into several documents.
 
+For placement decisions, use the harness [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md). This table remains the authority for which surface owns each knowledge type; the skill applies it to scope, context layer, and activation path.
+
 | Knowledge | Authoritative surface |
 | --- | --- |
 | Agent rules | `AGENTS.md` and applicable skill files |

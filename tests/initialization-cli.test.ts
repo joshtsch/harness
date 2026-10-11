@@ -24,6 +24,7 @@ async function runInitialization(args: string[], projects: Array<{ name: string;
   }));
   vi.doMock("node:child_process", () => ({ execFile: (_command: string, _args: string[], _options: unknown, callback: (error: Error | null, stdout: string, stderr: string) => void) => callback(null, "", "") }));
   vi.doMock("../src/project-skills.js", () => ({ verifyProjectSkills: vi.fn() }));
+  vi.doMock("../src/local-skill.js", () => ({ installHarnessSkills: vi.fn(), loadHarnessSkillNames: vi.fn().mockResolvedValue(["knowledge-routing"]) }));
   vi.doMock("../src/capability-policy.js", () => ({ loadCapabilityPolicy: vi.fn(), verifyCapabilityInventory: vi.fn() }));
   vi.doMock("../src/gemini-skills.js", () => ({ verifyGeminiProjectSkills: vi.fn() }));
   vi.doMock("../src/codex-plugins.js", () => ({ loadRequiredPlugins: vi.fn(), verifyRequiredPlugins: vi.fn() }));

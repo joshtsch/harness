@@ -17,6 +17,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | Tool intake and MCP inventory | [tooling.md](tooling.md) |
 | Agent role routing | [agent-roles.md](agent-roles.md) |
 | Documentation strategy | [documentation-strategy.md](documentation-strategy.md) |
+| Durable knowledge placement | [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md) and [documentation-strategy.md](documentation-strategy.md) |
 | Secure document storage | [secure-documents.md](secure-documents.md) |
 | Ubiquitous language | [UBIQUITOUS_LANGUAGE.md](UBIQUITOUS_LANGUAGE.md) |
 | Harness branch and merge-request workflow | [contributing.md](contributing.md) |

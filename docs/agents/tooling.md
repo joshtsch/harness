@@ -102,20 +102,29 @@ scope must remain explicit:
 - Install skills without their own plugin through `pnpm dlx skills` using its
   project-local mode. Do not install those skills globally. Native plugins are the
   exception and use the Codex/plugin installer described by `.codex/plugins.yml`.
-- Track only `skills-lock.json` for project-installed skills. Generated or pulled
-  files under `.agents/skills/` are ignored and restored with
+- Track external project-installed skills in `skills-lock.json`. Generated or
+  pulled files under `.agents/skills/` are ignored and restored with
   `pnpm dlx skills experimental_install` during harness initialization.
-- `joshtsch/skills` is the canonical authoring repository for custom skills. After a
-  skill is pushed there, install it into this harness with `pnpm dlx skills`.
+- Author harness-coupled skills in tracked `harness-skills/<name>/`. Harness
+  initialization links them into `.agents/skills/` and checks them alongside the
+  external skill inventory. Add each skill to `capabilities.yml` and
+  `agent-policy.yml`; do not add it to `skills-lock.json`.
+- Author skills that work unchanged outside this harness in the shared
+  `joshtsch/skills` repository, then install them here with `pnpm dlx skills`.
+  Keep existing installations intact until each skill is reviewed for ownership
+  and migrated deliberately.
+- The current `joshtsch/skills` entries `harness-grill-with-docs`,
+  `initialize-llm-wiki`, `scope-router`, and `save` depend on harness policy or
+  workflows; migrate them to `harness-skills/` in a separate inventory change.
+  `agent-system-audit` is the broadly reusable entry in that source set.
 - `mattpocock/skills` is an approved external skill source. Install it with
   `pnpm dlx skills`, and keep it in
   `.codex/skill-sources.yml`, not `.codex/plugins.yml`, because the repository does
   not currently ship a native Codex plugin. Install selected skills project-locally
   with the manifest's recorded command.
-- During local skill development, use a symlink into the harness's `.agents/skills/`
-  directory so the harness loads the working copy without copying unpushed changes.
-  The symlink target must stay outside this repository and must never be committed as
-  skill content.
+- During local development of a skill in another repository, use a symlink into
+  `.agents/skills/` so the harness loads the working copy without copying unpushed
+  changes. Keep that target outside this repository; never commit the symlink.
 - The current `codex plugin` CLI exposes marketplace and plugin installation at the
   host level; it does not expose a project-local flag. Approved plugins may therefore
   be installed at host level when explicitly listed in `.codex/plugins.yml`. Do not
@@ -125,8 +134,9 @@ scope must remain explicit:
   Inventory capture is bounded at 8 MiB per stdout/stderr stream. Larger output
   fails verification; reduce the inventory output before retrying. Command
   failures report status or availability without reproducing plugin output.
-- `pnpm init:harness` restores project skills with `pnpm dlx skills` and verifies every
-  entry in `skills-lock.json` has an installed `.agents/skills/<name>/SKILL.md`.
+- `pnpm init:harness` restores external project skills, links tracked harness skills,
+  and verifies every skill in the combined capability inventory is installed at
+  `.agents/skills/<name>/SKILL.md`.
 - Ponytail and Vercel are approved harness-level plugins and are listed in
   `.codex/plugins.yml`. Vercel provides shared deployment, Next.js, and Vercel
   workflow guidance; use its connected account only when the user places a

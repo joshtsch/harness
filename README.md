@@ -1,6 +1,8 @@
 # Personalized Agent Coding Harness
 
-This TypeScript harness coordinates agent sessions across independent Git repositories. Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated worktrees outside the harness tree.
+The harness improves its own workflows and coordinates agent work across independent Git repositories. It keeps sessions resumable through setup, handoffs, verification, review, and recovery. It carries reusable practices between projects while each retains ownership of its code and decisions. The harness owns orchestration, not project code.
+
+Public defaults live in `projects.yml`; installation-specific projects belong in ignored `projects.local.yml`. Projects are cloned under ignored `projects/` and worked on exclusively through isolated worktrees outside the harness tree.
 
 Start at the repository root and read [AGENTS.md](AGENTS.md) for workflow routing. Domain vocabulary lives in [CONTEXT.md](CONTEXT.md); durable workflow guidance lives under [docs/agents/](docs/agents/).
 
