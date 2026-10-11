@@ -35,26 +35,18 @@ configuration changes, and recovery operations.
 
 ## Shared GitHub Actions secrets
 
-When one secret value must be copied to every configured GitHub project, use
-`pnpm secrets:sync <SECRET_NAME>`. The command reads the value from
-`HARNESS_SHARED_SECRET_VALUE`, targets repositories with a configured GitHub
-issue tracker in the merged `projects.yml` and `projects.local.yml`, and runs a
-dry run by default. Pass `--apply` to write. Load the value from approved secret
-custody into the process environment as `HARNESS_SHARED_SECRET_VALUE`; never put
-it in an argument, project configuration, or shell history. The CLI does not
-load `.env` automatically.
+Manage shared GitHub Actions secrets in the existing harness Terraform root.
+Set `github_project_repositories` and the sensitive `shared_actions_secrets`
+map as persistent variables in the `harness` HCP Terraform workspace, then plan
+and apply through the documented remote workspace. Keep the private repository
+list aligned with configured GitHub projects during onboarding. Terraform writes
+one repository secret per configured repository and named value; updating a
+value rotates each copy. The GitHub CLI is not used for secret distribution.
 
-The command uses `gh secret set` through stdin and suppresses its raw output.
-GitHub stores a separate repository secret in each target. The GitHub CLI must
-be authenticated with permission to manage Actions secrets in every target
-repository. After adding a project to the configuration, rerun the command for
-each shared secret to add the new repository; rerun it after rotation to update
-all copies. Failed runs report completed progress and can be safely repeated.
-
-Terraform can manage these repository secrets, but the GitHub provider stores
-their values in Terraform state. The harness uses this user-approved fan-out
-command for shared values so the value stays in the invoking environment and
-does not enter Terraform state. See [the Terraform coverage record](infrastructure.md#shared-github-actions-secret-fan-out).
+The GitHub provider marks secret values sensitive in plans, but Terraform state
+still contains them. HCP remote state must remain encrypted, access-controlled,
+and versioned. Never put secret values in tracked files, issue bodies, or plan
+summaries. See the [harness Terraform guide](../../infrastructure/README.md#shared-actions-secrets).
 
 ## Current tools
 

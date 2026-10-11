@@ -4,6 +4,35 @@ variable "github_owner" {
   default     = "joshtsch"
 }
 
+variable "github_project_repositories" {
+  description = "Private HCP input containing owner/repository slugs for configured GitHub projects that receive shared Actions secrets."
+  type        = set(string)
+  default     = []
+
+  validation {
+    condition = alltrue([
+      for repository in var.github_project_repositories :
+      startswith(repository, "${var.github_owner}/") && length(split("/", repository)) == 2
+    ])
+    error_message = "Each configured GitHub project repository must use the configured github_owner/repository format."
+  }
+}
+
+variable "shared_actions_secrets" {
+  description = "Shared GitHub Actions secret names and values managed across configured project repositories. Values are stored in Terraform state."
+  type        = map(string)
+  sensitive   = true
+  default     = {}
+
+  validation {
+    condition = alltrue([
+      for name, value in var.shared_actions_secrets :
+      can(regex("^[A-Z_][A-Z0-9_]*$", name)) && length(value) > 0
+    ])
+    error_message = "Secret names must be uppercase environment-style names and values must be non-empty."
+  }
+}
+
 variable "repository_name" {
   description = "Name of the existing private historical repository after cutover."
   type        = string

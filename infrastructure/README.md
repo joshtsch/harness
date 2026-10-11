@@ -85,6 +85,30 @@ Configure these HCP workspace variables without putting their values in Git:
 | `organization_id` | Terraform | Non-sensitive |
 | `database_password` | Terraform | Sensitive |
 
+## Shared Actions secrets
+
+The harness Terraform root manages shared Actions secrets for configured GitHub
+project repositories through `github_actions_secret`. Set these persistent
+variables in the existing `harness` HCP Terraform workspace:
+
+| Name | HCP variable type | Sensitivity |
+| --- | --- | --- |
+| `github_project_repositories` | Terraform | Non-sensitive; contains private repository slugs |
+| `shared_actions_secrets` | Terraform | Sensitive map of secret names to values |
+
+The HCP remote workspace cannot read ignored `projects.local.yml`. Keep
+`github_project_repositories` aligned with the GitHub projects in the merged
+local configuration as part of project onboarding. Supply secret values only
+in the HCP sensitive variable; never add them to Terraform files, `.tfvars`, or
+local state. The resource creates one repository secret for each repository
+and map entry. Updating a map value rotates all copies; removing an entry plans
+to delete that named secret from every target repository.
+
+The GitHub provider marks values sensitive in plans, but Terraform state still
+contains them. HCP remote state must remain encrypted, access-controlled, and
+versioned. Always review the remote plan for the exact repositories and secret
+names before applying; do not include secret values in plan summaries.
+
 Terraform uses `database_password` when creating the project, but the Supabase
 provider cannot read it back or update it. The resource therefore ignores
 password changes after creation, including when importing an existing project.
