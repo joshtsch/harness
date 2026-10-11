@@ -95,7 +95,7 @@ describe("session startup with real Git", () => {
     const bin = join(root, "bin");
     await mkdir(bin);
     for (const command of ["pnpm", "npx", "codex", "age", "bw"]) await writeFile(join(bin, command), "#!/bin/sh\nprintf 'fixture-version\\n'\n", { mode: 0o755 });
-    await writeFile(join(bin, "gh"), '#!/bin/sh\nprintf \'{"number":12,"title":"Refresh session"}\\n\'\n', { mode: 0o755 });
+    await writeFile(join(bin, "gh"), '#!/bin/sh\nprintf \'{"number":12,"title":"Refresh session","labels":[]}\\n\'\n', { mode: 0o755 });
     const goal = "Prove safe session startup";
     const result = await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/setup-session.ts"), "--goal", goal, "example-project", "12"], { cwd: root, env: { ...env, HARNESS_WORKTREE_ROOT: root + "-worktrees", PATH: `${bin}:${env.PATH}` } });
     expect(result.stdout).toContain("example-project: updated");
