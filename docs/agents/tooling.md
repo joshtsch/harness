@@ -99,6 +99,10 @@ plugin-bundled skills have separate installation and enablement controls.
 Skills and plugins are dependencies of the harness workflow, but their installation
 scope must remain explicit:
 
+- When a requested skill is missing from the project inventory, check
+  `.codex/skill-sources.yml` before reporting it unavailable. A skill package or
+  repository is not a native plugin; use the listed project-local installer and
+  then add the skill to capability policy when it should be routable.
 - Install skills without their own plugin through `pnpm dlx skills` using its
   project-local mode. Do not install those skills globally. Native plugins are the
   exception and use the Codex/plugin installer described by `.codex/plugins.yml`.
@@ -117,11 +121,10 @@ scope must remain explicit:
   `initialize-llm-wiki`, `scope-router`, and `save` depend on harness policy or
   workflows; migrate them to `harness-skills/` in a separate inventory change.
   `agent-system-audit` is the broadly reusable entry in that source set.
-- `mattpocock/skills` is an approved external skill source. Install it with
-  `pnpm dlx skills`, and keep it in
-  `.codex/skill-sources.yml`, not `.codex/plugins.yml`, because the repository does
-  not currently ship a native Codex plugin. Install selected skills project-locally
-  with the manifest's recorded command.
+- `mattpocock/skills` is an approved external skill source, not a native Codex
+  plugin. Install selected skills project-locally with `pnpm dlx skills`; keep it
+  in `.codex/skill-sources.yml`, not `.codex/plugins.yml`, and use the manifest's
+  recorded installer command.
 - During local development of a skill in another repository, use a symlink into
   `.agents/skills/` so the harness loads the working copy without copying unpushed
   changes. Keep that target outside this repository; never commit the symlink.
