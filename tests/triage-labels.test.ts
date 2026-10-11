@@ -38,7 +38,7 @@ describe("triage labels", () => {
     expect(triageViolations({
       number: 1,
       title: "Epic",
-      labels: ["enhancement", "wayfinder:epic", "ready-for-planning"],
+      labels: ["enhancement", "epic", "ready-for-planning"],
       subIssueCount: 1,
     })).toEqual([]);
   });
@@ -47,7 +47,7 @@ describe("triage labels", () => {
     expect(triageViolations({
       number: 1,
       title: "Epic without children",
-      labels: ["enhancement", "wayfinder:epic", "ready-for-planning"],
+      labels: ["enhancement", "epic", "ready-for-planning"],
       subIssueCount: 0,
     })).toContain("ready epic must have at least one sub-issue");
     expect(triageViolations({
@@ -55,14 +55,14 @@ describe("triage labels", () => {
       title: "Unmarked planning issue",
       labels: ["enhancement", "ready-for-planning"],
       subIssueCount: 1,
-    })).toContain("ready-for-planning issue must have the wayfinder:epic label");
+    })).toContain("ready-for-planning issue must have the epic label");
   });
 
   it("does not allow epics to be marked ready for agent implementation", () => {
     expect(triageViolations({
       number: 1,
       title: "Epic",
-      labels: ["enhancement", "wayfinder:epic", "ready-for-agent"],
+      labels: ["enhancement", "epic", "ready-for-agent"],
       subIssueCount: 1,
     })).toContain("epic cannot be ready-for-agent");
   });
@@ -71,7 +71,7 @@ describe("triage labels", () => {
     expect(triageViolations({
       number: 1,
       title: "Epic",
-      labels: ["enhancement", "wayfinder:epic", "ready-for-human"],
+      labels: ["enhancement", "epic", "ready-for-human"],
       subIssueCount: 1,
     })).toContain("epic must use ready-for-planning instead of a deliverable readiness label");
   });

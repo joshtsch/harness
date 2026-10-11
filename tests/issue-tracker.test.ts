@@ -11,7 +11,7 @@ describe("resolveIssue", () => {
   });
 
   it("rejects planning epics as implementation session issues", async () => {
-    for (const label of ["wayfinder:epic", "ready-for-planning"]) {
+    for (const label of ["epic", "ready-for-planning"]) {
       const run = vi.fn().mockResolvedValue({
         code: 0,
         stdout: JSON.stringify({ number: 11, title: "Planning epic", labels: [{ name: label }] }),
