@@ -120,11 +120,15 @@ export async function loadCapabilityPolicy(catalogPath: string, policyPath: stri
   return parseCapabilityPolicy(catalog, policy);
 }
 
-export async function verifyCapabilityInventory(policy: CapabilityPolicy, lockPath: string): Promise<void> {
+export async function verifyCapabilityInventory(policy: CapabilityPolicy, lockPath: string, harnessSkills: string[] = []): Promise<void> {
   const locked = await loadProjectSkillNames(lockPath);
-  const missing = locked.filter((name) => !policy.skills[name]);
-  const extra = Object.keys(policy.skills).filter((name) => !locked.includes(name));
-  if (missing.length || extra.length) throw new Error(`skill policy/lock drift: missing ${missing.join(", ") || "none"}; extra ${extra.join(", ") || "none"}`);
+  const duplicate = harnessSkills.filter((name) => locked.includes(name));
+  const inventory = new Set([...locked, ...harnessSkills]);
+  const missing = [...inventory].filter((name) => !policy.skills[name]);
+  const extra = Object.keys(policy.skills).filter((name) => !inventory.has(name));
+  if (duplicate.length || missing.length || extra.length) {
+    throw new Error(`skill policy/inventory drift: duplicate ${duplicate.join(", ") || "none"}; missing ${missing.join(", ") || "none"}; extra ${extra.join(", ") || "none"}`);
+  }
 }
 
 export function decideCapability(policy: CapabilityPolicy, task: string): string {

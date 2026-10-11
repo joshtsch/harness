@@ -12,9 +12,13 @@ const linkStart = /!?\[[^\]]*\]\(/g;
 export function markdownViolations(source: string): MarkdownViolation[] {
   const violations: MarkdownViolation[] = [];
   const lines = source.split(/\r?\n/);
+  const frontmatterEnd = lines[0]?.trim() === "---"
+    ? lines.findIndex((line, index) => index > 0 && (line.trim() === "---" || line.trim() === "..."))
+    : -1;
   let fence: { line: number; marker: string } | undefined;
 
   for (const [index, line] of lines.entries()) {
+    if (frontmatterEnd >= 0 && index <= frontmatterEnd) continue;
     const lineNumber = index + 1;
     const trimmed = line.trimStart();
     if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {

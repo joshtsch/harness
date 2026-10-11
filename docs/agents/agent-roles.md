@@ -85,3 +85,24 @@ implementation workflow.
 Technical skills produce and verify content first. Use `/humanizer` only after that
 content is correct. Humanizer may improve wording and structure, but preserves code,
 commands, paths, identifiers, issue keys, citations, and exact error messages.
+
+## Capability routing
+
+Use one primary route for each task. For work-shape requests, run
+`pnpm capabilities decide <provider> <task>`. For another project skill, inspect
+`pnpm capabilities list`, then run `pnpm capabilities route <provider>
+<capability>`. Add declared companions to the same route call. Route session modes
+with `pnpm capabilities mode <provider> <mode>`. Ask the user when routing reports
+overlapping or unmatched intent; unsupported routes fail closed.
+
+The provider value is `codex` or `gemini`. Run
+`pnpm capabilities record <provider> <capability>` after using a capability to
+record a redacted event in ignored session scratch.
+
+## User action prompts
+
+End a response with a concise prompt when it leaves a decision or action for the
+user. In Codex, use `request_user_input_async` with one to three short choices and
+leave free text available. If interactive input is unavailable, provide numbered
+choices and an explicit free-text option. Omit the prompt when no user action
+remains; do not interrupt authorized work with unnecessary choices.

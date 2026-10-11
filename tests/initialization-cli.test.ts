@@ -24,6 +24,7 @@ async function runInitialization(args: string[], projects: Array<{ name: string;
   }));
   vi.doMock("node:child_process", () => ({ execFile: (_command: string, _args: string[], _options: unknown, callback: (error: Error | null, stdout: string, stderr: string) => void) => callback(null, "", "") }));
   vi.doMock("../src/project-skills.js", () => ({ verifyProjectSkills: vi.fn() }));
+  vi.doMock("../src/local-skill.js", () => ({ installHarnessSkills: vi.fn(), loadHarnessSkillNames: vi.fn().mockResolvedValue(["knowledge-routing"]) }));
   vi.doMock("../src/capability-policy.js", () => ({ loadCapabilityPolicy: vi.fn(), verifyCapabilityInventory: vi.fn() }));
   vi.doMock("../src/gemini-skills.js", () => ({ verifyGeminiProjectSkills: vi.fn() }));
   vi.doMock("../src/codex-plugins.js", () => ({ loadRequiredPlugins: vi.fn(), verifyRequiredPlugins: vi.fn() }));
@@ -46,6 +47,20 @@ describe("initialization CLI", () => {
     expect(initializeProjects).toHaveBeenCalledWith(expect.any(String), true);
     expect(output).toContain("project: fixture: cloned");
     expect(output).toContain("init: complete");
+  });
+
+  it("installs harness skills and verifies them in the combined capability inventory", async () => {
+    const { output } = await runInitialization([], []);
+    expect(output).toContain("init: project skills");
+    const localSkills = await import("../src/local-skill.js");
+    const capabilityPolicy = await import("../src/capability-policy.js");
+    expect(localSkills.installHarnessSkills).toHaveBeenCalledWith(expect.any(String));
+    expect(localSkills.loadHarnessSkillNames).toHaveBeenCalledWith(expect.stringContaining("harness-skills"));
+    expect(capabilityPolicy.verifyCapabilityInventory).toHaveBeenCalledWith(
+      undefined,
+      expect.stringContaining("skills-lock.json"),
+      ["knowledge-routing"],
+    );
   });
 
   it("reports every project failure and exits nonzero before dependency restoration", async () => {

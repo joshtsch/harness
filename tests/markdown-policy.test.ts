@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { markdownViolations } from "../src/markdown-policy.js";
 
 describe("markdown publication policy", () => {
+  it("accepts YAML frontmatter and checks the Markdown body", () => {
+    expect(markdownViolations("---\nname: example\n---\n\n# Good heading\n- item\n")).toEqual([]);
+    expect(markdownViolations("---\nname: example\n---\n#Bad heading\n")).toEqual([
+      { line: 4, message: "heading marker must be followed by a space" },
+    ]);
+  });
+
   it("accepts ordinary headings, lists, links, and fenced code", () => {
     expect(markdownViolations("# Title\n\n- item\n\n*emphasis*\n\n[link](https://example.com)\n\n```ts\nconst value = 1;\n```\n")).toEqual([]);
   });

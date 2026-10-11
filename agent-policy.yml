@@ -24,6 +24,7 @@ skills:
   harness-grill-with-docs: { capability: harness-grill-with-docs, state: canonical, requires: [grill-with-docs, grilling, domain-modeling], codex: supported, gemini: degraded }
   impeccable: { capability: ui-design, state: canonical, codex: supported, gemini: supported }
   initialize-llm-wiki: { capability: initialize-llm-wiki, state: canonical, codex: supported, gemini: degraded }
+  knowledge-routing: { capability: knowledge-routing, state: canonical, codex: supported, gemini: supported }
   investigate-first: { capability: investigate-first, state: canonical, codex: supported, gemini: supported }
   lean-build: { capability: lean-build, state: canonical, codex: supported, gemini: supported }
   migration: { capability: migration, state: canonical, codex: supported, gemini: supported }

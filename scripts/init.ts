@@ -7,6 +7,7 @@ import { loadCapabilityPolicy, verifyCapabilityInventory } from "../src/capabili
 import { verifyGeminiProjectSkills } from "../src/gemini-skills.js";
 import { prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisites.js";
 import { initializeProjects, parseInitializationArgs } from "../src/initialization-projects.js";
+import { installHarnessSkills, loadHarnessSkillNames } from "../src/local-skill.js";
 
 const repoRoot = resolve(import.meta.dirname, "..");
 const execFileAsync = promisify(execFile);
@@ -26,9 +27,10 @@ async function run(): Promise<void> {
     }],
     ["project skills", async () => {
       await execFileAsync("pnpm", ["dlx", "skills", "experimental_install"], { cwd: repoRoot });
+      await installHarnessSkills(repoRoot);
       await verifyProjectSkills(repoRoot, resolve(repoRoot, "skills-lock.json"));
       const policy = await loadCapabilityPolicy(resolve(repoRoot, "capabilities.yml"), resolve(repoRoot, "agent-policy.yml"));
-      await verifyCapabilityInventory(policy, resolve(repoRoot, "skills-lock.json"));
+      await verifyCapabilityInventory(policy, resolve(repoRoot, "skills-lock.json"), await loadHarnessSkillNames(resolve(repoRoot, "harness-skills")));
       if (provider === "gemini") await verifyGeminiProjectSkills(repoRoot, policy);
     }],
     ...(provider === "codex" ? [["codex plugins", async () => verifyRequiredPlugins(await loadRequiredPlugins(resolve(repoRoot, ".codex/plugins.yml")))]] as Array<[string, () => Promise<void>]> : []),

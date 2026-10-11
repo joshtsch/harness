@@ -45,9 +45,20 @@ describe("capability policy", () => {
     const root = await mkdtemp(resolve(tmpdir(), "capability-policy-"));
     const lock = resolve(root, "skills-lock.json");
     await writeFile(lock, JSON.stringify({ skills: { builder: { skillPath: "skills/builder/SKILL.md" }, unclassified: { skillPath: "skills/unclassified/SKILL.md" } } }));
-    await expect(verifyCapabilityInventory(parsed, lock)).rejects.toThrow("skill policy/lock drift");
+    await expect(verifyCapabilityInventory(parsed, lock)).rejects.toThrow("skill policy/inventory drift");
     expect(() => routeSkill(parsed, "codex", "old-builder")).toThrow("use builder");
     expect(() => routeSkill(parsed, "codex", "alternate-builder")).toThrow("use builder");
+  });
+
+  it("includes tracked harness skills alongside locked external skills", async () => {
+    const parsed = parseCapabilityPolicy(catalog, policy);
+    const root = await mkdtemp(resolve(tmpdir(), "capability-policy-"));
+    const lock = resolve(root, "skills-lock.json");
+    await writeFile(lock, JSON.stringify({ skills: { builder: { skillPath: "skills/builder/SKILL.md" }, "old-builder": { skillPath: "skills/old-builder/SKILL.md" }, "alternate-builder": { skillPath: "skills/alternate-builder/SKILL.md" }, auditor: { skillPath: "skills/auditor/SKILL.md" }, inspector: { skillPath: "skills/inspector/SKILL.md" }, stylist: { skillPath: "skills/stylist/SKILL.md" } } }));
+    await expect(verifyCapabilityInventory(parsed, lock, ["harness-router"])).rejects.toThrow("missing harness-router");
+    parsed.skills["harness-router"] = { capability: "audit", state: "available", providers: { codex: "supported", gemini: "supported" }, requires: [] };
+    await expect(verifyCapabilityInventory(parsed, lock, ["harness-router"])).resolves.toBeUndefined();
+    await expect(verifyCapabilityInventory(parsed, lock, ["builder"])).rejects.toThrow("duplicate builder");
   });
 
   it("requires explicit degraded support and declared composition", () => {

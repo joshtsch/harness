@@ -1,14 +1,15 @@
 import { resolve } from "node:path";
 import { decideCapability, loadCapabilityPolicy, recordCapabilityUsage, routeCapability, routeMode, routeSkill, verifyCapabilityInventory } from "../src/capability-policy.js";
+import { loadHarnessSkillNames } from "../src/local-skill.js";
 
 const root = resolve(import.meta.dirname, "..");
 const [command, provider, primary, ...rest] = process.argv.slice(2).filter((arg) => arg !== "--");
 
 async function run(): Promise<void> {
   const policy = await loadCapabilityPolicy(resolve(root, "capabilities.yml"), resolve(root, "agent-policy.yml"));
-  await verifyCapabilityInventory(policy, resolve(root, "skills-lock.json"));
+  await verifyCapabilityInventory(policy, resolve(root, "skills-lock.json"), await loadHarnessSkillNames(resolve(root, "harness-skills")));
   if (command === "check") {
-    console.log(`Capability policy covers ${Object.keys(policy.skills).length} locked skills.`);
+    console.log(`Capability policy covers ${Object.keys(policy.skills).length} registered skills.`);
     return;
   }
   if (command === "list") {

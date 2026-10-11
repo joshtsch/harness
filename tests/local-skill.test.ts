@@ -1,36 +1,42 @@
-import { mkdtemp, mkdir, readlink, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, readlink, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { describe, expect, it } from "vitest";
-import { linkLocalSkill } from "../src/local-skill.js";
+import { resolve } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { installHarnessSkills, loadHarnessSkillNames } from "../src/local-skill.js";
 
-describe("local skill linking", () => {
-  it("links a skill into the harness skill directory", async () => {
-    const root = await mkdtemp(join(tmpdir(), "harness-link-"));
-    const source = join(root, "skills", "example");
-    const harness = join(root, "harness");
-    await mkdir(source, { recursive: true });
+const roots: string[] = [];
 
-    try {
-      const destination = await linkLocalSkill("example", source, harness);
-      expect(await readlink(destination)).toBe(source);
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+afterEach(async () => {
+  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+
+describe("tracked harness skills", () => {
+  it("discovers skills and links them into the provider skill directory idempotently", async () => {
+    const root = await mkdtemp(resolve(tmpdir(), "harness-local-skills-"));
+    roots.push(root);
+    const source = resolve(root, "harness-skills");
+    const skill = resolve(source, "knowledge-routing");
+    await mkdir(skill, { recursive: true });
+    await writeFile(resolve(skill, "SKILL.md"), "---\nname: knowledge-routing\n---\n");
+
+    await expect(loadHarnessSkillNames(source)).resolves.toEqual(["knowledge-routing"]);
+    await expect(installHarnessSkills(root)).resolves.toEqual(["knowledge-routing"]);
+    await expect(installHarnessSkills(root)).resolves.toEqual(["knowledge-routing"]);
+    await expect(readlink(resolve(root, ".agents/skills/knowledge-routing"))).resolves.toBe(skill);
   });
 
-  it("refuses to replace an existing skill", async () => {
-    const root = await mkdtemp(join(tmpdir(), "harness-link-"));
-    const source = join(root, "source");
-    const harness = join(root, "harness");
-    const destination = join(harness, ".agents", "skills", "example");
-    await mkdir(source, { recursive: true });
-    await mkdir(destination, { recursive: true });
+  it("rejects mismatched skill names and conflicting destinations", async () => {
+    const root = await mkdtemp(resolve(tmpdir(), "harness-local-skills-"));
+    roots.push(root);
+    const skill = resolve(root, "harness-skills", "knowledge-routing");
+    await mkdir(skill, { recursive: true });
+    await writeFile(resolve(skill, "SKILL.md"), "---\nname: other-name\n---\n");
+    await expect(loadHarnessSkillNames(resolve(root, "harness-skills"))).rejects.toThrow("must match its directory");
 
-    try {
-      await expect(linkLocalSkill("example", source, harness)).rejects.toThrow("already exists");
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    await writeFile(resolve(skill, "SKILL.md"), "---\nname: knowledge-routing\n---\n");
+    const destination = resolve(root, ".agents/skills/knowledge-routing");
+    await mkdir(destination, { recursive: true });
+    await writeFile(resolve(destination, "SKILL.md"), "different skill");
+    await expect(installHarnessSkills(root)).rejects.toThrow("conflicts with another installation");
   });
 });
