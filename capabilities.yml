@@ -31,3 +31,4 @@ capabilities:
   scope-router: { intent: classify work ownership, inputs: [idea, repository inventory], output: scope memo, authority: suggest, verification: inspect ownership boundaries }
   surgical-patch: { intent: fix a narrow bug, triggers: [bug, regression, fix], inputs: [failure, repository], output: focused fix, authority: modify, verification: regression proof, group: work-shape }
   verify-and-stop: { intent: verify existing work, triggers: [verify, validate, completion check], inputs: [acceptance conditions], output: verification result, authority: observe, verification: run focused checks, group: work-shape }
+  worktree-location: { intent: retrieve and apply worktree location preferences, inputs: [project, scope, current configuration], output: scoped preference and deviation status, authority: suggest, verification: respect user instructions, policy, and project configuration }

@@ -33,6 +33,7 @@ skills:
   scope-router: { capability: scope-router, state: canonical, codex: supported, gemini: supported }
   surgical-patch: { capability: surgical-patch, state: canonical, codex: supported, gemini: supported }
   verify-and-stop: { capability: verify-and-stop, state: canonical, codex: supported, gemini: supported }
+  worktree-location: { capability: worktree-location, state: canonical, codex: supported, gemini: supported }
 companions:
   harness-grill-with-docs: [scope-router]
   investigate-first: [cavecrew]
