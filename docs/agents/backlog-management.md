@@ -37,6 +37,19 @@ with any readiness state. See
 Run onboarding after project registration and repository access are complete,
 before creating project issues or starting issue-bound work. Keep the project
 onboarding-incomplete until approved changes have been applied and verified.
+Record the current state and its evidence in the private harness audit record.
+
+| State | Enter when | Leave when |
+| --- | --- | --- |
+| `not-started` | The project is registered, but review has not begun. | Repository and issue access are ready; move to `inspecting`. |
+| `inspecting` | Inventorying standards, labels, templates, and open issues. | The deterministic checks and human review are complete; save the dry-run plan and move to `dry-run-ready`. |
+| `dry-run-ready` | A complete, read-only plan exists. | Present it to the maintainer; move to `awaiting-approval`. |
+| `awaiting-approval` | The maintainer is reviewing proposed changes and conflicts. | On approval, move to `applying`; on deferral, record the decision and remain incomplete. If there are no changes, move to `verifying`. |
+| `applying` | The maintainer approved the specific plan. | Apply only approved changes, then move to `verifying`. |
+| `verifying` | Approved changes were applied, or the dry run proposed none. | Recheck the same rules and scope; move to `complete` only when every check passes. |
+| `blocked` | Access, an unresolved conflict, or an external dependency prevents progress. | Record the blocker; resume at the state where work stopped once resolved. |
+| `stale` | The repository, issue data, or rule version changed after the dry run. | Discard the old plan and return to `inspecting`. |
+| `complete` | Verification passed and unresolved conflicts are recorded. | Reopen as `inspecting` when standards, rules, or project scope change. |
 
 1. **Inspect** the configured repository, open issues, labels, issue templates,
    and project-owned agent guidance. Record the rule version and a safe
@@ -84,10 +97,13 @@ resolve without a maintainer.
 
 Compare each run with the previous run for new, resolved, and continuing
 findings. Keep portable run history in a harness-scope secure record. Store the
-run timestamp, rule version, scope, issue identifiers, finding codes, and
-redacted summaries. Never store raw issue bodies, comments, secrets, or PII.
-Use `docs/.scratch/` only for temporary working files, not as the history
-authority.
+run ID, previous run ID, start and completion timestamps, rule version, scope,
+completion state, issue identifiers, finding codes, and redacted summaries.
+Store the onboarding state, dry-run plan, approval or deferral decision, and
+verification result in the same record. Keep the record in the encrypted,
+harness-scoped private operations store; use `docs/.scratch/` only for temporary
+working files, not as the history authority. Never store raw issue bodies,
+comments, secrets, or PII.
 
 ## Portfolio view
 
