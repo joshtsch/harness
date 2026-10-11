@@ -49,6 +49,20 @@ describe("initialization CLI", () => {
     expect(output).toContain("init: complete");
   });
 
+  it("installs harness skills and verifies them in the combined capability inventory", async () => {
+    const { output } = await runInitialization([], []);
+    expect(output).toContain("init: project skills");
+    const localSkills = await import("../src/local-skill.js");
+    const capabilityPolicy = await import("../src/capability-policy.js");
+    expect(localSkills.installHarnessSkills).toHaveBeenCalledWith(expect.any(String));
+    expect(localSkills.loadHarnessSkillNames).toHaveBeenCalledWith(expect.stringContaining("harness-skills"));
+    expect(capabilityPolicy.verifyCapabilityInventory).toHaveBeenCalledWith(
+      undefined,
+      expect.stringContaining("skills-lock.json"),
+      ["knowledge-routing"],
+    );
+  });
+
   it("reports every project failure and exits nonzero before dependency restoration", async () => {
     const { output, errors } = await runInitialization(["--clone-projects"], [{ name: "first", status: "failed" }, { name: "second", status: "existing" }]);
     expect(output).toContain("project: first: failed");

@@ -140,7 +140,8 @@ scope must remain explicit:
 - Ponytail and Vercel are approved harness-level plugins and are listed in
   `.codex/plugins.yml`. Vercel provides shared deployment, Next.js, and Vercel
   workflow guidance; use its connected account only when the user places a
-  Vercel project in scope.
+  Vercel project in scope. Deploy Next.js applications through Vercel; use the
+  approved Vercel plugin and document any explicitly approved exception.
 
 The manifest records identity, source, and installation instructions; it does not
 contain credentials or plugin output.
