@@ -20,6 +20,13 @@ body (`- [ ] #123`).
 | `ready-for-planning` | Epic is ready to plan and track. | The only readiness state for epics; requires `epic` and at least one child issue. |
 | `epic` | Parent issue for a larger outcome. | Group related deliverable issues using GitHub sub-issues. |
 
+These seven labels are the harness minimum for each configured GitHub issue
+tracker: `bug`, `enhancement`, `needs-triage`, `ready-for-agent`,
+`ready-for-human`, `ready-for-planning`, and `epic`. Project onboarding adds
+missing minimum labels and preserves project-specific labels. A project label
+does not replace a harness label unless the maintainer approves a recorded
+mapping that preserves the same meaning.
+
 Typical deliverable flow: new issue -> `needs-triage` -> `ready-for-agent` or
 `ready-for-human`. Epic flow: new issue -> `needs-triage` -> `epic` ->
 add at least one child issue -> `ready-for-planning`. An epic cannot be
@@ -27,6 +34,12 @@ add at least one child issue -> `ready-for-planning`. An epic cannot be
 deliverable issues.
 `ready-for-planning` is valid only on epics. Keep `needs-triage` for unreviewed
 or ambiguous issues; it cannot coexist with any readiness label.
+
+Priority is tracked separately from issue type and readiness. The shared
+priority values, `Unreviewed` state, and review rules are defined in
+[Backlog management](backlog-management.md). An issue can be `Unreviewed` and
+`needs-triage`, `Unreviewed` and ready, or have a reviewed priority while it
+still needs shaping. `needs-triage` never implies an unreviewed priority.
 
 Write epics around an outcome, why it matters, acceptance criteria, scope and
 non-goals, and known dependencies or risks. Write deliverable issues around one

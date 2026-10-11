@@ -2,6 +2,12 @@
 
 For repository creation or adoption, complete [Repository intake](repository-intake.md) first.
 
+After a project is registered and its repository is available, complete the
+project onboarding review in [Backlog management](backlog-management.md) before
+opening project issues or starting issue-bound work. Repeat the same read-only
+review after project standards or harness rules change, and run a backlog sweep
+on request. The sweep may cover one project or the full portfolio.
+
 0. Run the repository-scope gate: inventory every repository the session may modify, classify each boundary, and register every durable project before opening issues or creating branches/worktrees.
 1. Validate `projects.yml` and its permitted local overlay, then resolve the selected projects.
 2. Require an explicit `--goal` and resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed. Session setup rejects issues marked `epic` or `ready-for-planning`; use a deliverable sub-issue for implementation. Store the goal in the session manifest and adjacent generated `AGENTS.md`.
