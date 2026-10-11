@@ -38,9 +38,11 @@ configuration changes, and recovery operations.
 When one secret value must be copied to every configured GitHub project, use
 `pnpm secrets:sync <SECRET_NAME>`. The command reads the value from
 `HARNESS_SHARED_SECRET_VALUE`, targets repositories with a configured GitHub
-issue tracker, and runs a dry run by default. Pass `--apply` to write. Load the
-value from the approved secret store into the environment; never put it in an
-argument, project configuration, or shell history.
+issue tracker in the merged `projects.yml` and `projects.local.yml`, and runs a
+dry run by default. Pass `--apply` to write. Load the value from approved secret
+custody into the process environment as `HARNESS_SHARED_SECRET_VALUE`; never put
+it in an argument, project configuration, or shell history. The CLI does not
+load `.env` automatically.
 
 The command uses `gh secret set` through stdin and suppresses its raw output.
 GitHub stores a separate repository secret in each target. The GitHub CLI must

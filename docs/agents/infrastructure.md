@@ -47,11 +47,13 @@ sensitive. The provider therefore covers per-repository secret management, but
 it does not provide one shared secret scope for personal-account repositories.
 
 The user approved a harness-managed fan-out for one value shared across all
-configured GitHub projects. Use `pnpm secrets:sync <SECRET_NAME>` for this case;
-it reads the value from the process environment and sends it to each repository
-through `gh` stdin. This is an explicit operational exception to Terraform for
-shared-value fan-out. Project-specific infrastructure and secrets remain under
-their owning repository's Terraform state where provider coverage exists.
+configured GitHub projects. This is a user-selected operational exception to
+Terraform for shared-value fan-out, despite provider support for per-repository
+secrets. Use `pnpm secrets:sync <SECRET_NAME>` for this case; it discovers
+projects from the merged public and local configuration, reads the value from
+the process environment, and sends it to each repository through `gh` stdin.
+Project-specific infrastructure and secrets remain under their owning
+repository's Terraform state where provider coverage exists.
 
 ## State and execution
 
@@ -78,9 +80,11 @@ when preparing state ownership for a registered project.
 
 A fallback may be needed when no maintained provider covers an operation,
 when a provider cannot represent the required setting safely, or for a
-one-time recovery operation that Terraform cannot perform safely. Complete
-the coverage gate even for recovery;
-one unsupported step does not exempt the rest of a workflow.
+one-time recovery operation that Terraform cannot perform safely. The
+user-approved shared GitHub Actions secret fan-out above is a standing,
+recurring exception for that exact operation and scope. Complete the coverage
+gate even for recovery; one unsupported step does not exempt the rest of a
+workflow.
 
 Before a fallback write:
 
