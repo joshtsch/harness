@@ -35,6 +35,22 @@ _Avoid_: Shared branch, nested repository
 A record in a project's configured issue tracker that provides identity and context for tracked work.
 _Avoid_: Ticket (except when naming a provider's terminology)
 
+**Epic**:
+A parent issue for a larger outcome, decomposed into deliverable issues through GitHub sub-issues.
+_Avoid_: Project (a GitHub Project is a planning view, not a parent issue)
+
+**Deliverable issue**:
+A bounded issue that can be implemented and verified on its own, or tracked as an epic's sub-issue.
+_Avoid_: Story (unless naming a provider's terminology)
+
+**Initiative**:
+A goal spanning one or more epics, often tracked in a GitHub Project.
+_Avoid_: Epic (which is a parent issue for a bounded outcome)
+
+**Theme**:
+A cross-cutting grouping for related work that does not define parent-child hierarchy.
+_Avoid_: Initiative (which describes a goal)
+
 **Purpose**:
 The short human-readable explanation of what a session or worktree is for.
 _Avoid_: Description (when identity or naming is intended)
