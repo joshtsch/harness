@@ -35,8 +35,11 @@ Never commit secrets, credentials, raw MCP output, or PII; follow [Secrets and P
   infrastructure, and an explicitly authorized fallback for unsupported operations.
 - Deploy Next.js applications through Vercel. Use the approved Vercel plugin and document any explicitly approved exception.
 - Install skills without a native plugin through `pnpm dlx skills` in its
-  project-local scope; never install those skills globally. Native plugins are the
-  exception: approved Codex plugins are listed in `.codex/plugins.yml` and use the
+  project-local scope; never install those skills globally. Before treating a
+  skill as unavailable, check `.codex/skill-sources.yml` and use its approved
+  installer command when a source is listed. Skill-source repositories such as
+  `mattpocock/skills` are not native plugins. Native plugins are the exception:
+  approved Codex plugins are listed in `.codex/plugins.yml` and use the
   Codex/plugin installer when no project-local plugin scope exists. For Codex
   sessions, `pnpm init:harness` must verify those plugins before work starts.
 
