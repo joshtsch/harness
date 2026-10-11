@@ -87,11 +87,13 @@ with explicit project configuration and user confirmation.
 
 ## Implementation notes
 
-- Define a provider-neutral decision-memory record and retrieval result.
+- The first local slice implements the provider-neutral record and retrieval
+  contract, the user-scoped JSON store, the `worktree-location` category skill,
+  and project-deviation reporting. See [decision memory guidance](../agents/decision-memory.md).
 - Keep local user memory outside tracked repository content; use encryption
   before adding portable synchronization.
-- Include provenance, scope, confidence, freshness, and deviation status in
-  retrieval results.
+- Keep provenance, scope, confidence, freshness, and deviation status in
+  retrieval results as categories expand.
 - Add review-only promotion from repeated observations to preferences or
   project documentation.
 - Add tests for category and scope precedence, same-scope conflict failure,

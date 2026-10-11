@@ -16,6 +16,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | Domain glossary and ADR consumption | [domain.md](domain.md) |
 | Tool intake and MCP inventory | [tooling.md](tooling.md) |
 | Application deployment | [tooling.md](tooling.md#deployment) |
+| User-scoped decision memory | [decision-memory.md](decision-memory.md) |
 | Agent role routing | [agent-roles.md](agent-roles.md) |
 | Documentation strategy | [documentation-strategy.md](documentation-strategy.md) |
 | Durable knowledge placement | [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md) and [documentation-strategy.md](documentation-strategy.md) |

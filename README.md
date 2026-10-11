@@ -295,6 +295,21 @@ See [secure document storage](docs/agents/secure-documents.md) for environment
 variables, scope, and privacy rules. Use [.env.example](.env.example) as the
 names-only template; never commit `.env` or resolved credentials.
 
+## Decision memory
+
+User-confirmed preferences can be stored locally and retrieved by category:
+
+```sh
+pnpm decision-memory get --category worktree-location --user local --project harness
+pnpm decision-memory list --category worktree-location
+pnpm decision-memory forget --id worktree-root --confirm
+```
+
+The store lives outside Git and is not encrypted or synced. Recording and
+replacing preferences require a reviewed JSON file and explicit confirmation.
+See [decision memory guidance](docs/agents/decision-memory.md) for scope,
+precedence, and privacy rules.
+
 Back up or restore ignored local project configuration explicitly after
 Bitwarden and age custody are ready:
 
