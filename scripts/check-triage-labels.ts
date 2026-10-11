@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { epicLabel, planningReadinessLabel, readinessLabels, triageViolations, type IssueLabels } from "../src/triage-labels.js";
+import { epicLabel, planningReadinessLabel, readinessLabels, resolveChildIssueCount, triageViolations, type IssueLabels } from "../src/triage-labels.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -13,9 +13,9 @@ async function run(): Promise<void> {
     "--limit",
     "1000",
     "--json",
-    "number,title,labels",
+    "number,title,body,labels",
   ]);
-  const issues = JSON.parse(stdout) as Array<Omit<IssueLabels, "labels"> & { labels: Array<{ name: string }> }>;
+  const issues = JSON.parse(stdout) as Array<Omit<IssueLabels, "labels" | "subIssueCount"> & { body: string; labels: Array<{ name: string }> }>;
   const repositoryIssues = issues.filter((issue) => {
     const labels = issue.labels.map((label) => label.name);
     const hasReadiness = labels.some((label) => readinessLabels.some((readinessLabel) => readinessLabel === label));
@@ -25,11 +25,10 @@ async function run(): Promise<void> {
   if (repositoryIssues.length > 0) {
     const { stdout: repository } = await execFileAsync("gh", ["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"]);
     for (const issue of repositoryIssues) {
-      const { stdout: count } = await execFileAsync("gh", ["api", `repos/${repository.trim()}/issues/${issue.number}/sub_issues`, "--jq", "length"]);
-      const subIssueCount = Number(count.trim());
-      if (!Number.isSafeInteger(subIssueCount) || subIssueCount < 0) {
-        throw new Error(`GitHub returned an invalid sub-issue count for #${issue.number}`);
-      }
+      const subIssueCount = await resolveChildIssueCount(issue.number, issue.body, async () => {
+        const { stdout: count } = await execFileAsync("gh", ["api", `repos/${repository.trim()}/issues/${issue.number}/sub_issues`, "--jq", "length"]);
+        return Number(count.trim());
+      });
       subIssueCounts.set(issue.number, subIssueCount);
     }
   }

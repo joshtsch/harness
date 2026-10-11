@@ -1,7 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { triageViolations } from "../src/triage-labels.js";
+import { countTaskListIssueReferences, resolveChildIssueCount, triageViolations } from "../src/triage-labels.js";
 
 describe("triage labels", () => {
+  it("counts unique issue references in fallback task lists", () => {
+    expect(countTaskListIssueReferences("- [ ] #12 Do the work\n- [x] #13 Verify it\n- [ ] #12 Duplicate\n- [ ] #11 Parent\n- unrelated #14", 11)).toBe(2);
+  });
+
+  it("falls back to child task-list references when GitHub returns 404", async () => {
+    await expect(resolveChildIssueCount(11, "- [ ] #12 Child", async () => {
+      const error = new Error("GitHub API request failed") as Error & { stderr: string };
+      error.stderr = "HTTP 404: Not Found";
+      throw error;
+    })).resolves.toBe(1);
+  });
+
+  it("preserves non-404 API failures", async () => {
+    await expect(resolveChildIssueCount(11, "", async () => {
+      const error = new Error("GitHub API request failed") as Error & { stderr: string };
+      error.stderr = "HTTP 403: Forbidden";
+      throw error;
+    })).rejects.toThrow("Cannot query sub-issues for #11: HTTP 403: Forbidden");
+  });
+
   it("allows an unreviewed issue in intake", () => {
     expect(triageViolations({ number: 1, title: "Unknown", labels: ["needs-triage"] })).toEqual([]);
   });

@@ -17,8 +17,9 @@ issues and fails when a ready issue lacks exactly one issue-type label
 issue has neither intake nor a complete ready state. It also checks that
 `ready-for-planning` is used only with `wayfinder:epic`, that epics are not
 marked ready for deliverable work, and that every ready epic has at least one
-GitHub sub-issue. The checker reads sub-issue relationships through GitHub's
-API.
+child issue. The checker reads GitHub sub-issues through the API when available;
+if GitHub returns 404, it counts issue references in task-list entries in the
+epic body instead.
 
 Session setup resolves every implementation session through the configured issue
 tracker. GitHub sessions require a numeric issue number and use `gh issue view`
