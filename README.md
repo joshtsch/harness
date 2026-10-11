@@ -7,7 +7,7 @@ Public defaults live in `projects.yml`; installation-specific projects belong in
 Start at the repository root and read [AGENTS.md](AGENTS.md) for workflow routing. Domain vocabulary lives in [CONTEXT.md](CONTEXT.md); durable workflow guidance lives under [docs/agents/](docs/agents/).
 
 Infrastructure changes follow [Terraform-first management](docs/agents/infrastructure.md): use Terraform when provider coverage exists, keep shared state remote and locked, and record why any manual fallback was necessary.
-Next.js applications deploy through Vercel unless the user explicitly approves a documented exception.
+For Next.js deployment policy, see [deployment guidance](docs/agents/tooling.md#deployment).
 
 Repository-owned infrastructure is defined in [`infrastructure/`](infrastructure/).
 The HCP control plane in [`infrastructure/hcp/`](infrastructure/hcp/) is managed

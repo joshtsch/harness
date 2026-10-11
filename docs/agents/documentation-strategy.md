@@ -18,7 +18,7 @@ For placement decisions, use the harness [`knowledge-routing` skill](../../harne
 | Local rationale | Focused code comment |
 | Behavioral contract | Tests |
 
-## Recording workflow
+## Recording and retrieval
 
 1. Classify the information before writing it.
 2. Write the decision to its authoritative surface.
@@ -27,6 +27,13 @@ For placement decisions, use the harness [`knowledge-routing` skill](../../harne
 5. Create an ADR only for a hard-to-reverse, surprising trade-off.
 6. Keep transient handoffs and recovery metadata in ignored `docs/.scratch/`.
 7. Run `pnpm check:docs` before review.
+
+To retrieve harness wiki knowledge, read `docs/llm-wiki-harness/wiki/index.md`
+and search the wiki pages under that directory. For child wiki knowledge, run
+`pnpm wikis --json`, match the declared topics, then inspect the selected wiki's
+index and pages. If its configured repository checkout is missing or unreadable,
+mark inspection blocked and placement provisional. Do not infer page contents or
+claim the wiki was reviewed; state the setup or access needed before finalizing.
 
 The agent-facing wiki uses concise Caveman prose in maintained pages. Preserve original
 wording in `docs/llm-wiki-harness/raw/` and `docs/llm-wiki-harness/templates/`.
