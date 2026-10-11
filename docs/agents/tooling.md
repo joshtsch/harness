@@ -33,6 +33,27 @@ selecting a tool. Connector availability, plugin guidance, and a signed-in
 dashboard do not establish a fallback. Use this gate for provisioning,
 configuration changes, and recovery operations.
 
+## Shared GitHub Actions secrets
+
+When one secret value must be copied to every configured GitHub project, use
+`pnpm secrets:sync <SECRET_NAME>`. The command reads the value from
+`HARNESS_SHARED_SECRET_VALUE`, targets repositories with a configured GitHub
+issue tracker, and runs a dry run by default. Pass `--apply` to write. Load the
+value from the approved secret store into the environment; never put it in an
+argument, project configuration, or shell history.
+
+The command uses `gh secret set` through stdin and suppresses its raw output.
+GitHub stores a separate repository secret in each target. The GitHub CLI must
+be authenticated with permission to manage Actions secrets in every target
+repository. After adding a project to the configuration, rerun the command for
+each shared secret to add the new repository; rerun it after rotation to update
+all copies. Failed runs report completed progress and can be safely repeated.
+
+Terraform can manage these repository secrets, but the GitHub provider stores
+their values in Terraform state. The harness uses this user-approved fan-out
+command for shared values so the value stays in the invoking environment and
+does not enter Terraform state. See [the Terraform coverage record](infrastructure.md#shared-github-actions-secret-fan-out).
+
 ## Current tools
 
 - **Attio** — CRM context and relationship workflows through the public API by default.

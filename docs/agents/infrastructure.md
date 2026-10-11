@@ -37,6 +37,22 @@ operation are access or setup blockers, not evidence of missing provider
 coverage. Resolve them through the authorized setup workflow or report the
 blocker. Do not use a browser or another transport to bypass denied access.
 
+### Shared GitHub Actions secret fan-out
+
+Checked 11 October 2026 against `integrations/github` provider 6.13.0. The maintained
+provider supports repository Actions secrets through
+[`github_actions_secret`](https://registry.terraform.io/providers/integrations/github/6.13.0/docs/resources/actions_secret).
+Its sensitive value still resides in Terraform state, which must be treated as
+sensitive. The provider therefore covers per-repository secret management, but
+it does not provide one shared secret scope for personal-account repositories.
+
+The user approved a harness-managed fan-out for one value shared across all
+configured GitHub projects. Use `pnpm secrets:sync <SECRET_NAME>` for this case;
+it reads the value from the process environment and sends it to each repository
+through `gh` stdin. This is an explicit operational exception to Terraform for
+shared-value fan-out. Project-specific infrastructure and secrets remain under
+their owning repository's Terraform state where provider coverage exists.
+
 ## State and execution
 
 Before changing shared infrastructure:
