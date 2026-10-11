@@ -14,13 +14,20 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 Run `pnpm check:triage` before treating open issues as ready. It queries open
 issues and fails when a ready issue lacks exactly one issue-type label
 (`bug`/`enhancement`), when readiness conflicts with `needs-triage`, or when an
-issue has neither intake nor a complete ready state.
+issue has neither intake nor a complete ready state. It also checks that
+`ready-for-planning` is used only with `epic`, that epics are not
+marked ready for deliverable work, and that every ready epic has at least one
+child issue. The checker reads GitHub sub-issues through the API when available;
+if GitHub returns 404, it counts issue references in task-list entries in the
+epic body instead.
 
 Session setup resolves every implementation session through the configured issue
 tracker. GitHub sessions require a numeric issue number and use `gh issue view`
 against the configured repository; missing issues, unavailable access,
 unsupported trackers, and malformed responses fail before cloning or worktree
-creation. There is no exploratory implementation bypass.
+creation. Session setup rejects issues marked `epic` or
+`ready-for-planning`; start implementation from a deliverable issue instead.
+There is no exploratory implementation bypass.
 
 For session setup, use the repository configured under the selected project's
 issue tracker. Other repository-scoped `gh` commands may infer their repository

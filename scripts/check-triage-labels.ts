@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { triageViolations, type IssueLabels } from "../src/triage-labels.js";
+import { epicLabel, planningReadinessLabel, readinessLabels, resolveChildIssueCount, triageViolations, type IssueLabels } from "../src/triage-labels.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -13,14 +13,34 @@ async function run(): Promise<void> {
     "--limit",
     "1000",
     "--json",
-    "number,title,labels",
+    "number,title,body,labels",
   ]);
-  const issues = JSON.parse(stdout) as Array<Omit<IssueLabels, "labels"> & { labels: Array<{ name: string }> }>;
-  const violations = issues.flatMap((issue) => triageViolations({
-    number: issue.number,
-    title: issue.title,
-    labels: issue.labels.map((label) => label.name),
-  }).map((violation) => `#${issue.number} ${issue.title}: ${violation}`));
+  const issues = JSON.parse(stdout) as Array<Omit<IssueLabels, "labels" | "subIssueCount"> & { body: string; labels: Array<{ name: string }> }>;
+  const repositoryIssues = issues.filter((issue) => {
+    const labels = issue.labels.map((label) => label.name);
+    const hasReadiness = labels.some((label) => readinessLabels.some((readinessLabel) => readinessLabel === label));
+    return labels.includes(planningReadinessLabel) || (labels.includes(epicLabel) && hasReadiness);
+  });
+  const subIssueCounts = new Map<number, number>();
+  if (repositoryIssues.length > 0) {
+    const { stdout: repository } = await execFileAsync("gh", ["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"]);
+    for (const issue of repositoryIssues) {
+      const subIssueCount = await resolveChildIssueCount(issue.number, issue.body, async () => {
+        const { stdout: count } = await execFileAsync("gh", ["api", `repos/${repository.trim()}/issues/${issue.number}/sub_issues`, "--jq", "length"]);
+        return Number(count.trim());
+      });
+      subIssueCounts.set(issue.number, subIssueCount);
+    }
+  }
+  const violations = issues.flatMap((issue) => {
+    const labels = issue.labels.map((label) => label.name);
+    return triageViolations({
+      number: issue.number,
+      title: issue.title,
+      labels,
+      ...(subIssueCounts.has(issue.number) ? { subIssueCount: subIssueCounts.get(issue.number) } : {}),
+    }).map((violation) => `#${issue.number} ${issue.title}: ${violation}`);
+  });
 
   if (violations.length > 0) throw new Error(violations.join("\n"));
   console.log(`Triage labels pass for ${issues.length} open issue${issues.length === 1 ? "" : "s"}.`);
