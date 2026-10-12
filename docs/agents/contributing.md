@@ -20,7 +20,7 @@ Do not open a merge request before the review is complete. Do not push directly 
 
 The GitHub `Checks` workflow runs the Node test suite, typecheck, build,
 documentation and Markdown checks, plus Terraform formatting, validation, and
-mock-provider tests for pushes and pull requests. Resolve failed checks before
+mock-provider tests for pull requests. Resolve failed checks before
 the change request is ready for review.
 
 ## Completion rule
