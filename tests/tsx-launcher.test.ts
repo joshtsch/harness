@@ -19,6 +19,7 @@ describe("TypeScript package script launchers", () => {
 
     const listCommand = packageJson.scripts["continuation:list"];
     expect(listCommand).toBe("node --import tsx scripts/continuation.ts list");
+    expect(packageJson.scripts["continuation:todos"]).toBe("node --import tsx scripts/continuation.ts todos");
     const [runtime, preloadFlag, preload, entrypoint, ...arguments_] = listCommand.split(" ");
     expect([runtime, preloadFlag, preload, entrypoint]).toEqual([
       "node",

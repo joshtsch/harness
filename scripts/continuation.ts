@@ -8,6 +8,7 @@ import { continuationRetryQueueFromEnvironment } from "../src/session/continuati
 import { readResumeCheckpoint, renewResumeCheckpoint, resumeProviderPayload, writeResumeCheckpoint, type ResumeCheckpoint } from "../src/session/resume-checkpoint.js";
 import { SupabaseContinuationStore, ContinuationBackendUnavailableError } from "../src/session/supabase-continuation-store.js";
 import { commitProjectsLocalProjection, createProjectsLocalProjection, mergeProjectsLocal, readProjectsLocalRecord } from "../src/session/projects-local-projection.js";
+import { nextSessionTodo, parseSessionTodos } from "../src/session/session-todos.js";
 
 const rawArgs = process.argv.slice(2);
 if (rawArgs[0] === "--") rawArgs.shift();
@@ -109,6 +110,13 @@ async function save(): Promise<void> {
   for (const [name, kind] of [["--decisions", "decisions"], ["--outputs", "outputs"]] as const) {
     if (option(name)) artifacts.push({ id: kind, kind, content: { privacy: "sensitive", plaintext: await readInput(name) } });
   }
+  let nextTodo: ReturnType<typeof nextSessionTodo> = null;
+  if (option("--todos")) {
+    const content = await readInput("--todos");
+    const todos = parseSessionTodos(content);
+    nextTodo = nextSessionTodo(todos);
+    artifacts.push({ id: "session-todos", kind: "todos", content: { privacy: "sensitive", plaintext: JSON.stringify(todos) } });
+  }
   let projectConfigRevision: number | undefined;
   let projectConfigQueued = false;
   const projectsLocal = option("--projects-local");
@@ -122,7 +130,28 @@ async function save(): Promise<void> {
     isRetryable: (error) => error instanceof ContinuationBackendUnavailableError,
   });
   if (checkpoint) await unlink(checkpoint.path);
-  console.log(JSON.stringify({ status: "saved", sessionKey: manifest.key, state: manifest.state, revision: manifest.revision, ...(projectConfigRevision === undefined ? {} : { projectConfigRevision }), ...(projectConfigQueued ? { projectConfigStatus: "queued" } : {}) }));
+  console.log(JSON.stringify({ status: "saved", sessionKey: manifest.key, state: manifest.state, revision: manifest.revision, ...(nextTodo ? { nextTodo } : {}), ...(projectConfigRevision === undefined ? {} : { projectConfigRevision }), ...(projectConfigQueued ? { projectConfigStatus: "queued" } : {}) }));
+}
+
+async function saveTodos(): Promise<void> {
+  const keyMaterial = continuationKeyFromEnvironment();
+  const checkpoint = await readCheckpoint();
+  const explicitKey = option("--session-key");
+  if (checkpoint && explicitKey && explicitKey !== checkpoint.value.sessionKey) throw new Error("session key does not match checkpoint file");
+  const session = checkpoint?.value.sessionKey ?? explicitKey;
+  if (!session) throw new Error("--session-key or --checkpoint-file is required to update session todos");
+  const todos = parseSessionTodos(await readInput("--todos"));
+  const manifest = await persistSaveToKey(serviceStore(), keyMaterial, session, checkpoint?.value.owner ?? null, Date.now(), [{
+    id: "session-todos",
+    kind: "todos",
+    content: { privacy: "sensitive", plaintext: JSON.stringify(todos) },
+  }], continuationEncryptor(), {
+    retryQueue: continuationRetryQueueFromEnvironment(),
+    isRetryable: (error) => error instanceof ContinuationBackendUnavailableError,
+  });
+  if (checkpoint) await unlink(checkpoint.path);
+  const nextTodo = nextSessionTodo(todos);
+  console.log(JSON.stringify({ status: "saved", sessionKey: manifest.key, state: manifest.state, revision: manifest.revision, ...(nextTodo ? { nextTodo } : {}) }));
 }
 
 async function audit(): Promise<void> {
@@ -146,12 +175,11 @@ async function resume(): Promise<void> {
   const decrypt = continuationDecryptor();
   let artifacts: Array<{ kind: ArtifactKind; key: string; revision: number; content: string }> = [];
   const result = await persistResume(serviceStore(), session, owner, Date.now(), leaseDurationMs, async (checkpoint) => {
-    artifacts = await Promise.all(checkpoint.map(async (artifact) => ({
-    kind: artifact.kind,
-    key: artifact.key,
-    revision: artifact.revision,
-    content: await decrypt(artifact),
-    })));
+    artifacts = await Promise.all(checkpoint.map(async (artifact) => {
+      const content = await decrypt(artifact);
+      if (artifact.kind === "todos") parseSessionTodos(content);
+      return { kind: artifact.kind, key: artifact.key, revision: artifact.revision, content };
+    }));
   });
   const directory = await mkdtemp(resolve(tmpdir(), "harness-resume-"));
   await chmod(directory, 0o700);
@@ -162,7 +190,9 @@ async function resume(): Promise<void> {
     await persistSaveToKey(serviceStore(), continuationKeyFromEnvironment(), session, owner, Date.now(), [], continuationEncryptor());
     throw error;
   }
-  console.log(resumeProviderPayload(session, result.manifest.lease?.expiresAt, output, artifacts));
+  const todosArtifact = artifacts.find((artifact) => artifact.kind === "todos");
+  const nextTodo = todosArtifact ? nextSessionTodo(parseSessionTodos(todosArtifact.content)) : null;
+  console.log(JSON.stringify({ ...JSON.parse(resumeProviderPayload(session, result.manifest.lease?.expiresAt, output, artifacts)), ...(nextTodo ? { nextTodo } : {}) }));
 }
 
 async function renewLease(): Promise<void> {
@@ -222,10 +252,10 @@ async function flush(): Promise<void> {
   console.log(JSON.stringify({ status: "flushed", ...result }));
 }
 
-const actions: Record<string, () => Promise<void>> = { save, audit, resume, renew: renewLease, list, close, flush, projects: projectsPull };
+const actions: Record<string, () => Promise<void>> = { save, todos: saveTodos, audit, resume, renew: renewLease, list, close, flush, projects: projectsPull };
 try {
   const action = command ? actions[command] : undefined;
-  if (!action) throw new Error("usage: pnpm save | pnpm resume | pnpm continuation:renew | pnpm continuation:list | pnpm continuation:close | pnpm continuation:flush | pnpm continuation:projects");
+  if (!action) throw new Error("usage: pnpm save -- --handoff <file> [--todos <json-file>] | pnpm continuation:todos -- --session-key <key> --todos <json-file> | pnpm resume | pnpm continuation:renew | pnpm continuation:list | pnpm continuation:close | pnpm continuation:flush | pnpm continuation:projects");
   await action();
 } catch (error) {
   if (error instanceof ContinuationQueuedError) {

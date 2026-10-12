@@ -2,7 +2,7 @@ import { createHash, createHmac, randomUUID } from "node:crypto";
 import { assertSafeContinuationArtifact } from "./continuation-content-policy.js";
 
 export type ContinuationState = "active" | "in-progress" | "inactive";
-export type ArtifactKind = "handoff" | "decisions" | "outputs" | "evaluation";
+export type ArtifactKind = "handoff" | "decisions" | "outputs" | "evaluation" | "todos";
 export type ArtifactContent = { privacy: "encrypted"; ciphertext: string };
 export type ContinuationArtifactInput = { privacy: "sensitive"; plaintext: string };
 const maxLeaseMs = 60 * 60 * 1000;
