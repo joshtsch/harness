@@ -89,6 +89,16 @@ stores a review-only evaluation; ordinary `pnpm save` does not run an audit or
 promote tentative decisions. Never put credentials or raw transcripts in a
 continuation artifact.
 
+Session todos are an optional ordered JSON artifact passed to `pnpm save` with
+`--todos <file>`. Update the list with
+`pnpm continuation:todos -- --session-key <key> --todos <file>` or use
+`--checkpoint-file <file>` for an active resumed claim. Keep stable IDs while
+editing the list and use `open` and `completed` statuses. The first open todo is
+surfaced as `nextTodo` after save and resume. Todo updates use the same
+encrypted artifact revisions and remote revision check as other checkpoint
+data; resolve a revision conflict by resuming the latest checkpoint and
+applying the intended list changes again.
+
 ## Inspecting self-optimization evidence
 
 The end-to-end path is:

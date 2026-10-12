@@ -138,13 +138,26 @@ Use the `save` skill to capture a handoff, decisions, and outputs. The CLI
 stores encrypted artifacts in Supabase so another session or machine can resume
 the work.
 
+Maintain an optional ordered todo list as a JSON array and pass it with
+`--todos <file>` to `pnpm save`. Each item has a stable `id`, a single-line
+`title`, a `status` of `open` or `completed`, and an optional HTTPS `reference`.
+Edit the JSON array to add, reorder, complete, or reopen items, then update it
+with `pnpm continuation:todos -- --session-key <key> --todos <file>` (or pass
+`--checkpoint-file <file>` for an active resumed claim). Saves append an
+encrypted revision using the session's existing compare-and-swap check, so a
+stale or concurrent update fails instead of replacing newer state. Save,
+todo-update, and resume responses include the first remaining open item as `nextTodo`; when
+none remain, the ordered list is complete. Todo titles and references pass the
+same sensitive-content and transcript checks as other continuation artifacts.
+
 ### Set up saving
 
 1. Install the harness dependencies with `pnpm install --frozen-lockfile` and
    make the `age` executable available. Provision the continuation backend using
    [the repository infrastructure guide](infrastructure/README.md), then
-   apply the checked-in [continuation migration](supabase/migrations/20261004040031_continuation_state.sql)
-   and [artifact revision fix](supabase/migrations/20261006222000_continuation_artifact_revision_advancement.sql)
+   apply the checked-in [continuation migration](supabase/migrations/20261004040031_continuation_state.sql),
+   [artifact revision fix](supabase/migrations/20261006222000_continuation_artifact_revision_advancement.sql),
+   and [session todos migration](supabase/migrations/20261012000000_continuation_session_todos.sql)
    in order through your database deployment workflow. Terraform provisions the project;
    the migration installs the tables and RPC functions used by the CLI.
 2. Configure the five settings below through your external secret store or an

@@ -5,6 +5,7 @@ select plan(27);
 select set_config('test.continuation_key', 'sessions/' || repeat('a', 64), true);
 select set_config('test.handoff_key', 'sessions/' || repeat('a', 64) || '/artifacts/handoff/' || repeat('b', 64), true);
 select set_config('test.decisions_key', 'sessions/' || repeat('a', 64) || '/artifacts/decisions/' || repeat('c', 64), true);
+select set_config('test.todos_key', 'sessions/' || repeat('a', 64) || '/artifacts/todos/' || repeat('d', 64), true);
 select set_config('test.first_owner', repeat('d', 64), true);
 select set_config('test.second_owner', repeat('e', 64), true);
 select set_config('test.user_record_key', 'user-records/' || repeat('f', 64), true);
@@ -123,20 +124,30 @@ select is(
       'state', 'active',
       'latest', jsonb_build_object(
         current_setting('test.handoff_key'), 1,
-        current_setting('test.decisions_key'), 1
+        current_setting('test.decisions_key'), 1,
+        current_setting('test.todos_key'), 1
       ),
       'events', jsonb_build_array(
         jsonb_build_object('type', 'saved', 'actor', null),
         jsonb_build_object('type', 'saved', 'actor', null)
       )
     ),
-    jsonb_build_array(jsonb_build_object(
-      'key', current_setting('test.decisions_key') || '/revisions/1',
-      'kind', 'decisions',
-      'revision', 1,
-      'privacy', 'encrypted',
-      'ciphertext', '-----BEGIN AGE ENCRYPTED FILE-----\nopaque'
-    ))
+    jsonb_build_array(
+      jsonb_build_object(
+        'key', current_setting('test.decisions_key') || '/revisions/1',
+        'kind', 'decisions',
+        'revision', 1,
+        'privacy', 'encrypted',
+        'ciphertext', '-----BEGIN AGE ENCRYPTED FILE-----\nopaque'
+      ),
+      jsonb_build_object(
+        'key', current_setting('test.todos_key') || '/revisions/1',
+        'kind', 'todos',
+        'revision', 1,
+        'privacy', 'encrypted',
+        'ciphertext', '-----BEGIN AGE ENCRYPTED FILE-----\nopaque'
+      )
+    )
   )->>'revision')::integer,
   2,
   'a valid compare-and-swap appends a second revision'
@@ -188,8 +199,8 @@ select throws_ok(
 
 select is(
   (select count(*)::integer from public.continuation_artifacts where session_key = current_setting('test.continuation_key')),
-  2,
-  'only immutable handoff and decisions revisions were stored'
+  3,
+  'immutable handoff, decisions, and todos revisions were stored'
 );
 
 select is(

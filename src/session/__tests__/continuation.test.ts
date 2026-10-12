@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { artifactKey, claim, close, loadCheckpoint, persistAudit, persistClaim, persistClose, persistRenew, persistResume, persistSave, renew, save, sessionKey, type ContinuationArtifact, type ContinuationManifest, type ContinuationStore, type ContinuationState } from "../continuation.js";
+import { nextSessionTodo, parseSessionTodos } from "../session-todos.js";
 
 const keyMaterial = Buffer.alloc(32, 7);
 const session = sessionKey(keyMaterial, "private issue title");
@@ -140,6 +141,37 @@ describe("portable continuation contract", () => {
     expect(resumed.manifest.state).toBe("in-progress");
     expect(resumed.artifacts[0]?.key).toBe(`${handoff}/revisions/1`);
     await expect(persistResume(store, session, "codex-session", 2500, 1000)).rejects.toThrow("already claimed");
+  });
+
+  it("saves ordered todos, resumes them, and persists completion as a new revision", async () => {
+    const store = new MemoryStore();
+    const todos = [
+      { id: "review", title: "Review the issue", status: "open" },
+      { id: "implement", title: "Implement the feature", status: "open" },
+    ];
+    await persistSave(store, keyMaterial, "todo session", null, 1000, [
+      { id: "main", kind: "handoff", content: { privacy: "sensitive", plaintext: "Continue the session" } },
+      { id: "session-todos", kind: "todos", content: { privacy: "sensitive", plaintext: JSON.stringify(todos) } },
+    ], encryptForTest);
+    const resumed = await persistResume(store, sessionKey(keyMaterial, "todo session"), "provider-b", 2000, 1000, async (artifacts) => {
+      const todosArtifact = artifacts.find((artifact) => artifact.kind === "todos");
+      expect(parseSessionTodos(Buffer.from(todosArtifact!.ciphertext.slice("encrypted:".length)).toString())).toEqual(todos);
+    });
+    const completed = [todos[1]!, { ...todos[0]!, status: "completed" }];
+    await persistSave(store, keyMaterial, "todo session", "provider-b", 2500, [
+      { id: "session-todos", kind: "todos", content: { privacy: "sensitive", plaintext: JSON.stringify(completed) } },
+    ], encryptForTest);
+    const latest = await loadCheckpoint(store, resumed.manifest.key);
+    const latestTodos = parseSessionTodos(Buffer.from(latest.artifacts.find((artifact) => artifact.kind === "todos")!.ciphertext.slice("encrypted:".length)).toString());
+    expect(latest.artifacts.find((artifact) => artifact.kind === "todos")?.revision).toBe(2);
+    expect(nextSessionTodo(latestTodos)).toMatchObject({ id: "implement" });
+    const reopened = [{ ...todos[0]!, status: "open" }, todos[1]!];
+    await persistSave(store, keyMaterial, "todo session", null, 3000, [
+      { id: "session-todos", kind: "todos", content: { privacy: "sensitive", plaintext: JSON.stringify(reopened) } },
+    ], encryptForTest);
+    const latestReopened = await loadCheckpoint(store, resumed.manifest.key);
+    expect(latestReopened.artifacts.find((artifact) => artifact.kind === "todos")?.revision).toBe(3);
+    expect(nextSessionTodo(parseSessionTodos(Buffer.from(latestReopened.artifacts.find((artifact) => artifact.kind === "todos")!.ciphertext.slice("encrypted:".length)).toString()))).toMatchObject({ id: "review" });
   });
 
   it("validates and decrypts artifacts before acquiring the resume claim", async () => {

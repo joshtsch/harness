@@ -23,6 +23,7 @@
     "save:audit": "node --import tsx scripts/continuation.ts audit",
     "continuation:renew": "node --import tsx scripts/continuation.ts renew",
     "continuation:list": "node --import tsx scripts/continuation.ts list",
+    "continuation:todos": "node --import tsx scripts/continuation.ts todos",
     "continuation:close": "node --import tsx scripts/continuation.ts close",
     "continuation:flush": "node --import tsx scripts/continuation.ts flush",
     "continuation:projects": "node --import tsx scripts/continuation.ts projects",
