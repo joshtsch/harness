@@ -12,6 +12,10 @@ const project: ProjectDefinition = {
   defaultBranch: "main",
   setupScript: "scripts/setup.sh",
   issueTracker: { type: "github", repository: "org/example-project" },
+  quality: {
+    lint: { command: "pnpm", args: ["lint"], required: true },
+    format: { command: "pnpm", args: ["format:check"], required: true },
+  },
   verification: [{ command: "pnpm", args: ["test"], required: true }],
   workflows: [{ command: "pnpm", args: ["lint"], required: false }],
 };
@@ -55,7 +59,9 @@ describe("prepareSession", () => {
     expect(result.states[project.name]).toMatchObject({ status: "verified", path: expect.any(String) });
     expect(deps.runSetupSession).toHaveBeenNthCalledWith(1, [expect.objectContaining({ phase: "bootstrap" })]);
     expect(deps.runSetupSession).toHaveBeenNthCalledWith(2, [expect.objectContaining({ phase: "worktree" })]);
-    expect(deps.verifyProject).toHaveBeenCalledOnce();
+    expect(deps.verifyProject).toHaveBeenCalledTimes(2);
+    expect(deps.runCommands).toHaveBeenNthCalledWith(1, [project.quality!.lint, project.quality!.format], expect.objectContaining({ project }));
+    expect(deps.runCommands).toHaveBeenNthCalledWith(2, [...project.verification, ...project.workflows], expect.objectContaining({ project }));
     expect(deps.writeManifest).toHaveBeenLastCalledWith("complete", result.states);
 
     const update = vi.fn(async () => ({ id: "updated" }));
@@ -71,6 +77,28 @@ describe("prepareSession", () => {
       projects: result.states,
       status: "complete",
     }).toolMappings).toEqual(["crm"]);
+  });
+
+  it("refuses to start before cloning when lint and format checks are missing", async () => {
+    const deps = dependencies();
+    const projectWithoutQuality = { ...project, quality: undefined };
+
+    await expect(prepareSession({ ...options, selected: [projectWithoutQuality] }, deps)).rejects.toThrow("must configure required lint and format checks");
+    expect(deps.ensureClone).not.toHaveBeenCalled();
+    expect(deps.writeManifest).not.toHaveBeenCalled();
+  });
+
+  it("checks the worktree again after required lint and format commands", async () => {
+    const verifyProject = vi.fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("worktree verification failed: worktree is not clean"));
+    const runCommands = vi.fn(async () => []);
+    const deps = dependencies({ verifyProject, runCommands });
+
+    await expect(prepareSession(options, deps)).rejects.toThrow("worktree is not clean");
+    expect(runCommands).toHaveBeenCalledOnce();
+    expect(runCommands).toHaveBeenCalledWith([project.quality!.lint, project.quality!.format], expect.objectContaining({ project }));
+    expect(verifyProject.mock.invocationCallOrder[1]).toBeGreaterThan(runCommands.mock.invocationCallOrder[0]!);
   });
 
   it("stops and records required setup failure", async () => {
