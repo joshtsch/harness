@@ -59,3 +59,14 @@ run "rejects_repositories_outside_the_configured_owner" {
 
   expect_failures = [var.github_project_repositories]
 }
+
+run "rejects_repository_without_a_name" {
+  command = plan
+
+  variables {
+    github_project_repositories = ["joshtsch/"]
+    shared_actions_secrets      = {}
+  }
+
+  expect_failures = [var.github_project_repositories]
+}

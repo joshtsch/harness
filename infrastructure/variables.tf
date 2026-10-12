@@ -12,7 +12,7 @@ variable "github_project_repositories" {
   validation {
     condition = alltrue([
       for repository in var.github_project_repositories :
-      startswith(repository, "${var.github_owner}/") && length(split("/", repository)) == 2
+      startswith(repository, "${var.github_owner}/") && can(regex("^[^/]+/[^/]+$", repository))
     ])
     error_message = "Each configured GitHub project repository must use the configured github_owner/repository format."
   }
