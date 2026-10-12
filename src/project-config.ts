@@ -33,6 +33,7 @@ export interface ProjectWiki {
 export interface ProjectDefinition {
   name: string;
   remote: string;
+  hcpWorkspace?: string;
   defaultBranch: string;
   setupScript: string;
   issueTracker: IssueTracker;
@@ -46,6 +47,7 @@ export interface ProjectDefinition {
 
 interface RawProject {
   remote?: unknown;
+  hcp_workspace?: unknown;
   default_branch?: unknown;
   setup_script?: unknown;
   issue_tracker?: unknown;
@@ -68,7 +70,7 @@ export interface LoadProjectsConfigOptions {
   localConfigPath?: string | null;
 }
 
-const rawProjectFields = new Set(["remote", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "verification", "workflows"]);
+const rawProjectFields = new Set(["remote", "hcp_workspace", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "verification", "workflows"]);
 const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "verification", "workflows"]);
 const businessLineFields = new Set(["display_name", "tool_mappings"]);
 const issueTrackerFields = new Set(["type", "repository"]);
@@ -213,6 +215,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
       return [name, {
         name,
         remote: requiredString(definition.remote, `projects.${name}.remote`),
+        ...(definition.hcp_workspace === undefined ? {} : { hcpWorkspace: requiredString(definition.hcp_workspace, `projects.${name}.hcp_workspace`) }),
         defaultBranch: requiredString(definition.default_branch ?? defaults.default_branch, `projects.${name}.default_branch`),
         setupScript: requiredString(definition.setup_script ?? defaults.setup_script, `projects.${name}.setup_script`),
         issueTracker: mergeIssueTracker(defaults.issue_tracker, definition.issue_tracker, name),

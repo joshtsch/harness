@@ -58,6 +58,13 @@ infrastructure workspace. Follow its
 [repository workspace inputs and adoption guide](../../infrastructure/hcp/README.md#repository-workspaces)
 when preparing state ownership for a registered project.
 
+Checked 12 October 2026 against maintained `hashicorp/tfe` provider 0.81.0:
+`tfe_workspace`, `tfe_workspace_settings`, and
+[`tfe_variable`](https://registry.terraform.io/providers/hashicorp/tfe/0.81.0/docs/resources/variable)
+cover project workspace creation, remote execution, and persistence of the
+bootstrap input. Onboarding supplies the complete list from merged project
+configuration through a CLI-driven HCP run.
+
 ## Unsupported operations and recovery
 
 A fallback may be needed when no maintained provider covers an operation,

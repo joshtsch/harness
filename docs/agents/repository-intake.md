@@ -19,6 +19,13 @@ defaults, is still project work.
 4. Validate the merged configuration and record the selected project, repository,
    and purpose in ignored `docs/.scratch/`. Registration must be valid before
    repository provisioning, issue creation, branches, or worktrees.
+5. For a project using Terraform, set `hcp_workspace` to its unique HCP workspace
+   name in the project entry. Run `pnpm hcp:projects plan` from the harness root
+   after registration and review the complete control-plane plan. Run
+   `pnpm hcp:projects apply` only when its workspace changes are approved. The
+   command derives the full list from merged configuration and persists it in
+   HCP; do not edit the list separately in the HCP UI. A project without
+   `hcp_workspace` receives no workspace.
 
 ## Prepare the repository
 

@@ -18,12 +18,19 @@ Each project entry should identify:
 
 - a unique logical name;
 - its Git remote and default branch;
+- `hcp_workspace` when the repository uses Terraform and needs its own HCP Terraform state;
 - its issue-tracker type and project key;
 - its optional CRM provider;
 - its optional business-line memberships and project-level tool mappings;
 - its optional child-wiki description, topics, and paths (`wiki.pages`, `wiki.raw`, and `wiki.templates`);
 - the project-owned `scripts/setup.sh`;
 - verification and other optional workflow commands.
+
+`hcp_workspace` is an optional, unique HCP workspace name. Set it only for a
+project whose infrastructure is managed through Terraform. It is portable
+private project metadata, so it may live in `projects.local.yml` and its
+encrypted user-level record. The onboarding command derives the complete HCP
+workspace list from these fields; a missing field creates no workspace.
 
 Verification commands use `verification`, and optional commands use `workflows`.
 Each entry has `command`, `args`, and optional `required`; verification defaults to

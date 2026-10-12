@@ -3,7 +3,8 @@
 This module manages the existing `harness` HCP Terraform workspace in an
 existing organization. That workspace stores the repository's infrastructure
 state. This module's own state belongs to the manually created
-`platform-bootstrap` workspace; the bootstrap workspace does not manage itself.
+`platform-bootstrap` workspace. The module manages that workspace's
+`project_workspace_names` input, but not the workspace resource or settings.
 See the [infrastructure workspace policy](../../docs/agents/infrastructure.md).
 
 The organization identity and organization rename remain one-time HCP
@@ -63,19 +64,36 @@ removal.
 ## Repository workspaces
 
 `project_workspace_names` manages additional repository workspaces in this same
-control-plane state. Its empty default creates none. Supply the names through a
-persistent Terraform variable in the `platform-bootstrap` workspace, keeping
+control-plane state. Its empty default creates none. Set `hcp_workspace` on each
+registered Terraform project in the merged harness configuration, then run
+`pnpm hcp:projects plan` and `pnpm hcp:projects apply` from the harness root.
+The command supplies the complete list for that run. The `tfe_variable` resource
+persists it in the `platform-bootstrap` workspace for later remote runs, keeping
 private project names out of tracked files and public issue/plan summaries.
+Set the existing `TF_VAR_tfe_organization` in the local environment and
+use an HCP account with plan/apply access. The HCP workspace's sensitive
+`TFE_TOKEN` is used by the remote TFE provider. `plan` makes no changes;
+`apply` shows its plan and prompts for approval.
+The command writes an ignored `onboarding.auto.tfvars` file with mode `0600`
+for the remote run and removes it afterward. If the command is interrupted and
+the file remains, inspect and remove it before retrying; the next run refuses
+to overwrite it. Use `--config-root <path>` when the private project overlay is
+in another harness checkout.
 Use one workspace per repository unless another boundary is explicitly approved.
 The existing `tfe_workspace.harness` address remains unchanged; project names
 cannot collide with it or `platform-bootstrap`.
 
-Populate the persistent input before planning, and keep every managed name in
-it after apply. A one-run override is insufficient: a later empty input would
-propose removal and fail `prevent_destroy`. Removing a name or renaming a
+Keep every managed name in the merged configuration after apply. The onboarding
+command refuses an empty list, and `prevent_destroy` blocks accidental workspace
+removal. Removing a name or renaming a
 workspace is a migration, not routine cleanup. Do not remove the resource blocks
 to bypass that protection. Keep state version recovery available and review any
 removal, rename, or state operation explicitly.
+
+The first managed run creates the `project_workspace_names` HCP variable. If it
+already exists, import it into `tfe_variable.project_workspace_names` before
+applying. A workspace created outside this control plane also needs its workspace
+and settings imported into the corresponding project addresses before apply.
 
 For an existing project workspace, inspect state before adoption. Import both
 its workspace and settings into the selected map key before planning. Use a

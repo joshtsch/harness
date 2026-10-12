@@ -15,7 +15,7 @@ const absolutePath = /^(?:\/|~(?:[\\/]|$)|[a-z]:[\\/]|\\\\)/i;
 
 function portable(value: unknown, field = ""): unknown {
   const normalizedField = field.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase().replace(/[\s.-]+/g, "_");
-  if (privateField.test(normalizedField) || machineField.test(normalizedField)
+  if (privateField.test(normalizedField) || (machineField.test(normalizedField) && normalizedField !== "hcp_workspace")
       || (machinePathField.test(normalizedField) && normalizedField !== "wiki_path")) return undefined;
   if (typeof value === "string") {
     if (findSensitiveContent(`+${JSON.stringify(value)}`).some(({ kind }) => kind === "credential" || kind === "private-key")) return undefined;
