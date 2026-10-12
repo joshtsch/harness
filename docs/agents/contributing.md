@@ -18,6 +18,11 @@ If an issue tracker outage prevents issue creation, record a redacted outage han
 
 Do not open a merge request before the review is complete. Do not push directly to `main` or use the harness CLI to manage the harness repository itself.
 
+The GitHub `Checks` workflow runs the Node test suite, typecheck, build,
+documentation and Markdown checks, plus Terraform formatting, validation, and
+mock-provider tests for pushes and pull requests. Resolve failed checks before
+the change request is ready for review.
+
 ## Completion rule
 
 Requests to pick up, work on, or implement a backlog issue are end-to-end development requests. Selecting an issue or producing a locally verified patch is an intermediate state, not completion. Continue through the review loop and open the merge request after all review gates pass. Report completion only after the merge request exists, or state the exact blocker and next required action.
