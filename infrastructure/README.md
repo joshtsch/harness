@@ -114,11 +114,13 @@ in [`.github/workflows/terraform-plan.yml`](../.github/workflows/terraform-plan.
 It uses the trusted base-branch workflow definition, uploads only the PR
 configuration to the existing `harness` workspace, and queues a plan-only HCP
 Terraform run; it never applies. The PR configuration is not run on the GitHub
-runner. Configure a repository variable `TF_CLOUD_ORGANIZATION` and an Actions
-secret `TF_API_TOKEN`. The token should belong to a team with Plan access to the
-`harness` workspace and no Apply access. Fork pull requests do not receive the
-token and therefore do not run this plan. The workflow takes effect for PRs
-after it has merged to the default branch.
+runner. Since HCP runs the uploaded Terraform with workspace variables, the
+credential-bearing job runs only for same-repository PRs authored and updated
+by the repository owner. Fork and collaborator PRs do not receive the token or
+run plans against this workspace. Configure a repository variable
+`TF_CLOUD_ORGANIZATION` and an Actions secret `TF_API_TOKEN`. The token should
+belong to a team with Plan access to the `harness` workspace and no Apply access.
+The workflow takes effect for PRs after it has merged to the default branch.
 
 Terraform uses `database_password` when creating the project, but the Supabase
 provider cannot read it back or update it. The resource therefore ignores

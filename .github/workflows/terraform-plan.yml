@@ -33,7 +33,11 @@ jobs:
 
   speculative-plan:
     needs: detect-infrastructure-changes
-    if: needs.detect-infrastructure-changes.outputs.terraform == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      needs.detect-infrastructure-changes.outputs.terraform == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == github.repository_owner &&
+      github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
