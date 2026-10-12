@@ -53,6 +53,8 @@ private `github_project_repositories` variable must stay aligned with the
 configured GitHub projects during onboarding. Shared secret values are supplied
 through the sensitive `shared_actions_secrets` workspace variable. Terraform
 state contains the values and must remain encrypted and access-controlled.
+PR changes to the infrastructure root run a plan-only workflow against this
+workspace; see the [Terraform plan pipeline](../../.github/workflows/terraform-plan.yml).
 
 ## State and execution
 
