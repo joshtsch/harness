@@ -29,6 +29,41 @@ defaults, is still project work.
 
 ## Prepare the repository
 
+### Quality and formatting
+
+During onboarding, inspect the repository's language and existing toolchain,
+then retrieve applicable user preferences with
+`pnpm decision-memory get --category code-quality --user local`. Treat a fresh
+preference as a recommendation and ask the project owner to confirm the lint
+and format preset or choose a custom one. An existing toolchain does not cancel
+an applicable preference; explain the recommended change and ask before
+replacing tools. When there is no applicable preference or established
+toolchain, offer a stack-native preset. For JavaScript/TypeScript, use an
+applicable user preference; otherwise, offer [ESLint](https://eslint.org/docs/latest/use/command-line-interface)
+and [Prettier's check mode](https://prettier.io/docs/cli/#check), invoked through
+the project's package manager (for example, `pnpm exec eslint .` and
+`pnpm exec prettier . --check`). For Python, [Ruff](https://docs.astral.sh/ruff/linter/)
+provides linting plus a [formatter](https://docs.astral.sh/ruff/formatter/)
+with a non-mutating `--check` mode. For other stacks, prefer the existing
+ecosystem formatter and linter or ask the owner to choose a supported project
+tool. Do not add dependencies or rewrite existing style without the owner's
+choice.
+
+When the applicable preference recommends Biome, recommend it for both Node
+linting and formatting. Configure `quality.lint` with Biome's lint command and
+`quality.format` with its format command, without write flags. Biome also offers
+a combined `check` command; see its [CLI guide](https://biomejs.dev/reference/cli/)
+for commands and CI usage.
+
+Set explicit formatting rules in the project's configuration, add repeatable
+lint and non-mutating format-check commands, and run both in the project's CI.
+Record those exact commands under the project's `quality.lint` and
+`quality.format` fields in the merged harness configuration. Both checks run as
+required gates in each harness session; a project missing either command cannot
+start a session until onboarding is complete. See
+[project configuration](project-configuration.md#project-configuration) for the
+command schema and enforcement behavior.
+
 Choose the path from observed state:
 
 | State | Next action |

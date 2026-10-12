@@ -91,7 +91,7 @@ describe("session startup with real Git", () => {
 
   it("writes the explicit goal to the manifest and session AGENTS.md through the CLI", async () => {
     const head = await advanceRemote();
-    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n    repository: example/fixture\nprojects:\n  example-project:\n    remote: ${remote}\n`);
+    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n    repository: example/fixture\n  quality:\n    lint:\n      command: node\n      args: [--version]\n    format:\n      command: node\n      args: [--version]\nprojects:\n  example-project:\n    remote: ${remote}\n`);
     const bin = join(root, "bin");
     await mkdir(bin);
     for (const command of ["pnpm", "npx", "codex", "age", "bw"]) await writeFile(join(bin, command), "#!/bin/sh\nprintf 'fixture-version\\n'\n", { mode: 0o755 });

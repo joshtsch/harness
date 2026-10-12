@@ -52,6 +52,64 @@ describe("loadProjectsConfig", () => {
     });
   });
 
+  it("parses required lint and non-mutating format commands from defaults", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "harness-config-"));
+    temporaryDirectories.push(directory);
+    const configPath = join(directory, "projects.yml");
+    await writeFile(configPath, [
+      "defaults:",
+      "  default_branch: main",
+      "  setup_script: scripts/setup.sh",
+      "  issue_tracker:",
+      "    type: github",
+      "  quality:",
+      "    lint:",
+      "      command: pnpm",
+      "      args: [lint]",
+      "    format:",
+      "      command: pnpm",
+      "      args: [format:check]",
+      "projects:",
+      "  example-project:",
+      "    remote: git@github.com:joshtsch/example-project.git",
+    ].join("\n"));
+
+    await expect(loadProjectsConfig(configPath)).resolves.toMatchObject({
+      "example-project": {
+        quality: {
+          lint: { command: "pnpm", args: ["lint"], required: true },
+          format: { command: "pnpm", args: ["format:check"], required: true },
+        },
+      },
+    });
+  });
+
+  it("rejects optional quality checks", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "harness-config-"));
+    temporaryDirectories.push(directory);
+    const configPath = join(directory, "projects.yml");
+    await writeFile(configPath, [
+      "defaults:",
+      "  default_branch: main",
+      "  setup_script: scripts/setup.sh",
+      "  issue_tracker:",
+      "    type: github",
+      "projects:",
+      "  example-project:",
+      "    remote: git@github.com:joshtsch/example-project.git",
+      "    quality:",
+      "      lint:",
+      "        command: pnpm",
+      "        args: [lint]",
+      "        required: false",
+      "      format:",
+      "        command: pnpm",
+      "        args: [format:check]",
+    ].join("\n"));
+
+    await expect(loadProjectsConfig(configPath)).rejects.toThrow("projects.example-project.quality.lint.required must be true");
+  });
+
   it("merges an ignored local overlay with local values taking priority", async () => {
     const directory = await mkdtemp(join(tmpdir(), "harness-config-"));
     temporaryDirectories.push(directory);
