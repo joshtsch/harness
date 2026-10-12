@@ -88,19 +88,12 @@ commands, paths, identifiers, issue keys, citations, and exact error messages.
 
 ## Capability routing
 
-The `pnpm capabilities` inventory covers project-local skills registered in
-`skills-lock.json` or `harness-skills/`. Use one primary route for each such
-task. For work-shape requests, run
+Use one primary route for each task. For work-shape requests, run
 `pnpm capabilities decide <provider> <task>`. For another project skill, inspect
 `pnpm capabilities list`, then run `pnpm capabilities route <provider>
 <capability>`. Add declared companions to the same route call. Route session modes
 with `pnpm capabilities mode <provider> <mode>`. Ask the user when routing reports
 overlapping or unmatched intent; unsupported routes fail closed.
-
-Host-global skills and plugin-bundled skills use their own installation and
-enablement controls and are not added to the project-local inventory. Invoke an
-available host-global skill directly. For example, `/code-review` is a
-host-global skill; do not try to select it with `pnpm capabilities route`.
 
 The provider value is `codex` or `gemini`. Run
 `pnpm capabilities record <provider> <capability>` after using a capability to

@@ -21,6 +21,6 @@ This harness improves its own workflows and coordinates work across independent 
 
 ## Work and completion
 
-- Follow [Agent role routing](docs/agents/agent-roles.md) for capability selection, provider-specific behavior, and skill ownership. Resolve project-local skill routes with `pnpm capabilities`; unresolved or unsupported routes fail closed within that inventory. Host-global skills and plugin-bundled skills follow their separate installation and enablement controls.
+- Follow [Agent role routing](docs/agents/agent-roles.md) for capability selection, provider-specific behavior, and skill ownership. Resolve skill routes with `pnpm capabilities`; unresolved or unsupported routes fail closed.
 - Before reporting work complete, follow [Session completion](docs/agents/session-completion.md) and report remaining blockers or preserved changes.
 - Do not send messages or publish external content unless the user's request authorizes that action.
