@@ -37,6 +37,25 @@ operation are access or setup blockers, not evidence of missing provider
 coverage. Resolve them through the authorized setup workflow or report the
 blocker. Do not use a browser or another transport to bypass denied access.
 
+### Shared GitHub Actions secret fan-out
+
+Checked 11 October 2026 against `integrations/github` provider 6.13.0. The maintained
+provider supports repository Actions secrets through
+[`github_actions_secret`](https://registry.terraform.io/providers/integrations/github/6.13.0/docs/resources/actions_secret).
+Its sensitive value still resides in Terraform state, which must be treated as
+sensitive. The provider therefore covers per-repository secret management, but
+it does not provide one shared secret scope for personal-account repositories.
+
+The user chose the harness Terraform root to manage shared Actions secret values
+across configured project repositories. See the [shared Actions secrets guide](../../infrastructure/README.md#shared-actions-secrets).
+The remote HCP workspace cannot read ignored `projects.local.yml`, so its
+private `github_project_repositories` variable must stay aligned with the
+configured GitHub projects during onboarding. Shared secret values are supplied
+through the sensitive `shared_actions_secrets` workspace variable. Terraform
+state contains the values and must remain encrypted and access-controlled.
+PR changes to the infrastructure root run a plan-only workflow against this
+workspace; see the [Terraform plan pipeline](../../.github/workflows/terraform-plan.yml).
+
 ## State and execution
 
 Before changing shared infrastructure:
@@ -62,9 +81,9 @@ when preparing state ownership for a registered project.
 
 A fallback may be needed when no maintained provider covers an operation,
 when a provider cannot represent the required setting safely, or for a
-one-time recovery operation that Terraform cannot perform safely. Complete
-the coverage gate even for recovery;
-one unsupported step does not exempt the rest of a workflow.
+one-time recovery operation that Terraform cannot perform safely. Complete the
+coverage gate even for recovery; one unsupported step does not exempt the rest
+of a workflow.
 
 Before a fallback write:
 

@@ -52,6 +52,10 @@ lists replace public lists.
 Keep private repository names, account identifiers, external resource IDs, CRM
 records, and personal project descriptions out of tracked files. Use environment
 variables for external IDs and keep credentials outside the repository.
+Shared GitHub Actions secrets are managed in the harness Terraform root and
+stored as separate repository secrets across configured project repositories.
+The private HCP Terraform workspace inputs hold the repository list and secret
+values; see the [infrastructure guide](infrastructure/README.md#shared-actions-secrets).
 
 Check host prerequisites directly with `pnpm check:prereqs`. The check covers
 Git, Node.js, pnpm, npx, the selected agent CLI, `age`, and the Bitwarden CLI. It only checks

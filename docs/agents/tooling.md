@@ -33,6 +33,21 @@ selecting a tool. Connector availability, plugin guidance, and a signed-in
 dashboard do not establish a fallback. Use this gate for provisioning,
 configuration changes, and recovery operations.
 
+## Shared GitHub Actions secrets
+
+Manage shared GitHub Actions secrets in the existing harness Terraform root.
+Set `github_project_repositories` and the sensitive `shared_actions_secrets`
+map as persistent variables in the `harness` HCP Terraform workspace, then plan
+and apply through the documented remote workspace. Keep the private repository
+list aligned with configured GitHub projects during onboarding. Terraform writes
+one repository secret per configured repository and named value; updating a
+value rotates each copy. The GitHub CLI is not used for secret distribution.
+
+The GitHub provider marks secret values sensitive in plans, but Terraform state
+still contains them. HCP remote state must remain encrypted, access-controlled,
+and versioned. Never put secret values in tracked files, issue bodies, or plan
+summaries. See the [harness Terraform guide](../../infrastructure/README.md#shared-actions-secrets).
+
 ## Current tools
 
 - **Attio** — CRM context and relationship workflows through the public API by default.

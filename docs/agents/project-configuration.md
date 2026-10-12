@@ -7,6 +7,13 @@ portable fields from Supabase and retain machine-specific fields locally. The
 harness validates the merged configuration before touching any repository. A
 generated runtime representation must never become a second source of truth.
 
+When a configured GitHub project is covered by shared Actions secrets in the
+harness Terraform root, update the private `github_project_repositories` input
+in the `harness` HCP Terraform workspace during onboarding. HCP remote runs do
+not receive the ignored local overlay, so this workspace input is the private
+target inventory for shared secret resources. See the
+[shared Actions secrets guide](../../infrastructure/README.md#shared-actions-secrets).
+
 The overlay deep-merges mappings. Local scalar values override public values,
 and local lists replace public lists. Keep private repository names, account
 identifiers, external resource IDs, CRM records, and personal project context

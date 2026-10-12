@@ -85,6 +85,43 @@ Configure these HCP workspace variables without putting their values in Git:
 | `organization_id` | Terraform | Non-sensitive |
 | `database_password` | Terraform | Sensitive |
 
+## Shared Actions secrets
+
+The harness Terraform root manages shared Actions secrets for configured GitHub
+project repositories through `github_actions_secret`. Set these persistent
+variables in the existing `harness` HCP Terraform workspace:
+
+| Name | HCP variable type | Sensitivity |
+| --- | --- | --- |
+| `github_project_repositories` | Terraform | Non-sensitive; contains private repository slugs |
+| `shared_actions_secrets` | Terraform | Sensitive map of secret names to values |
+
+The HCP remote workspace cannot read ignored `projects.local.yml`. Keep
+`github_project_repositories` aligned with the GitHub projects in the merged
+local configuration as part of project onboarding. Supply secret values only
+in the HCP sensitive variable; never add them to Terraform files, `.tfvars`, or
+local state. The resource creates one repository secret for each repository
+and map entry. Updating a map value rotates all copies; removing an entry plans
+to delete that named secret from every target repository.
+
+The GitHub provider marks values sensitive in plans, but Terraform state still
+contains them. HCP remote state must remain encrypted, access-controlled, and
+versioned. Always review the remote plan for the exact repositories and secret
+names before applying; do not include secret values in plan summaries.
+
+Pull requests that change `infrastructure/` run the speculative-plan workflow
+in [`.github/workflows/terraform-plan.yml`](../.github/workflows/terraform-plan.yml).
+It uses the trusted base-branch workflow definition, uploads only the PR
+configuration to the existing `harness` workspace, and queues a plan-only HCP
+Terraform run; it never applies. The PR configuration is not run on the GitHub
+runner. Since HCP runs the uploaded Terraform with workspace variables, the
+credential-bearing job runs only for same-repository PRs authored and updated
+by the repository owner. Fork and collaborator PRs do not receive the token or
+run plans against this workspace. Configure a repository variable
+`TF_CLOUD_ORGANIZATION` and an Actions secret `TF_API_TOKEN`. The token should
+belong to a team with Plan access to the `harness` workspace and no Apply access.
+The workflow takes effect for PRs after it has merged to the default branch.
+
 Terraform uses `database_password` when creating the project, but the Supabase
 provider cannot read it back or update it. The resource therefore ignores
 password changes after creation, including when importing an existing project.

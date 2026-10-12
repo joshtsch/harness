@@ -1,0 +1,94 @@
+name: Terraform Plan
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  detect-infrastructure-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      terraform: ${{ steps.filter.outputs.terraform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - id: filter
+        name: Detect Terraform changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed_files="$(git diff --name-only "$BASE_SHA...$HEAD_SHA")"
+          if printf '%s\n' "$changed_files" | grep -Eq '^(infrastructure/|\.github/workflows/terraform-plan\.yml$)'; then
+            echo "terraform=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "terraform=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  speculative-plan:
+    needs: detect-infrastructure-changes
+    if: >-
+      needs.detect-infrastructure-changes.outputs.terraform == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == github.repository_owner &&
+      github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+      TF_CLOUD_ORGANIZATION: ${{ vars.TF_CLOUD_ORGANIZATION }}
+      TF_WORKSPACE: harness
+      CONFIG_DIRECTORY: infrastructure
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Require HCP Terraform plan credentials
+        run: |
+          if [ -z "$TF_API_TOKEN" ]; then
+            echo "Configure the TF_API_TOKEN GitHub Actions secret with a plan-only HCP Terraform team token."
+            exit 1
+          fi
+          if [ -z "$TF_CLOUD_ORGANIZATION" ]; then
+            echo "Configure the TF_CLOUD_ORGANIZATION GitHub Actions variable."
+            exit 1
+          fi
+
+      - name: Upload speculative configuration
+        id: upload
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.2
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+          speculative: true
+
+      - name: Queue speculative plan
+        id: plan
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
+        continue-on-error: true
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
+          plan_only: true
+
+      - name: Link HCP Terraform run
+        if: always()
+        env:
+          RUN_LINK: ${{ steps.plan.outputs.run_link }}
+          PLAN_ACTION_STATUS: ${{ steps.plan.outputs.status }}
+          RUN_STATUS: ${{ steps.plan.outputs.run_status }}
+        run: |
+          if [ -n "$RUN_LINK" ]; then
+            echo "[View speculative plan in HCP Terraform]($RUN_LINK)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "$PLAN_ACTION_STATUS" != "Success" ]; then
+            echo "HCP Terraform plan did not finish successfully (action status: ${PLAN_ACTION_STATUS:-unknown}, run status: ${RUN_STATUS:-unknown})."
+            exit 1
+          fi
