@@ -82,6 +82,7 @@ interface RawConfig {
 export interface LoadProjectsConfigOptions {
   resolveEnvironment?: boolean;
   localConfigPath?: string | null;
+  environment?: Record<string, string | undefined>;
 }
 
 const rawProjectFields = new Set(["remote", "hcp_workspace", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "verification", "workflows"]);
@@ -204,6 +205,7 @@ function parseQuality(value: unknown, label: string): ProjectQualityChecks | und
 
 export async function loadProjectsConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<Record<string, ProjectDefinition>> {
   const resolveEnvironment = options.resolveEnvironment ?? true;
+  const environment = options.environment ?? process.env;
   const localConfigPath = options.localConfigPath === undefined ? defaultLocalConfigPath(filePath) : options.localConfigPath;
   const publicRaw = parse(await readFile(filePath, "utf8"));
   let rawValue = publicRaw;
@@ -232,7 +234,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
     parsedBusinessLines[key] = {
       key,
       displayName: requiredString(value.display_name, `business_lines.${key}.display_name`),
-      toolMappings: parseToolMappings(value.tool_mappings, `business_lines.${key}.tool_mappings`, resolveEnvironment),
+      toolMappings: parseToolMappings(value.tool_mappings, `business_lines.${key}.tool_mappings`, resolveEnvironment, environment),
     };
   }
 
@@ -253,7 +255,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
           if (!parsedBusinessLines[key]) throw new Error(`projects.${name}.business_lines references unknown business line ${key}`);
           return key;
         }),
-        toolMappings: parseToolMappings(definition.tool_mappings, `projects.${name}.tool_mappings`, resolveEnvironment),
+        toolMappings: parseToolMappings(definition.tool_mappings, `projects.${name}.tool_mappings`, resolveEnvironment, environment),
         quality: parseQuality(definition.quality ?? defaults.quality, `projects.${name}.quality`),
         verification: parseCommands(definition.verification ?? defaults.verification, `projects.${name}.verification`, true),
         workflows: parseCommands(definition.workflows ?? defaults.workflows, `projects.${name}.workflows`, false),

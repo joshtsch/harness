@@ -11,6 +11,7 @@ import { createSessionFinalizer, runSessionFinalizationHook, type SessionFinaliz
 import { createSessionOptimizationHook } from "../src/optimization/index.js";
 import { recordSetupEvent } from "../src/session/project-setup.js";
 import { prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisites.js";
+import { loadProjectConfigEnvironment } from "../src/session/index.js";
 
 const executeFile = promisify(execFile);
 const args = process.argv.slice(2);
@@ -19,7 +20,8 @@ const harnessRoot = resolve(".");
 const worktreesDirectory = await resolveWorktreeRoot(harnessRoot);
 await verifyPrerequisites(prerequisitesForProvider(process.env.HARNESS_AGENT_PROVIDER ?? "codex"));
 const { projectList } = input;
-const projects = await loadProjectsConfig(resolve("projects.yml"));
+const projectConfigEnvironment = await loadProjectConfigEnvironment(harnessRoot);
+const projects = await loadProjectsConfig(resolve("projects.yml"), { environment: projectConfigEnvironment });
 const selected = projectList.split(",").map((name) => projects[name]);
 if (selected.some((project) => !project)) throw new Error("Unknown project in session");
 const tracker = selected[0]!.issueTracker;

@@ -40,6 +40,11 @@ required, workflows default to optional. Commands run from the project worktree.
 
 Common defaults may be declared at the top level and overridden per project. Unknown fields and ambiguous project names should be rejected. Secrets and machine-specific values may come from environment variables; they should not be committed to configuration.
 
+During `pnpm setup:session`, `${ENV_VAR}` target references can resolve from the
+process environment or the ignored harness-root `.env` file. Process values take
+precedence. The `.env` values are scoped to configuration loading and are not
+added to the environment inherited by child project setup commands.
+
 `quality` contains one `lint` command and one non-mutating `format` check. Both
 are required checks; `required: false` is rejected. Keep commands native to the
 project's package manager and toolchain. A top-level `defaults.quality` is useful

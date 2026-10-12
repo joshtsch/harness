@@ -405,6 +405,35 @@ describe("loadProjectsConfig", () => {
     });
   });
 
+  it("resolves target IDs from a scoped environment without reading process.env", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "harness-config-"));
+    temporaryDirectories.push(directory);
+    const configPath = join(directory, "projects.yml");
+    await writeFile(configPath, [
+      "defaults:",
+      "  default_branch: main",
+      "  setup_script: scripts/setup.sh",
+      "  issue_tracker:",
+      "    type: github",
+      "projects:",
+      "  example-project:",
+      "    remote: git@github.com:joshtsch/example-project.git",
+      "    tool_mappings:",
+      "      drive:",
+      "        provider: google-drive-workspace",
+      "        targets:",
+      "          - id: ${EXAMPLE_DRIVE_ID}",
+      "            access: read",
+    ].join("\n"));
+
+    const originalDriveId = process.env.EXAMPLE_DRIVE_ID;
+    const projects = await loadProjectsConfig(configPath, { environment: { EXAMPLE_DRIVE_ID: "scoped-drive-id" } });
+    expect(projects["example-project"]?.toolMappings).toEqual({
+      drive: { provider: "google-drive-workspace", targets: [{ id: "scoped-drive-id", access: "read" }] },
+    });
+    expect(process.env.EXAMPLE_DRIVE_ID).toBe(originalDriveId);
+  });
+
   it("requires environment variables for target references", async () => {
     const directory = await mkdtemp(join(tmpdir(), "harness-config-"));
     temporaryDirectories.push(directory);

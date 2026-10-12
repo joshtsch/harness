@@ -190,13 +190,17 @@ output inside the target worktree and out of tracked files. See
 
 ## Host prerequisites
 
-`pnpm check:prereqs` verifies the commands required by harness workflows: Git,
-Node.js, pnpm, npx, the selected agent CLI, `age`, and the Bitwarden CLI. Use
+`pnpm check:prereqs` verifies the commands required by routine harness workflows:
+Git, Node.js, pnpm, npx, the selected agent CLI, and `age`. Use
 `--provider gemini` to select Gemini; Codex is the default. It invokes only
-version commands, so it does not unlock Bitwarden or contact an account.
+version commands.
 `pnpm init:harness` and `pnpm setup:session` run the same fast check before
 continuing. The checker reports installation guidance and never installs
 missing tools automatically.
+
+The Bitwarden CLI is needed only for explicit secure-record and key operations.
+Those commands report their own missing-tool errors when invoked; routine setup
+reads local runtime configuration from `.env` through dotenv, not from Bitwarden.
 
 For local development, link a skill with:
 
