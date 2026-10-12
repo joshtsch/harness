@@ -111,11 +111,14 @@ names before applying; do not include secret values in plan summaries.
 
 Pull requests that change `infrastructure/` run the speculative-plan workflow
 in [`.github/workflows/terraform-plan.yml`](../.github/workflows/terraform-plan.yml).
-It uploads the configuration to the existing `harness` workspace and queues a
-plan-only HCP Terraform run; it never applies. Configure a repository variable
-`TF_CLOUD_ORGANIZATION` and an Actions secret `TF_API_TOKEN`. The token should
-belong to a team with Plan access to the `harness` workspace and no Apply access.
-Fork pull requests do not receive the token and therefore do not run this plan.
+It uses the trusted base-branch workflow definition, uploads only the PR
+configuration to the existing `harness` workspace, and queues a plan-only HCP
+Terraform run; it never applies. The PR configuration is not run on the GitHub
+runner. Configure a repository variable `TF_CLOUD_ORGANIZATION` and an Actions
+secret `TF_API_TOKEN`. The token should belong to a team with Plan access to the
+`harness` workspace and no Apply access. Fork pull requests do not receive the
+token and therefore do not run this plan. The workflow takes effect for PRs
+after it has merged to the default branch.
 
 Terraform uses `database_password` when creating the project, but the Supabase
 provider cannot read it back or update it. The resource therefore ignores
