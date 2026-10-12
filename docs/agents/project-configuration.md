@@ -23,6 +23,8 @@ Each project entry should identify:
 - its optional business-line memberships and project-level tool mappings;
 - its optional child-wiki description, topics, and paths (`wiki.pages`, `wiki.raw`, and `wiki.templates`);
 - the project-owned `scripts/setup.sh`;
+- required project-specific lint and format checks (`quality.lint` and
+  `quality.format`);
 - verification and other optional workflow commands.
 
 Verification commands use `verification`, and optional commands use `workflows`.
@@ -30,6 +32,35 @@ Each entry has `command`, `args`, and optional `required`; verification defaults
 required, workflows default to optional. Commands run from the project worktree.
 
 Common defaults may be declared at the top level and overridden per project. Unknown fields and ambiguous project names should be rejected. Secrets and machine-specific values may come from environment variables; they should not be committed to configuration.
+
+`quality` contains one `lint` command and one non-mutating `format` check. Both
+are required checks; `required: false` is rejected. Keep commands native to the
+project's package manager and toolchain. A top-level `defaults.quality` is useful
+only when its commands apply to every project that inherits it. Otherwise set
+the commands per project. Session preparation and direct worktree creation run
+both checks as required verification before optional workflows; a missing
+quality configuration blocks either setup path.
+
+For example, a Python project using Ruff can configure:
+
+```yaml
+quality:
+  lint:
+    command: uv
+    args: [run, ruff, check, .]
+  format:
+    command: uv
+    args: [run, ruff, format, --check, .]
+```
+
+The `format` command must check formatting without modifying files. For other
+stacks, use the matching package manager and project-native tools; onboarding
+examples are listed in [repository intake](repository-intake.md#quality-and-formatting).
+
+The project owns the rule files, tool dependencies, setup behavior, and CI
+workflow. CI should run the same lint and format checks and make them required
+for changes to merge. The harness runs the configured commands in every session
+worktree, so local and agent changes receive the same checks.
 
 Projects with a durable agent wiki declare a short `wiki.description`, a
 non-empty `wiki.topics` list, and its relative paths under `wiki`. Run

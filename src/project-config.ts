@@ -22,6 +22,11 @@ export interface WorkflowCommand {
   required: boolean;
 }
 
+export interface ProjectQualityChecks {
+  lint: WorkflowCommand;
+  format: WorkflowCommand;
+}
+
 export interface ProjectWiki {
   description: string;
   topics: string[];
@@ -40,8 +45,16 @@ export interface ProjectDefinition {
   wiki?: ProjectWiki;
   businessLines?: string[];
   toolMappings?: Record<string, ToolMapping>;
+  quality?: ProjectQualityChecks;
   verification: WorkflowCommand[];
   workflows: WorkflowCommand[];
+}
+
+export function requireProjectQuality(project: ProjectDefinition): ProjectQualityChecks {
+  if (!project.quality) {
+    throw new Error(`project ${project.name} must configure required lint and format checks before session setup; see docs/agents/repository-intake.md#quality-and-formatting`);
+  }
+  return project.quality;
 }
 
 interface RawProject {
@@ -53,6 +66,7 @@ interface RawProject {
   wiki?: unknown;
   business_lines?: unknown;
   tool_mappings?: unknown;
+  quality?: unknown;
   verification?: unknown;
   workflows?: unknown;
 }
@@ -68,13 +82,14 @@ export interface LoadProjectsConfigOptions {
   localConfigPath?: string | null;
 }
 
-const rawProjectFields = new Set(["remote", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "verification", "workflows"]);
-const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "verification", "workflows"]);
+const rawProjectFields = new Set(["remote", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "verification", "workflows"]);
+const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "quality", "verification", "workflows"]);
 const businessLineFields = new Set(["display_name", "tool_mappings"]);
 const issueTrackerFields = new Set(["type", "repository"]);
 const crmFields = new Set(["type"]);
 const wikiFields = new Set(["description", "topics", "pages", "raw", "templates"]);
 const workflowCommandFields = new Set(["command", "args", "required"]);
+const qualityFields = new Set(["lint", "format"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -172,6 +187,19 @@ function parseCommands(value: unknown, label: string, required: boolean): Workfl
   });
 }
 
+function parseQuality(value: unknown, label: string): ProjectQualityChecks | undefined {
+  if (value === undefined) return undefined;
+  assertKnownFields(value, qualityFields, label);
+  const parseCheck = (name: "lint" | "format"): WorkflowCommand => {
+    if (value[name] === undefined) throw new Error(`${label}.${name} is required`);
+    const command = parseCommands([value[name]], `${label}.${name}`, true)[0];
+    if (!command) throw new Error(`${label}.${name} is required`);
+    if (!command.required) throw new Error(`${label}.${name}.required must be true`);
+    return command;
+  };
+  return { lint: parseCheck("lint"), format: parseCheck("format") };
+}
+
 export async function loadProjectsConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<Record<string, ProjectDefinition>> {
   const resolveEnvironment = options.resolveEnvironment ?? true;
   const localConfigPath = options.localConfigPath === undefined ? defaultLocalConfigPath(filePath) : options.localConfigPath;
@@ -223,6 +251,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
           return key;
         }),
         toolMappings: parseToolMappings(definition.tool_mappings, `projects.${name}.tool_mappings`, resolveEnvironment),
+        quality: parseQuality(definition.quality ?? defaults.quality, `projects.${name}.quality`),
         verification: parseCommands(definition.verification ?? defaults.verification, `projects.${name}.verification`, true),
         workflows: parseCommands(definition.workflows ?? defaults.workflows, `projects.${name}.workflows`, false),
       } satisfies ProjectDefinition];

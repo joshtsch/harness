@@ -1,4 +1,4 @@
-import type { ProjectDefinition, SessionContext, WorkflowCommand } from "../project-config.js";
+import { requireProjectQuality, type ProjectDefinition, type SessionContext, type WorkflowCommand } from "../project-config.js";
 import { ensureProjectClone, type ProjectClone } from "./project-clone.js";
 import { createProjectWorktree, type WorktreeProject, type WorktreeResult } from "./worktree.js";
 import { recordSetupEvent, runProjectCommands, runProjectSetupSession, verifyProjectReady, type ProjectSetupOptions, type SetupCommandRunner, type SetupSessionResult, type SetupStep, type SetupFailure, type VerificationOptions } from "./project-setup.js";
@@ -91,6 +91,7 @@ function defaultAdapters(options: SessionPreparationOptions): SessionPreparation
 
 export async function prepareSession(options: SessionPreparationOptions, adapters: SessionPreparationAdapters = defaultAdapters(options)): Promise<SessionPreparationResult> {
   if (!/^\d+$/.test(options.issueKey)) throw new Error("issue-bound session requires a tracker issue key");
+  for (const project of options.selected) requireProjectQuality(project);
   const projects: ProjectPreparation[] = options.selected.map((project) => ({ project, state: { status: "pending" } }));
   const writeManifest = (status: string, failure?: PreparationFailure) => adapters.writeManifest(status, projectStates(projects), failure);
   const eventOptions = { logDirectory: options.logDirectory, sessionId: options.session.sessionId };
@@ -171,12 +172,16 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
     const { project, setupOptions, worktree } = preparation;
     try {
       await adapters.verifyProject(worktree!.path, options.run);
-      const optionalFailures = await adapters.runCommands([...project.verification, ...project.workflows], {
+      const quality = requireProjectQuality(project);
+      const verificationOptions = {
         project,
         worktreePath: worktree!.path,
         options: setupOptions!,
         run: options.run,
-      });
+      };
+      await adapters.runCommands([quality.lint, quality.format], verificationOptions);
+      await adapters.verifyProject(worktree!.path, options.run);
+      const optionalFailures = await adapters.runCommands([...project.verification, ...project.workflows], verificationOptions);
       if (optionalFailures.length > 0) {
         preparation.state = { ...preparation.state, optionalFailures: optionalFailures.map(({ error }) => String(error)) };
         await writeManifest("running");
