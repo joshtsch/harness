@@ -7,13 +7,9 @@ const prerequisites: HarnessPrerequisite[] = [
 ];
 
 describe("harness prerequisites", () => {
-  it("includes the Bitwarden CLI without requiring account access", () => {
-    expect(harnessPrerequisites).toContainEqual({
-      name: "Bitwarden CLI",
-      command: "bw",
-      args: ["--version"],
-      installHint: "Install the Bitwarden CLI from https://bitwarden.com/help/cli/.",
-    });
+  it("does not require Bitwarden for routine harness workflows", () => {
+    expect(harnessPrerequisites.map(({ command }) => command)).not.toContain("bw");
+    expect(prerequisitesForProvider("gemini").map(({ command }) => command)).not.toContain("bw");
   });
 
   it("checks only the selected agent provider", () => {

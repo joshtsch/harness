@@ -32,7 +32,7 @@ describe("session startup with real Git", () => {
     await git("init", "--bare", "--initial-branch=main", remote);
     await git("init", "--initial-branch=main", seed);
     await mkdir(join(seed, "scripts"));
-    await writeFile(join(seed, "scripts/setup.sh"), "#!/bin/sh\nif [ -n \"${FIXTURE_DRIVE_ID:-}\" ] || [ -n \"${UNRELATED_ENV_VALUE:-}\" ]; then exit 1; fi\nexit 0\n");
+    await writeFile(join(seed, "scripts/setup.sh"), "#!/bin/sh\nif [ \"${FIXTURE_DRIVE_ID:-}\" = \"fixture-drive-id\" ] || [ \"${UNRELATED_ENV_VALUE:-}\" = \"fixture-value\" ]; then exit 1; fi\nexit 0\n");
     await writeFile(join(seed, "AGENTS.md"), "Project fixture rules.\n");
     await git("-C", seed, "add", ".");
     await git("-C", seed, "commit", "-m", "Fixture");
