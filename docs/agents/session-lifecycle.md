@@ -63,6 +63,12 @@ sensitive-content scanner rejects likely secrets or PII; callers must still
 review goal text because pattern checks cannot prove it safe.
 The purpose comes from the resolved issue title; a goal is supplied separately.
 
+Session setup resolves project configuration references from the process
+environment first, then from the ignored harness-root `.env` file. Values are
+passed only to project configuration parsing; `.env` is not loaded into
+`process.env` or inherited by child setup commands. Keep `.env` local and never
+include its contents in session notes or logs.
+
 The manifest and generated session instructions live under
 `docs/.scratch/setup/<session-id>/`. The manifest's `agentInstructions` field
 points to the adjacent `AGENTS.md`, and successful setup prints its path.

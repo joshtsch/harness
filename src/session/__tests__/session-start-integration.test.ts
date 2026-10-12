@@ -32,7 +32,7 @@ describe("session startup with real Git", () => {
     await git("init", "--bare", "--initial-branch=main", remote);
     await git("init", "--initial-branch=main", seed);
     await mkdir(join(seed, "scripts"));
-    await writeFile(join(seed, "scripts/setup.sh"), "#!/bin/sh\nexit 0\n");
+    await writeFile(join(seed, "scripts/setup.sh"), "#!/bin/sh\nif [ -n \"${FIXTURE_DRIVE_ID:-}\" ] || [ -n \"${UNRELATED_ENV_VALUE:-}\" ]; then exit 1; fi\nexit 0\n");
     await writeFile(join(seed, "AGENTS.md"), "Project fixture rules.\n");
     await git("-C", seed, "add", ".");
     await git("-C", seed, "commit", "-m", "Fixture");
@@ -91,7 +91,8 @@ describe("session startup with real Git", () => {
 
   it("writes the explicit goal to the manifest and session AGENTS.md through the CLI", async () => {
     const head = await advanceRemote();
-    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n    repository: example/fixture\n  quality:\n    lint:\n      command: node\n      args: [--version]\n    format:\n      command: node\n      args: [--version]\nprojects:\n  example-project:\n    remote: ${remote}\n`);
+    await writeFile(join(root, ".env"), "FIXTURE_DRIVE_ID=fixture-drive-id\nUNRELATED_ENV_VALUE=fixture-value\n");
+    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n    repository: example/fixture\n  quality:\n    lint:\n      command: node\n      args: [--version]\n    format:\n      command: node\n      args: [--version]\nprojects:\n  example-project:\n    remote: ${remote}\n    tool_mappings:\n      drive:\n        provider: google-drive-workspace\n        targets:\n          - id: \${FIXTURE_DRIVE_ID}\n            access: read\n`);
     const bin = join(root, "bin");
     await mkdir(bin);
     for (const command of ["pnpm", "npx", "codex", "age", "bw"]) await writeFile(join(bin, command), "#!/bin/sh\nprintf 'fixture-version\\n'\n", { mode: 0o755 });

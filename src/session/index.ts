@@ -1,4 +1,5 @@
 export { ensureProjectClone } from "./project-clone.js";
+export { loadProjectConfigEnvironment } from "./local-environment.js";
 export type { ProjectClone } from "./project-clone.js";
 export * from "./project-setup.js";
 export * from "./session-evaluation.js";

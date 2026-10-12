@@ -63,16 +63,26 @@ function requiredString(value: unknown, label: string): string {
   return value;
 }
 
-function resolveTargetId(value: unknown, label: string, resolveEnvironment: boolean): string {
+function resolveTargetId(
+  value: unknown,
+  label: string,
+  resolveEnvironment: boolean,
+  environment: Record<string, string | undefined>,
+): string {
   const id = requiredString(value, label);
   const reference = /^\$\{([A-Z][A-Z0-9_]*)\}$/.exec(id);
   if (!reference || !resolveEnvironment) return id;
-  const resolved = process.env[reference[1]]?.trim();
+  const resolved = environment[reference[1]]?.trim();
   if (!resolved) throw new Error(`${label} environment variable ${reference[1]} must be set`);
   return resolved;
 }
 
-export function parseToolMappings(value: unknown, label: string, resolveEnvironment = true): Record<string, ToolMapping> {
+export function parseToolMappings(
+  value: unknown,
+  label: string,
+  resolveEnvironment = true,
+  environment: Record<string, string | undefined> = process.env,
+): Record<string, ToolMapping> {
   if (value === undefined) return {};
   if (!isRecord(value)) throw new Error(`${label} must be a mapping`);
   return Object.fromEntries(Object.entries(value).map(([tool, mapping]) => {
@@ -83,7 +93,7 @@ export function parseToolMappings(value: unknown, label: string, resolveEnvironm
     }
     const targets = mapping.targets.map((target, index) => {
       assertKnownFields(target, toolTargetFields, `${label}.${tool}.targets[${index}]`);
-      const id = resolveTargetId(target.id, `${label}.${tool}.targets[${index}].id`, resolveEnvironment);
+      const id = resolveTargetId(target.id, `${label}.${tool}.targets[${index}].id`, resolveEnvironment, environment);
       if (!toolAccesses.has(target.access as ToolAccess)) {
         throw new Error(`${label}.${tool}.targets[${index}].access must be read, write, or read_write`);
       }
