@@ -132,6 +132,7 @@ describe("loadProjectsConfig", () => {
       "projects:",
       "  example-project:",
       "    remote: https://github.com/local/project.git",
+      "    hcp_workspace: example-project",
       "    verification:",
       "      - command: pnpm",
       "        args: [typecheck]",
@@ -140,6 +141,7 @@ describe("loadProjectsConfig", () => {
     await expect(loadProjectsConfig(join(directory, "projects.yml"))).resolves.toMatchObject({
       "example-project": {
         remote: "https://github.com/local/project.git",
+        hcpWorkspace: "example-project",
         setupScript: "scripts/local-setup.sh",
         verification: [{ command: "pnpm", args: ["typecheck"], required: true }],
       },

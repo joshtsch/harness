@@ -12,6 +12,7 @@
 *.tfstate
 *.tfstate.*
 .terraform.tfstate.lock.info
+/infrastructure/hcp/onboarding.auto.tfvars
 .vscode/
 .env
 .env.*

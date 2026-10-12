@@ -4,6 +4,11 @@ import { createProjectsLocalProjection, mergeProjectsLocal, persistProjectsLocal
 import type { ArtifactContent } from "../continuation.js";
 
 describe("projects.local portable projection", () => {
+  it("preserves the HCP workspace selected for a Terraform project", () => {
+    const result = createProjectsLocalProjection("projects:\n  app:\n    hcp_workspace: app-infrastructure\n    local_workspace: /private/tmp/workspace\n", Buffer.alloc(32, 9));
+    expect(result).toContain("hcp_workspace: app-infrastructure");
+    expect(result).not.toContain("local_workspace");
+  });
   it("keeps portable user metadata while excluding credentials and machine paths", () => {
     const source = `projects:\n  private-wiki:\n    remote: git@github.com:private-org/private-wiki.git\n    default_branch: trunk\n    setup_script: scripts/setup.sh\n    issue_tracker:\n      type: github\n      repository: private-org/private-wiki\n    tool_mappings:\n      calendar:\n        targets: [{ id: private-calendar-id, access: read }]\n`;
     const projection = createProjectsLocalProjection(source, Buffer.alloc(32, 9));
