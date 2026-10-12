@@ -22,7 +22,6 @@ export const harnessPrerequisites: HarnessPrerequisite[] = [
   { name: "npx", command: "npx", args: ["--version"], installHint: "Install Node.js; npx is included with npm." },
   { name: "Codex CLI", command: "codex", args: ["--version"], installHint: "Install and authenticate the Codex CLI for this host." },
   { name: "age", command: "age", args: ["--version"], installHint: "Install age from https://github.com/FiloSottile/age#installation." },
-  { name: "Bitwarden CLI", command: "bw", args: ["--version"], installHint: "Install the Bitwarden CLI from https://bitwarden.com/help/cli/." },
 ];
 
 const geminiPrerequisite: HarnessPrerequisite = {
