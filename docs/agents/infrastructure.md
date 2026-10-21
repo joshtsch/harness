@@ -91,3 +91,49 @@ before reporting the infrastructure task complete. For a resource that remains
 unsupported, document ownership, the ongoing management path, and a follow-up
 condition for importing it if provider support becomes available. Keep secrets,
 raw responses, and private account details out of issues and session notes.
+
+### Supabase organizations
+
+As of 21 October 2026, the Supabase Terraform provider manages projects and
+project-level resources, but has no organization resource. Keep project
+infrastructure in Terraform and use the Supabase CLI only for organization
+operations the provider cannot manage. Recheck the
+[provider resource reference](https://supabase.com/docs/guides/deployment/terraform/reference)
+before relying on this gap; provider coverage can change. If the provider adds
+organization support, assess importing existing organizations into Terraform
+and move their ongoing management there when safe.
+
+Treat a Supabase organization as a billing and membership boundary. Put projects
+in the same organization when they share ownership, access, and billing; create
+another organization when one of those boundaries needs separation. A project
+or environment does not need its own organization by default. Each Supabase
+project is an independent instance; environments that need isolation should
+generally use separate projects in the same org.
+
+To inspect available organizations, authenticate as a member of the intended
+Supabase account, then run:
+
+```sh
+supabase login
+supabase orgs list
+```
+
+`supabase login` prompts for a personal access token and stores it in native
+credentials storage when available. Otherwise, the CLI writes it to
+`~/.supabase/access-token`; protect that local file. Do not pass the token as a
+command-line argument or save it in the repository. See the
+[CLI login reference](https://supabase.com/docs/reference/cli/supabase-login)
+for token storage details.
+
+To create an organization, first confirm the intended owner/account, name,
+membership, and billing boundary. Check `supabase orgs create --help` against the
+installed CLI version, then run `supabase orgs create` and complete its prompts.
+This creates an organization for the signed-in user; manage its members through
+the Supabase dashboard. Before using this write,
+follow the [unsupported-operation fallback procedure](#unsupported-operations-and-recovery)
+and obtain explicit authorization for the specific organization. Do not put
+access tokens or private account details in issues or session notes.
+
+Use the organization ID or slug shown by the CLI when configuring a
+`supabase_project` resource. The CLI commands are documented in the
+[Supabase CLI reference](https://supabase.com/docs/reference/cli/supabase-orgs).
