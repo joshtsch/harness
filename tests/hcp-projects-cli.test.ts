@@ -5,7 +5,8 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("HCP project onboarding CLI", () => {
-  it.each(["absent", "ordinary", "template"])("plans without applying and forwards contacts safely: %s", (kind) => {
+  it.each(["absent", "ordinary", "template", "apply"])("forwards explicit private run inputs safely: %s", (kind) => {
+    const action = kind === "apply" ? "apply" : "plan";
     const withContacts = kind !== "absent";
     const contacts = { "app-isolated": [kind === "template" ? "private${@}contact%{marker}" : "operations", "example.invalid"].join("@") };
     const providerCredential = ["synthetic", kind === "template" ? "${@}%{marker}" : "credential"].join("-");
@@ -18,21 +19,24 @@ describe("HCP project onboarding CLI", () => {
       mkdirSync(bin);
       writeFileSync(join(config, "projects.yml"), "defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\nprojects: {}\n");
       writeFileSync(join(config, "projects.local.yml"), "projects:\n  app:\n    remote: git@github.com:example/app.git\n    hcp_workspace: app-infrastructure\n    hcp_organization: app-isolated\n");
-      writeFileSync(join(bin, "terraform"), "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$HCP_TEST_LOG\"\nif [ \"$2\" = plan ]; then cat \"$HCP_TEST_VARS\" >> \"$HCP_TEST_LOG\"; fi\n", { mode: 0o700 });
+      writeFileSync(join(bin, "terraform"), "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$HCP_TEST_LOG\"\nprintf 'cloud=%s workspace=%s\\n' \"$TF_CLOUD_ORGANIZATION\" \"$TF_WORKSPACE\" >> \"$HCP_TEST_LOG\"\nif [ \"$2\" = plan ] || [ \"$2\" = apply ]; then cat \"$HCP_TEST_VARS\" >> \"$HCP_TEST_LOG\"; fi\n", { mode: 0o700 });
 
-      const result = spawnSync(process.execPath, ["--import", "tsx", "scripts/hcp-projects.ts", "plan", "--config-root", config], {
+      const result = spawnSync(process.execPath, ["--import", "tsx", "scripts/hcp-projects.ts", action, "--config-root", config], {
         cwd: resolve("."),
         encoding: "utf8",
-        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TF_VAR_tfe_organization: "synthetic", TFE_TOKEN: kind === "absent" ? "" : providerCredential, TF_VAR_project_organization_admin_emails: withContacts ? JSON.stringify(contacts) : "", HCP_TEST_LOG: log, HCP_TEST_VARS: resolve("infrastructure/hcp/onboarding.auto.tfvars") },
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TF_VAR_tfe_organization: "synthetic", TF_WORKSPACE: "wrong-workspace", TFE_TOKEN: kind === "absent" ? "" : providerCredential, TF_VAR_project_organization_admin_emails: withContacts ? JSON.stringify(contacts) : "", HCP_TEST_LOG: log, HCP_TEST_VARS: resolve("infrastructure/hcp/onboarding.auto.tfvars") },
       });
       expect(result.status).toBe(0);
       const calls = readFileSync(log, "utf8");
       expect(calls).toContain(" init ");
-      expect(calls).toContain(" plan -input=false");
+      expect(calls).toContain(` ${action} -var-file=onboarding.auto.tfvars${action === "plan" ? " -input=false" : ""}`);
+      expect(calls).toContain("cloud=synthetic workspace=\n");
+      expect(calls).not.toContain("wrong-workspace");
+      expect(calls).not.toContain("-backend-config");
       expect(calls).toContain('project_workspace_names = ["app-infrastructure"]');
       expect(calls).toContain('project_workspace_organizations = {"app-infrastructure":"app-isolated"}');
       expect(calls).toContain('project_organization_names = ["app-isolated"]');
-      expect(calls).not.toContain(" apply");
+      if (action === "plan") expect(calls).not.toContain(" apply");
       expect(calls.includes("project_organization_admin_emails =")).toBe(withContacts);
       expect(calls.includes("tfe_provider_token =")).toBe(withContacts);
       if (kind === "ordinary") expect(calls).toContain(`project_organization_admin_emails = ${JSON.stringify(contacts)}`);

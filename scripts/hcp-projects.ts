@@ -1,6 +1,5 @@
 #!/usr/bin/env tsx
-import { mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { unlink, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { loadProjectsConfig } from "../src/project-config.js";
@@ -56,13 +55,10 @@ try {
   const names = inventory.workspaceNames;
   if (names.length === 0) throw new Error("No Terraform projects are configured; refusing an empty workspace inventory");
 
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), "harness-hcp-projects-"));
   const terraformRoot = resolve("infrastructure/hcp");
   const variables = join(terraformRoot, "onboarding.auto.tfvars");
   let wroteVariables = false;
   try {
-    const backend = join(temporaryDirectory, "bootstrap.tfbackend");
-    await writeFile(backend, `organization = ${JSON.stringify(organization)}\nworkspaces { name = "platform-bootstrap" }\n`, { mode: 0o600 });
     await writeFile(variables, [
       `project_workspace_names = ${JSON.stringify(names)}`,
       `project_workspace_organizations = ${JSON.stringify(inventory.workspaceOrganizations)}`,
@@ -71,15 +67,18 @@ try {
       ...(providerCredential ? [`tfe_provider_token = ${hclLiteral(providerCredential)}`] : []),
     ].join("\n") + "\n", { mode: 0o600, flag: "wx" });
     wroteVariables = true;
-    const environment = {
+    const environment: NodeJS.ProcessEnv = {
       ...process.env,
       TF_VAR_tfe_organization: organization,
+      TF_CLOUD_ORGANIZATION: organization,
     };
-    await run("terraform", [`-chdir=${terraformRoot}`, "init", "-input=false", `-backend-config=${backend}`], environment);
-    await run("terraform", [`-chdir=${terraformRoot}`, action, ...(action === "plan" ? ["-input=false"] : [])], environment);
+    // The named cloud workspace is pinned in configuration. A CLI workspace
+    // override breaks migration from the single-workspace remote backend.
+    delete environment.TF_WORKSPACE;
+    await run("terraform", [`-chdir=${terraformRoot}`, "init", "-input=false"], environment);
+    await run("terraform", [`-chdir=${terraformRoot}`, action, "-var-file=onboarding.auto.tfvars", ...(action === "plan" ? ["-input=false"] : [])], environment);
   } finally {
     if (wroteVariables) await unlink(variables);
-    await rm(temporaryDirectory, { recursive: true, force: true });
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
