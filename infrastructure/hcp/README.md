@@ -115,6 +115,32 @@ imported into its corresponding resource address before apply. Configure
 `project_organization_admin_emails` as a protected HCL map before planning any
 new organization. Its keys must cover every organization being created.
 
+### CLI import prerequisites
+
+CLI import runs the provider locally, even with remote state. Supply a local
+`TFE_TOKEN` user token from protected custody, with the same cross-organization
+permissions described above. Workspace environment variables are not available
+to this local provider process.
+
+Before importing, load the complete intended inventory into local environment
+variables `TF_VAR_project_workspace_names`,
+`TF_VAR_project_workspace_organizations`, and
+`TF_VAR_project_organization_names`, using JSON values derived from the same
+merged project configuration used by onboarding. Load
+`TF_VAR_project_organization_admin_emails` from protected custody as a JSON map,
+and retain `TF_VAR_tfe_organization` for the existing control-plane organization.
+Remote workspace variables alone do not supply these local import inputs.
+Keep values inside the process environment; never print them or paste them into
+shell command arguments, tracked files, or public logs. Unset the temporary
+inventory, contact, and token variables when adoption is complete.
+
+Initialize the remote backend as described under State and credentials. Keep
+these local inputs present for each `terraform state list` and `terraform import`
+command below. The onboarding CLI removes its temporary tfvars after each run,
+so invoking it beforehand does not leave import inputs behind. An omitted
+inventory leaves the default project resource maps empty and cannot import a
+project instance.
+
 For an existing project organization, inspect state before adoption. Import it
 before planning so Terraform does not attempt to recreate it:
 

@@ -48,6 +48,18 @@ resource "tfe_workspace_settings" "project" {
 data "tfe_workspace" "platform_bootstrap" {
   name         = "platform-bootstrap"
   organization = var.tfe_organization
+
+  # Cross-input checks use preconditions to support Terraform 1.6.
+  lifecycle {
+    precondition {
+      condition     = alltrue([for workspace, organization in var.project_workspace_organizations : contains(var.project_workspace_names, workspace) && contains(var.project_organization_names, organization)])
+      error_message = "Dedicated organization mappings must reference configured project workspaces and managed project organizations."
+    }
+    precondition {
+      condition     = !contains(var.project_organization_names, var.tfe_organization)
+      error_message = "Project organizations must be distinct from the existing control-plane organization."
+    }
+  }
 }
 
 # Persist run-specific onboarding input for later remote plans.

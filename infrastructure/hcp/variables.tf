@@ -29,10 +29,6 @@ variable "project_workspace_organizations" {
   description = "Project workspaces assigned to dedicated HCP Terraform organizations; omitted workspaces use tfe_organization."
   type        = map(string)
   default     = {}
-  validation {
-    condition     = alltrue([for workspace, organization in var.project_workspace_organizations : contains(var.project_workspace_names, workspace) && contains(var.project_organization_names, organization)])
-    error_message = "Dedicated organization mappings must reference configured project workspaces and managed project organizations."
-  }
 }
 
 variable "project_organization_names" {
@@ -40,8 +36,8 @@ variable "project_organization_names" {
   type        = set(string)
   default     = []
   validation {
-    condition     = alltrue([for name in var.project_organization_names : can(regex("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,89}$", name)) && name != var.tfe_organization])
-    error_message = "Project organization names must be valid and distinct from the control-plane organization."
+    condition     = alltrue([for name in var.project_organization_names : can(regex("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,89}$", name))])
+    error_message = "Project organization names must be valid HCP organization names."
   }
 }
 

@@ -82,5 +82,24 @@ run "reject_unmanaged_organization_mapping" {
     project_workspace_names         = ["finance-state"]
     project_workspace_organizations = { "finance-state" = "missing-org" }
   }
-  expect_failures = [var.project_workspace_organizations]
+  expect_failures = [data.tfe_workspace.platform_bootstrap]
+}
+
+run "reject_unknown_workspace_mapping" {
+  command = plan
+  variables {
+    project_workspace_organizations   = { "missing-state" = "finance-org" }
+    project_organization_names        = ["finance-org"]
+    project_organization_admin_emails = { "finance-org" = format("%s@%s", "finance", "example.invalid") }
+  }
+  expect_failures = [data.tfe_workspace.platform_bootstrap]
+}
+
+run "reject_control_plane_organization" {
+  command = plan
+  variables {
+    project_organization_names        = ["synthetic-organization"]
+    project_organization_admin_emails = { "synthetic-organization" = format("%s@%s", "admin", "example.invalid") }
+  }
+  expect_failures = [data.tfe_workspace.platform_bootstrap]
 }
