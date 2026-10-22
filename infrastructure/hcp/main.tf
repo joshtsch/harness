@@ -93,3 +93,17 @@ resource "tfe_variable" "project_organization_names" {
   hcl          = true
   description  = "HCP organizations managed for registered projects. Managed by project onboarding."
 }
+
+resource "tfe_variable" "project_organization_admin_emails" {
+  workspace_id = data.tfe_workspace.platform_bootstrap.id
+  key          = "project_organization_admin_emails"
+  value        = jsonencode(var.project_organization_admin_emails)
+  category     = "terraform"
+  hcl          = true
+  sensitive    = true
+  description  = "Protected organization contacts managed by project onboarding."
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}

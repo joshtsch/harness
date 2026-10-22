@@ -48,6 +48,10 @@ run "dedicated_organizations" {
     condition     = tfe_workspace.project["finance-state"].organization == "finance-org" && tfe_workspace.project["tax-state"].organization == "tax-org"
     error_message = "Each project workspace must use its configured organization."
   }
+  assert {
+    condition     = tfe_variable.project_organization_admin_emails.sensitive && tfe_variable.project_organization_admin_emails.hcl && tfe_variable.project_organization_admin_emails.category == "terraform" && tfe_variable.project_organization_admin_emails.workspace_id == data.tfe_workspace.platform_bootstrap.id && tfe_variable.project_organization_admin_emails.value == jsonencode(var.project_organization_admin_emails)
+    error_message = "Organization contacts must persist as a protected HCL input in the bootstrap workspace."
+  }
 }
 
 
