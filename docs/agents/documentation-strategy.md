@@ -28,6 +28,22 @@ For placement decisions, use the harness [`knowledge-routing` skill](../../harne
 6. Keep transient handoffs and recovery metadata in ignored `docs/.scratch/`.
 7. Run `pnpm check:docs` before review.
 
+For newly learned operational facts and user corrections, record the source and
+confirmation date with the fact, and ensure later work can retrieve it through
+the relevant project configuration, index, or focused documentation pointer.
+Distinguish user-confirmed facts from independently verified observations; label
+uncertain claims before relying on them. Update an existing authoritative record
+when correcting a fact. Follow the applicable contribution and write-authorization
+gates; when capture is blocked, report the blocker and keep the fact provisional
+in session scratch.
+
+Keep private domain, account, and provider mappings in the ignored project
+configuration overlay and its encrypted portable record. Keep credentials in
+external custody or environment configuration. Apply
+[Secrets and PII safety](data-safety.md) before writing provenance or facts.
+The public harness records general rules and procedures; project-specific facts
+belong with their owning project.
+
 To retrieve harness wiki knowledge, read `docs/llm-wiki-harness/wiki/index.md`
 and search the wiki pages under that directory. For child wiki knowledge, run
 `pnpm wikis --json`, match the declared topics, then inspect the selected wiki's
