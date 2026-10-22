@@ -15,6 +15,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | Triage labels and workflow | [triage-labels.md](triage-labels.md) |
 | Domain glossary and ADR consumption | [domain.md](domain.md) |
 | Tool intake and MCP inventory | [tooling.md](tooling.md) |
+| DNS failures, connection errors, and stalled network commands | [Sandbox network troubleshooting](tooling.md#sandbox-network-troubleshooting) |
 | Application deployment | [tooling.md](tooling.md#deployment) |
 | User-scoped decision memory | [decision-memory.md](decision-memory.md) |
 | Agent role routing | [agent-roles.md](agent-roles.md) |
