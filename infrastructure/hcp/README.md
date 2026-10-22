@@ -25,20 +25,37 @@ below. Existing installations without that input retain the provider's
 `TFE_TOKEN` environment or CLI credential fallback. Never commit the token or
 a local state file.
 
-Create a temporary backend configuration file outside the repository:
+The `cloud` integration uses the existing organization from
+`TF_CLOUD_ORGANIZATION` and pins the workspace to `platform-bootstrap`.
+Onboarding derives that organization from `TF_VAR_tfe_organization`. For manual
+initialization, first confirm that this organization already contains the
+intended workspace, then run:
 
 ```sh
-export TF_VAR_tfe_organization="$TFE_ORGANIZATION"
+export TF_CLOUD_ORGANIZATION="$TF_VAR_tfe_organization"
+unset TF_WORKSPACE
 cd infrastructure/hcp
-cat > /tmp/harness-platform-bootstrap.tfbackend <<EOF
-organization = "$TF_VAR_tfe_organization"
-workspaces {
-  name = "platform-bootstrap"
-}
-EOF
-terraform init -backend-config=/tmp/harness-platform-bootstrap.tfbackend
-rm /tmp/harness-platform-bootstrap.tfbackend
+terraform init -input=false
 ```
+
+### Existing remote-backend installations
+
+Replacing the legacy `remote` backend with `cloud` retains the same HCP
+organization, workspace, state, and locking. Before initialization, record the
+existing workspace ID and state lineage/serial privately; verify they are
+unchanged afterward. Run `terraform init` once with interactive input to approve
+this same-workspace connection migration; unattended `-input=false` runs cannot
+approve that first transition. Later onboarding runs initialize noninteractively.
+Stop if initialization selects a different workspace or
+requests creation of a new one. No state push, move, or resource import is
+needed for this connection change. See HashiCorp's
+[remote-backend migration guide](https://developer.hashicorp.com/terraform/cli/cloud/settings#migrate-remote-backend).
+
+To roll back the connection, restore the previous `backend "remote"` block and
+initialize it with the same private organization and `platform-bootstrap`
+workspace settings. Resource state remains in that workspace. The legacy
+backend cannot accept explicit run variables, so inventory updates require the
+cloud path described here.
 
 ## First adoption
 
@@ -86,12 +103,16 @@ use an HCP account with plan/apply access. The TFE provider token must be a user
 token for an account with organization-creation rights and the required
 workspace permissions in every selected organization. An
 [organization-scoped token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens)
-is insufficient for cross-organization work. Store the token as the
+is insufficient for cross-organization work. Store the token in the
 `platform-bootstrap` workspace through the protected input workflow below.
 `plan` makes no changes;
 `apply` shows its plan and prompts for approval.
 The command writes an ignored `onboarding.auto.tfvars` file with mode `0600`
-for the remote run and removes it afterward. If the command is interrupted and
+and passes it explicitly with `-var-file` to both plan and apply. HCP's saved
+workspace variables override automatically loaded tfvars files; explicit run
+inputs override those saved values, making the current merged inventory
+authoritative. See [HCP variable precedence](https://developer.hashicorp.com/terraform/cloud-docs/variables#precedence).
+The file is removed afterward. If the command is interrupted and
 the file remains, inspect and remove it before retrying; the next run refuses
 to overwrite it. Use `--config-root <path>` when the private project overlay is
 in another harness checkout.

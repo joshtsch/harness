@@ -8,8 +8,12 @@ terraform {
     }
   }
 
-  # Configure the organization and workspace with -backend-config during init.
-  backend "remote" {}
+  # Onboarding supplies the existing organization through TF_CLOUD_ORGANIZATION.
+  cloud {
+    workspaces {
+      name = "platform-bootstrap"
+    }
+  }
 }
 
 provider "tfe" {
