@@ -20,9 +20,10 @@ organization contact details, so keep state in the protected remote backend.
 ## State and credentials
 
 Use the existing `platform-bootstrap` workspace for remote state and locking.
-The `hashicorp/tfe` provider reads `TFE_TOKEN` from the environment. Configure
-that token as a sensitive environment variable in the `platform-bootstrap`
-workspace. Never commit the token or a local state file.
+For provider authentication, use the [protected user-token input](#protected-provider-authentication)
+below. Existing installations without that input retain the provider's
+`TFE_TOKEN` environment or CLI credential fallback. Never commit the token or
+a local state file.
 
 Create a temporary backend configuration file outside the repository:
 
@@ -86,7 +87,7 @@ token for an account with organization-creation rights and the required
 workspace permissions in every selected organization. An
 [organization-scoped token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens)
 is insufficient for cross-organization work. Store the token as the
-`platform-bootstrap` workspace's sensitive `TFE_TOKEN` environment variable.
+`platform-bootstrap` workspace through the protected input workflow below.
 `plan` makes no changes;
 `apply` shows its plan and prompts for approval.
 The command writes an ignored `onboarding.auto.tfvars` file with mode `0600`
@@ -116,6 +117,42 @@ imported into its corresponding resource address before apply. Configure
 `project_organization_admin_emails` through the protected input workflow below
 before planning any new organization. Its keys must cover every organization
 being created.
+
+### Protected provider authentication
+
+CLI authentication and the remote provider credential are separate. A local
+login can start a remote run while that run's workspace credential lacks
+organization-creation permissions. Only user tokens can create organizations;
+use a user token with access to every organization managed by this control plane.
+
+For the first run or token rotation, supply `TFE_TOKEN` from protected custody
+through the local process environment or ignored `.env`. Load it with
+`node --env-file=.env --import tsx scripts/hcp-projects.ts plan`, then run
+`apply` after reviewing the plan. Onboarding places it in the private temporary
+tfvars as the sensitive `tfe_provider_token` input. The remote provider uses
+that input immediately, and `tfe_variable.provider_token[0]` persists it as a
+sensitive Terraform workspace variable for later runs. Without a configured
+input, the provider retains its environment/CLI authentication fallback and no
+token variable resource is created.
+
+After a successful apply, remove the local `TFE_TOKEN` override so subsequent
+runs use the protected workspace input. A stale local token would supersede a
+later rotation. The pre-existing remote `TFE_TOKEN` environment variable is
+outside this resource's ownership; an explicit `tfe_provider_token` takes
+precedence. Removing the protected input later is a credential migration:
+`prevent_destroy` guards its resource.
+
+The token exists in uploaded configuration and protected Terraform state as
+well as the workspace variable. Restrict those surfaces to authorized
+administrators, never print the token, and rotate it through protected inputs.
+HCP masks sensitive variables, so Terraform cannot detect a value changed
+outside Terraform. If `tfe_provider_token` already exists in HCP, import it
+before applying, using the CLI import prerequisites below and locally supplied
+`TF_VAR_tfe_provider_token` from protected custody:
+
+```sh
+terraform import 'tfe_variable.provider_token[0]' "$TF_VAR_tfe_organization/platform-bootstrap/$PROVIDER_TOKEN_VARIABLE_ID"
+```
 
 ### Protected organization contacts
 

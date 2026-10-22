@@ -12,9 +12,28 @@ variables {
 run "empty_default_preserves_control_plane" {
   command = plan
   assert {
-    condition     = length(tfe_workspace.project) == 0 && tfe_workspace.harness.name == "harness"
+    condition     = length(tfe_workspace.project) == 0 && tfe_workspace.harness.name == "harness" && length(tfe_variable.provider_token) == 0
     error_message = "Empty project input must leave the existing harness workspace address unchanged."
   }
+}
+
+run "protected_provider_token" {
+  command = plan
+  variables {
+    tfe_provider_token = join("-", ["synthetic", "credential"])
+  }
+  assert {
+    condition     = length(tfe_variable.provider_token) == 1 && tfe_variable.provider_token[0].sensitive && tfe_variable.provider_token[0].category == "terraform" && tfe_variable.provider_token[0].key == "tfe_provider_token" && tfe_variable.provider_token[0].value == var.tfe_provider_token && tfe_variable.provider_token[0].workspace_id == data.tfe_workspace.platform_bootstrap.id
+    error_message = "A supplied provider credential must persist as a sensitive bootstrap input."
+  }
+}
+
+run "reject_empty_provider_token" {
+  command = plan
+  variables {
+    tfe_provider_token = " "
+  }
+  expect_failures = [var.tfe_provider_token]
 }
 
 run "isolated_repository_workspaces" {

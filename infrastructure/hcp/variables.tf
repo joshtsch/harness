@@ -47,3 +47,14 @@ variable "project_organization_admin_emails" {
   default     = {}
   sensitive   = true
 }
+
+variable "tfe_provider_token" {
+  description = "Optional protected user token for cross-organization provider operations; null retains environment/CLI authentication."
+  type        = string
+  default     = null
+  sensitive   = true
+  validation {
+    condition     = var.tfe_provider_token == null ? true : length(trimspace(var.tfe_provider_token)) > 0
+    error_message = "The supplied provider token must be nonempty."
+  }
+}

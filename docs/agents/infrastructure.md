@@ -68,8 +68,9 @@ for creating project organizations. Onboarding supplies the complete workspace
 and organization inventory from merged private project configuration through a
 CLI-driven HCP run. An organization-specific administrative contact email is
 provided through the [Terraform-managed protected contact input](../../infrastructure/hcp/README.md#protected-organization-contacts).
-Cross-organization management
-requires a user token whose account has the necessary permissions in each
+Cross-organization management uses the
+[protected provider input](../../infrastructure/hcp/README.md#protected-provider-authentication)
+for a user token whose account has the necessary permissions in each
 organization; [organization tokens are scoped to their organization](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens)
 and cannot manage other organizations.
 

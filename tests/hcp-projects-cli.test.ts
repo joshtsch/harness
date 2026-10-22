@@ -8,6 +8,7 @@ describe("HCP project onboarding CLI", () => {
   it.each(["absent", "ordinary", "template"])("plans without applying and forwards contacts safely: %s", (kind) => {
     const withContacts = kind !== "absent";
     const contacts = { "app-isolated": [kind === "template" ? "private${@}contact%{marker}" : "operations", "example.invalid"].join("@") };
+    const providerCredential = ["synthetic", kind === "template" ? "${@}%{marker}" : "credential"].join("-");
     const root = mkdtempSync(join(tmpdir(), "harness-hcp-cli-test-"));
     try {
       const config = join(root, "config");
@@ -22,7 +23,7 @@ describe("HCP project onboarding CLI", () => {
       const result = spawnSync(process.execPath, ["--import", "tsx", "scripts/hcp-projects.ts", "plan", "--config-root", config], {
         cwd: resolve("."),
         encoding: "utf8",
-        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TF_VAR_tfe_organization: "synthetic", TF_VAR_project_organization_admin_emails: withContacts ? JSON.stringify(contacts) : "", HCP_TEST_LOG: log, HCP_TEST_VARS: resolve("infrastructure/hcp/onboarding.auto.tfvars") },
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TF_VAR_tfe_organization: "synthetic", TFE_TOKEN: kind === "absent" ? "" : providerCredential, TF_VAR_project_organization_admin_emails: withContacts ? JSON.stringify(contacts) : "", HCP_TEST_LOG: log, HCP_TEST_VARS: resolve("infrastructure/hcp/onboarding.auto.tfvars") },
       });
       expect(result.status).toBe(0);
       const calls = readFileSync(log, "utf8");
@@ -33,12 +34,16 @@ describe("HCP project onboarding CLI", () => {
       expect(calls).toContain('project_organization_names = ["app-isolated"]');
       expect(calls).not.toContain(" apply");
       expect(calls.includes("project_organization_admin_emails =")).toBe(withContacts);
+      expect(calls.includes("tfe_provider_token =")).toBe(withContacts);
       if (kind === "ordinary") expect(calls).toContain(`project_organization_admin_emails = ${JSON.stringify(contacts)}`);
+      if (kind === "ordinary") expect(calls).toContain(`tfe_provider_token = ${JSON.stringify(providerCredential)}`);
       if (kind === "template") {
         expect(calls).toContain("private$${@}contact%%{marker}");
         expect(calls).not.toContain("private${@}contact%{marker}");
+        expect(calls).toContain("synthetic-$${@}%%{marker}");
       }
       expect(result.stdout + result.stderr).not.toContain(contacts["app-isolated"]);
+      expect(result.stdout + result.stderr).not.toContain(providerCredential);
       expect(existsSync(resolve("infrastructure/hcp/onboarding.auto.tfvars"))).toBe(false);
     } finally {
       rmSync(root, { recursive: true, force: true });
