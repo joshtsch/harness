@@ -1,15 +1,20 @@
 # HCP Terraform control plane
 
-This module manages the existing `harness` HCP Terraform workspace in an
-existing organization. That workspace stores the repository's infrastructure
-state. This module's own state belongs to the manually created
-`platform-bootstrap` workspace. The module manages that workspace's
-`project_workspace_names` input, but not the workspace resource or settings.
+This module manages the existing `harness` HCP Terraform workspace in the
+control-plane organization. That workspace stores the repository's
+infrastructure state. This module's own state belongs to the manually created
+`platform-bootstrap` workspace in the same organization. It manages the
+bootstrap workspace's project inventory variables, but not that workspace's
+resource or settings.
 See the [infrastructure workspace policy](../../docs/agents/infrastructure.md).
 
-The organization identity and organization rename remain one-time HCP
-administrative operations. The module does not store an owner email or other
-organization-level PII.
+The control-plane organization remains an existing HCP administrative resource.
+Project organizations declared through private `hcp_organization` metadata
+are created by Terraform. Their required admin contact emails are sensitive
+inputs and must be added to the protected `platform-bootstrap` workspace as
+`project_organization_admin_emails`, an HCL map keyed by organization name.
+Do not put contact emails in project metadata. Terraform state may contain
+organization contact details, so keep state in the protected remote backend.
 
 ## State and credentials
 
@@ -63,23 +68,34 @@ removal.
 
 ## Repository workspaces
 
-`project_workspace_names` manages additional repository workspaces in this same
-control-plane state. Its empty default creates none. Set `hcp_workspace` on each
-registered Terraform project in the merged harness configuration, then run
+`project_workspace_names` manages additional repository workspaces in the
+control-plane state. Its empty default creates none. Set `hcp_workspace` on
+each registered Terraform project in merged harness configuration. Optionally
+set private `hcp_organization` as directed by the
+[infrastructure organization policy](../../docs/agents/infrastructure.md#state-and-execution).
+Projects without that field stay in the control-plane organization. Then run
 `pnpm hcp:projects plan` and `pnpm hcp:projects apply` from the harness root.
-The command supplies the complete list for that run. The `tfe_variable` resource
-persists it in the `platform-bootstrap` workspace for later remote runs, keeping
-private project names out of tracked files and public issue/plan summaries.
+The command supplies the complete workspace and organization inventory for that
+run. The `tfe_variable` resources persist it in the `platform-bootstrap`
+workspace for later remote runs, keeping private project and organization names
+out of tracked files and public issue/plan summaries.
 Set the existing `TF_VAR_tfe_organization` in the local environment and
-use an HCP account with plan/apply access. The HCP workspace's sensitive
-`TFE_TOKEN` is used by the remote TFE provider. `plan` makes no changes;
+use an HCP account with plan/apply access. The TFE provider token must be a user
+token for an account with organization-creation rights and the required
+workspace permissions in every selected organization. An
+[organization-scoped token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens)
+is insufficient for cross-organization work. Store the token as the
+`platform-bootstrap` workspace's sensitive `TFE_TOKEN` environment variable.
+`plan` makes no changes;
 `apply` shows its plan and prompts for approval.
 The command writes an ignored `onboarding.auto.tfvars` file with mode `0600`
 for the remote run and removes it afterward. If the command is interrupted and
 the file remains, inspect and remove it before retrying; the next run refuses
 to overwrite it. Use `--config-root <path>` when the private project overlay is
 in another harness checkout.
-Use one workspace per repository unless another boundary is explicitly approved.
+Use organization isolation only as allowed by the
+[infrastructure organization policy](../../docs/agents/infrastructure.md#state-and-execution).
+It does not change the one-workspace-per-repository default.
 The existing `tfe_workspace.harness` address remains unchanged; project names
 cannot collide with it or `platform-bootstrap`.
 
@@ -90,19 +106,58 @@ workspace is a migration, not routine cleanup. Do not remove the resource blocks
 to bypass that protection. Keep state version recovery available and review any
 removal, rename, or state operation explicitly.
 
-The first managed run creates the `project_workspace_names` HCP variable. If it
-already exists, import it into `tfe_variable.project_workspace_names` before
-applying. A workspace created outside this control plane also needs its workspace
-and settings imported into the corresponding project addresses before apply.
+The first managed run creates the project inventory HCP variables. If any
+already exist, import them into `tfe_variable.project_workspace_names`,
+`tfe_variable.project_workspace_organizations`, or
+`tfe_variable.project_organization_names` before applying. A project
+organization or workspace created outside this control plane also needs to be
+imported into its corresponding resource address before apply. Configure
+`project_organization_admin_emails` as a protected HCL map before planning any
+new organization. Its keys must cover every organization being created.
 
-For an existing project workspace, inspect state before adoption. Import both
-its workspace and settings into the selected map key before planning. Use a
-private temporary shell variable for the name; do not paste resolved identities
-into issues or logs:
+### CLI import prerequisites
+
+CLI import runs the provider locally, even with remote state. Supply a local
+`TFE_TOKEN` user token from protected custody, with the same cross-organization
+permissions described above. Workspace environment variables are not available
+to this local provider process.
+
+Before importing, load the complete intended inventory into local environment
+variables `TF_VAR_project_workspace_names`,
+`TF_VAR_project_workspace_organizations`, and
+`TF_VAR_project_organization_names`, using JSON values derived from the same
+merged project configuration used by onboarding. Load
+`TF_VAR_project_organization_admin_emails` from protected custody as a JSON map,
+and retain `TF_VAR_tfe_organization` for the existing control-plane organization.
+Remote workspace variables alone do not supply these local import inputs.
+Keep values inside the process environment; never print them or paste them into
+shell command arguments, tracked files, or public logs. Unset the temporary
+inventory, contact, and token variables when adoption is complete.
+
+Initialize the remote backend as described under State and credentials. Keep
+these local inputs present for each `terraform state list` and `terraform import`
+command below. The onboarding CLI removes its temporary tfvars after each run,
+so invoking it beforehand does not leave import inputs behind. An omitted
+inventory leaves the default project resource maps empty and cannot import a
+project instance.
+
+For an existing project organization, inspect state before adoption. Import it
+before planning so Terraform does not attempt to recreate it:
 
 ```sh
-terraform import "tfe_workspace.project[\"$PROJECT_WORKSPACE_NAME\"]" "$TF_VAR_tfe_organization/$PROJECT_WORKSPACE_NAME"
-terraform import "tfe_workspace_settings.project[\"$PROJECT_WORKSPACE_NAME\"]" "$TF_VAR_tfe_organization/$PROJECT_WORKSPACE_NAME"
+terraform import "tfe_organization.project[\"$PROJECT_ORGANIZATION_NAME\"]" "$PROJECT_ORGANIZATION_NAME"
+```
+
+For an existing project workspace, inspect state before adoption. Import both
+its workspace and settings into the selected map key before planning. Set the
+organization slug in a private shell variable for dedicated organizations; for
+a workspace in the shared organization, set it from
+`TF_VAR_tfe_organization`. Do not paste resolved identities into issues or
+logs:
+
+```sh
+terraform import "tfe_workspace.project[\"$PROJECT_WORKSPACE_NAME\"]" "$PROJECT_ORGANIZATION_NAME/$PROJECT_WORKSPACE_NAME"
+terraform import "tfe_workspace_settings.project[\"$PROJECT_WORKSPACE_NAME\"]" "$PROJECT_ORGANIZATION_NAME/$PROJECT_WORKSPACE_NAME"
 ```
 
 New workspaces use remote execution. Configure provider credentials as sensitive
@@ -126,3 +181,9 @@ retains its existing Terraform 1.6 minimum.
 Mock plans prove empty-default behavior, repository isolation, remote execution,
 and rejection of harness/bootstrap collisions and invalid names. Live planning
 still requires the existing remote backend and control-plane credentials.
+Both project workspaces and organizations have `prevent_destroy`. Terraform's
+[`expect_failures` test support](https://developer.hashicorp.com/terraform/language/tests)
+matches custom-condition failures, while this lifecycle guard emits a core
+diagnostic. A mock apply followed by a plan that removed the project inventory
+produced Terraform's `Instance cannot be destroyed` error; the Terraform test
+runner cannot treat that core diagnostic as an expected failure.

@@ -58,12 +58,19 @@ infrastructure workspace. Follow its
 [repository workspace inputs and adoption guide](../../infrastructure/hcp/README.md#repository-workspaces)
 when preparing state ownership for a registered project.
 
-Checked 12 October 2026 against maintained `hashicorp/tfe` provider 0.81.0:
+Checked 21 October 2026 against maintained `hashicorp/tfe` provider 0.81.0:
 `tfe_workspace`, `tfe_workspace_settings`, and
 [`tfe_variable`](https://registry.terraform.io/providers/hashicorp/tfe/0.81.0/docs/resources/variable)
 cover project workspace creation, remote execution, and persistence of the
-bootstrap input. Onboarding supplies the complete list from merged project
-configuration through a CLI-driven HCP run.
+bootstrap inputs. The pinned `hashicorp/tfe` provider also has a
+[`tfe_organization` resource](https://registry.terraform.io/providers/hashicorp/tfe/0.81.0/docs/resources/organization)
+for creating project organizations. Onboarding supplies the complete workspace
+and organization inventory from merged private project configuration through a
+CLI-driven HCP run. An organization-specific administrative contact email is
+provided as a protected bootstrap variable. Cross-organization management
+requires a user token whose account has the necessary permissions in each
+organization; [organization tokens are scoped to their organization](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens)
+and cannot manage other organizations.
 
 ## Unsupported operations and recovery
 
