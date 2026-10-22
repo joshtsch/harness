@@ -11,8 +11,9 @@ See the [infrastructure workspace policy](../../docs/agents/infrastructure.md).
 The control-plane organization remains an existing HCP administrative resource.
 Project organizations declared through private `hcp_organization` metadata
 are created by Terraform. Their required admin contact emails are sensitive
-inputs and must be added to the protected `platform-bootstrap` workspace as
-`project_organization_admin_emails`, an HCL map keyed by organization name.
+inputs. Terraform manages `project_organization_admin_emails` as a sensitive
+HCL variable in the protected `platform-bootstrap` workspace, keyed by
+organization name.
 Do not put contact emails in project metadata. Terraform state may contain
 organization contact details, so keep state in the protected remote backend.
 
@@ -112,8 +113,42 @@ already exist, import them into `tfe_variable.project_workspace_names`,
 `tfe_variable.project_organization_names` before applying. A project
 organization or workspace created outside this control plane also needs to be
 imported into its corresponding resource address before apply. Configure
-`project_organization_admin_emails` as a protected HCL map before planning any
-new organization. Its keys must cover every organization being created.
+`project_organization_admin_emails` through the protected input workflow below
+before planning any new organization. Its keys must cover every organization
+being created.
+
+### Protected organization contacts
+
+For the first run or a contact rotation, supply the complete contact map as JSON
+in `TF_VAR_project_organization_admin_emails` through protected process inputs or
+the ignored harness-root `.env`. Load it with `node --env-file=.env --import tsx
+scripts/hcp-projects.ts plan` (and then `apply` after plan approval); ordinary
+`pnpm hcp:projects` does not load `.env` automatically. Keep actual contact
+values out of commands, tracked files, and public logs.
+
+Onboarding validates the input without echoing it and includes it in the
+mode-`0600` temporary tfvars uploaded to the protected remote run. Terraform
+persists the map through `tfe_variable.project_organization_admin_emails` with
+`sensitive = true` and `hcl = true`. A plan alone does not persist it. After a
+successful apply, unset the local override or remove it from `.env`; later runs
+omit that input and use the protected workspace value. Leaving an old local
+override present would supersede later rotations.
+
+Import an existing workspace variable before the first apply, using the local
+credentials and complete input prerequisites below. Supply its ID through a
+private shell variable:
+
+```sh
+terraform import tfe_variable.project_organization_admin_emails "$TF_VAR_tfe_organization/platform-bootstrap/$CONTACT_VARIABLE_ID"
+```
+
+`prevent_destroy` protects the variable. Its value also exists in the protected
+remote state and uploaded run configuration; HCP's sensitive flag redacts it
+from plan output and prevents later API reads of its value. The provider cannot
+detect an out-of-band change to a sensitive value. Rotate through Terraform
+with a new complete input map, and keep state and configuration access limited
+to authorized administrators. Provider behavior is documented in the
+[`tfe_variable` reference](https://registry.terraform.io/providers/hashicorp/tfe/0.81.0/docs/resources/variable).
 
 ### CLI import prerequisites
 

@@ -31,6 +31,21 @@ try {
   const organization = process.env.TF_VAR_tfe_organization;
   if (!organization) throw new Error("Set TF_VAR_tfe_organization for the existing HCP organization");
 
+  let contactMap: Record<string, string> | undefined;
+  const suppliedContacts = process.env.TF_VAR_project_organization_admin_emails;
+  if (suppliedContacts?.trim()) {
+    try {
+      const parsed: unknown = JSON.parse(suppliedContacts);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)
+          || !Object.values(parsed).every((value) => typeof value === "string" && value.trim().length > 0)) {
+        throw new Error();
+      }
+      contactMap = parsed as Record<string, string>;
+    } catch {
+      throw new Error("TF_VAR_project_organization_admin_emails must be a JSON object of nonempty strings");
+    }
+  }
+
   const projects = await loadProjectsConfig(join(configRoot, "projects.yml"), { resolveEnvironment: false });
   const inventory = projectWorkspaceInventory(projects);
   const names = inventory.workspaceNames;
@@ -47,6 +62,7 @@ try {
       `project_workspace_names = ${JSON.stringify(names)}`,
       `project_workspace_organizations = ${JSON.stringify(inventory.workspaceOrganizations)}`,
       `project_organization_names = ${JSON.stringify(inventory.organizationNames)}`,
+      ...(contactMap === undefined ? [] : [`project_organization_admin_emails = ${JSON.stringify(contactMap).replace(/\$\{|%\{/g, (marker) => marker[0] + marker)}`]),
     ].join("\n") + "\n", { mode: 0o600, flag: "wx" });
     wroteVariables = true;
     const environment = {
