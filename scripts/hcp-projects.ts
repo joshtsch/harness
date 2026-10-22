@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { loadProjectsConfig } from "../src/project-config.js";
-import { projectWorkspaceNames } from "../src/hcp-project-workspaces.js";
+import { projectWorkspaceInventory } from "../src/hcp-project-workspaces.js";
 
 const [action, ...options] = process.argv.slice(2);
 
@@ -32,7 +32,8 @@ try {
   if (!organization) throw new Error("Set TF_VAR_tfe_organization for the existing HCP organization");
 
   const projects = await loadProjectsConfig(join(configRoot, "projects.yml"), { resolveEnvironment: false });
-  const names = projectWorkspaceNames(projects);
+  const inventory = projectWorkspaceInventory(projects);
+  const names = inventory.workspaceNames;
   if (names.length === 0) throw new Error("No Terraform projects are configured; refusing an empty workspace inventory");
 
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "harness-hcp-projects-"));
@@ -42,7 +43,11 @@ try {
   try {
     const backend = join(temporaryDirectory, "bootstrap.tfbackend");
     await writeFile(backend, `organization = ${JSON.stringify(organization)}\nworkspaces { name = "platform-bootstrap" }\n`, { mode: 0o600 });
-    await writeFile(variables, `project_workspace_names = ${JSON.stringify(names)}\n`, { mode: 0o600, flag: "wx" });
+    await writeFile(variables, [
+      `project_workspace_names = ${JSON.stringify(names)}`,
+      `project_workspace_organizations = ${JSON.stringify(inventory.workspaceOrganizations)}`,
+      `project_organization_names = ${JSON.stringify(inventory.organizationNames)}`,
+    ].join("\n") + "\n", { mode: 0o600, flag: "wx" });
     wroteVariables = true;
     const environment = {
       ...process.env,

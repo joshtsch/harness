@@ -39,6 +39,7 @@ export interface ProjectDefinition {
   name: string;
   remote: string;
   hcpWorkspace?: string;
+  hcpOrganization?: string;
   defaultBranch: string;
   setupScript: string;
   issueTracker: IssueTracker;
@@ -61,6 +62,7 @@ export function requireProjectQuality(project: ProjectDefinition): ProjectQualit
 interface RawProject {
   remote?: unknown;
   hcp_workspace?: unknown;
+  hcp_organization?: unknown;
   default_branch?: unknown;
   setup_script?: unknown;
   issue_tracker?: unknown;
@@ -85,7 +87,7 @@ export interface LoadProjectsConfigOptions {
   environment?: Record<string, string | undefined>;
 }
 
-const rawProjectFields = new Set(["remote", "hcp_workspace", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "verification", "workflows"]);
+const rawProjectFields = new Set(["remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "verification", "workflows"]);
 const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "quality", "verification", "workflows"]);
 const businessLineFields = new Set(["display_name", "tool_mappings"]);
 const issueTrackerFields = new Set(["type", "repository"]);
@@ -246,6 +248,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
         name,
         remote: requiredString(definition.remote, `projects.${name}.remote`),
         ...(definition.hcp_workspace === undefined ? {} : { hcpWorkspace: requiredString(definition.hcp_workspace, `projects.${name}.hcp_workspace`) }),
+        ...(definition.hcp_organization === undefined ? {} : { hcpOrganization: requiredString(definition.hcp_organization, `projects.${name}.hcp_organization`) }),
         defaultBranch: requiredString(definition.default_branch ?? defaults.default_branch, `projects.${name}.default_branch`),
         setupScript: requiredString(definition.setup_script ?? defaults.setup_script, `projects.${name}.setup_script`),
         issueTracker: mergeIssueTracker(defaults.issue_tracker, definition.issue_tracker, name),

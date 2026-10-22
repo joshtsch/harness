@@ -24,3 +24,30 @@ variable "project_workspace_names" {
     error_message = "Workspace names must be 1-90 alphanumeric, underscore, or hyphen characters, with an alphanumeric first character."
   }
 }
+
+variable "project_workspace_organizations" {
+  description = "Project workspaces assigned to dedicated HCP Terraform organizations; omitted workspaces use tfe_organization."
+  type        = map(string)
+  default     = {}
+  validation {
+    condition     = alltrue([for workspace, organization in var.project_workspace_organizations : contains(var.project_workspace_names, workspace) && contains(var.project_organization_names, organization)])
+    error_message = "Dedicated organization mappings must reference configured project workspaces and managed project organizations."
+  }
+}
+
+variable "project_organization_names" {
+  description = "HCP Terraform organizations explicitly managed for projects."
+  type        = set(string)
+  default     = []
+  validation {
+    condition     = alltrue([for name in var.project_organization_names : can(regex("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,89}$", name)) && name != var.tfe_organization])
+    error_message = "Project organization names must be valid and distinct from the control-plane organization."
+  }
+}
+
+variable "project_organization_admin_emails" {
+  description = "Required administrative contact email for each new project organization, supplied through protected HCP workspace variables."
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+}

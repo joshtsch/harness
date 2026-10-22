@@ -19,6 +19,7 @@ Each project entry should identify:
 - a unique logical name;
 - its Git remote and default branch;
 - `hcp_workspace` when the repository uses Terraform and needs its own HCP Terraform state;
+- `hcp_organization` when that project needs a dedicated HCP Terraform organization;
 - its issue-tracker type and project key;
 - its optional CRM provider;
 - its optional business-line memberships and project-level tool mappings;
@@ -33,6 +34,18 @@ project whose infrastructure is managed through Terraform. It is portable
 private project metadata, so it may live in `projects.local.yml` and its
 encrypted user-level record. The onboarding command derives the complete HCP
 workspace list from these fields; a missing field creates no workspace.
+
+`hcp_organization` is optional and requires `hcp_workspace`. When omitted, the
+workspace belongs to the shared organization selected by the control plane.
+When present, the control plane creates or adopts that HCP organization and
+places the project's workspace there. See the
+[infrastructure organization policy](infrastructure.md#state-and-execution)
+for when to use a dedicated organization. Projects with the same organization
+may share its slug.
+Organization names are private account metadata and belong only in the local
+overlay and encrypted user-level record. The required administrative contact
+email belongs in the protected `platform-bootstrap` Terraform variables, never
+in project metadata.
 
 Verification commands use `verification`, and optional commands use `workflows`.
 Each entry has `command`, `args`, and optional `required`; verification defaults to
