@@ -5,8 +5,9 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("HCP project onboarding CLI", () => {
-  it.each([false, true])("plans without applying and forwards contacts only when supplied: %s", (withContacts) => {
-    const contacts = { "app-isolated": ["operations", "example.invalid"].join("@") };
+  it.each(["absent", "ordinary", "template"])("plans without applying and forwards contacts safely: %s", (kind) => {
+    const withContacts = kind !== "absent";
+    const contacts = { "app-isolated": [kind === "template" ? "private${@}contact%{marker}" : "operations", "example.invalid"].join("@") };
     const root = mkdtempSync(join(tmpdir(), "harness-hcp-cli-test-"));
     try {
       const config = join(root, "config");
@@ -32,7 +33,11 @@ describe("HCP project onboarding CLI", () => {
       expect(calls).toContain('project_organization_names = ["app-isolated"]');
       expect(calls).not.toContain(" apply");
       expect(calls.includes("project_organization_admin_emails =")).toBe(withContacts);
-      if (withContacts) expect(calls).toContain(`project_organization_admin_emails = ${JSON.stringify(contacts)}`);
+      if (kind === "ordinary") expect(calls).toContain(`project_organization_admin_emails = ${JSON.stringify(contacts)}`);
+      if (kind === "template") {
+        expect(calls).toContain("private$${@}contact%%{marker}");
+        expect(calls).not.toContain("private${@}contact%{marker}");
+      }
       expect(result.stdout + result.stderr).not.toContain(contacts["app-isolated"]);
       expect(existsSync(resolve("infrastructure/hcp/onboarding.auto.tfvars"))).toBe(false);
     } finally {

@@ -62,7 +62,7 @@ try {
       `project_workspace_names = ${JSON.stringify(names)}`,
       `project_workspace_organizations = ${JSON.stringify(inventory.workspaceOrganizations)}`,
       `project_organization_names = ${JSON.stringify(inventory.organizationNames)}`,
-      ...(contactMap === undefined ? [] : [`project_organization_admin_emails = ${JSON.stringify(contactMap)}`]),
+      ...(contactMap === undefined ? [] : [`project_organization_admin_emails = ${JSON.stringify(contactMap).replace(/\$\{|%\{/g, (marker) => marker[0] + marker)}`]),
     ].join("\n") + "\n", { mode: 0o600, flag: "wx" });
     wroteVariables = true;
     const environment = {
