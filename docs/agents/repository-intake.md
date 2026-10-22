@@ -97,6 +97,11 @@ originating issue before feature implementation. Enter
 worktree, implementation, verification, review, and a change request. Requested
 feature content, including a PR template, belongs in that worktree.
 
+After registration and repository access are established, run the read-only
+project onboarding review described in [Backlog management](backlog-management.md)
+before creating project issues or beginning issue-bound work. Present the
+proposed standards and backlog changes for approval before applying them.
+
 ## Resolve blockers within the selected path
 
 Run required provider initialization before implementation. If initialization,

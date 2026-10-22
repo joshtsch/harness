@@ -39,6 +39,22 @@ _Avoid_: Ticket (except when naming a provider's terminology)
 A parent issue for a larger outcome, decomposed into deliverable issues through GitHub sub-issues.
 _Avoid_: Project (a GitHub Project is a planning view, not a parent issue)
 
+**Priority**:
+The maintainer-assessed urgency and value of an issue, tracked independently from readiness and effort.
+_Avoid_: Readiness, severity (unless describing a defect's impact)
+
+**Project onboarding review**:
+A read-only review of a registered project's backlog and standards, followed by approval, scoped changes, and verification.
+_Avoid_: Project setup (which prepares a repository for development)
+
+**Backlog sweep**:
+A repeatable audit of one or more project backlogs that reports deterministic findings separately from human review suggestions.
+_Avoid_: Triage (which resolves an individual issue's intake and readiness)
+
+**Unreviewed priority**:
+The portfolio value indicating that no maintainer has assessed an issue's priority.
+_Avoid_: `needs-triage` (an independent issue-shaping state)
+
 **Deliverable issue**:
 A bounded issue that can be implemented and verified on its own, or tracked as an epic's sub-issue.
 _Avoid_: Story (unless naming a provider's terminology)

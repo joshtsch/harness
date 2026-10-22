@@ -14,6 +14,7 @@ This harness improves its own workflows and coordinates work across independent 
 
 ## Context routing
 
+- For project registration, backlog review, standards alignment, or portfolio maintenance, follow [Backlog management](docs/agents/backlog-management.md) before changing issue state.
 - When adding, revising, moving, or assessing the placement of durable agent knowledge, invoke `$knowledge-routing`. It recommends the authoritative source and the path that loads it when needed; it does not write by default.
 - [Documentation strategy](docs/agents/documentation-strategy.md) defines the authoritative surface for each knowledge type. [Agent documentation map](docs/agents/README.md) routes to focused procedures; load only the guidance needed for the current operation.
 - Keep transient handoffs and recovery state under ignored `docs/.scratch/`.
