@@ -8,6 +8,10 @@ import { projectWorkspaceInventory } from "../src/hcp-project-workspaces.js";
 
 const [action, ...options] = process.argv.slice(2);
 
+function hclLiteral(value: string | Record<string, string>): string {
+  return JSON.stringify(value).replace(/\$\{|%\{/g, (marker) => marker[0] + marker);
+}
+
 async function run(command: string, args: string[], environment: NodeJS.ProcessEnv): Promise<void> {
   const code = await new Promise<number>((done, reject) => {
     const child = spawn(command, args, { env: environment, stdio: "inherit" });
@@ -30,6 +34,7 @@ try {
   }
   const organization = process.env.TF_VAR_tfe_organization;
   if (!organization) throw new Error("Set TF_VAR_tfe_organization for the existing HCP organization");
+  const providerCredential = process.env.TFE_TOKEN?.trim();
 
   let contactMap: Record<string, string> | undefined;
   const suppliedContacts = process.env.TF_VAR_project_organization_admin_emails;
@@ -62,7 +67,8 @@ try {
       `project_workspace_names = ${JSON.stringify(names)}`,
       `project_workspace_organizations = ${JSON.stringify(inventory.workspaceOrganizations)}`,
       `project_organization_names = ${JSON.stringify(inventory.organizationNames)}`,
-      ...(contactMap === undefined ? [] : [`project_organization_admin_emails = ${JSON.stringify(contactMap).replace(/\$\{|%\{/g, (marker) => marker[0] + marker)}`]),
+      ...(contactMap === undefined ? [] : [`project_organization_admin_emails = ${hclLiteral(contactMap)}`]),
+      ...(providerCredential ? [`tfe_provider_token = ${hclLiteral(providerCredential)}`] : []),
     ].join("\n") + "\n", { mode: 0o600, flag: "wx" });
     wroteVariables = true;
     const environment = {

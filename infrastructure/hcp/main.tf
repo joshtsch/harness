@@ -107,3 +107,18 @@ resource "tfe_variable" "project_organization_admin_emails" {
     prevent_destroy = true
   }
 }
+
+resource "tfe_variable" "provider_token" {
+  # Only the presence flag is public; the token remains sensitive.
+  count        = nonsensitive(var.tfe_provider_token != null) ? 1 : 0
+  workspace_id = data.tfe_workspace.platform_bootstrap.id
+  key          = "tfe_provider_token"
+  value        = var.tfe_provider_token
+  category     = "terraform"
+  sensitive    = true
+  description  = "Protected user credential for cross-organization control-plane operations."
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
