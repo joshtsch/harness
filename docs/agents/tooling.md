@@ -33,6 +33,31 @@ selecting a tool. Connector availability, plugin guidance, and a signed-in
 dashboard do not establish a fallback. Use this gate for provisioning,
 configuration changes, and recovery operations.
 
+## Sandbox network troubleshooting
+
+Sandbox restrictions commonly cause DNS errors such as `ENOTFOUND`, connection
+failures, and stalled package downloads even when the host network and remote
+service work. Treat a sandbox failure as evidence about that execution context.
+
+1. Check the active sandbox and network permissions. Confirm the configured
+   endpoint without printing credentials or private configuration values.
+2. Use a minimal read-only connectivity check. When elevation is available,
+   request it through the tool's approval mechanism and repeat the same check
+   outside the sandbox, within the authorized account and operation scope.
+   Keep credentials inside the request process and report only status or error
+   codes; follow [Secrets and PII safety](data-safety.md).
+3. Compare the results before attributing the failure to host DNS, a VPN, or a
+   service outage, or changing network settings. Success only outside the sandbox
+   establishes a sandbox restriction. If both checks fail, investigate the
+   endpoint, network, authentication, and service using the returned evidence.
+   If elevation is unavailable or rejected, report that the comparison is
+   blocked and follow the stated approval decision.
+4. Once connectivity works, retry the original authorized operation through the
+   approved execution path and verify its result. For a write with an uncertain
+   outcome, inspect provider state before retrying. A successful connectivity
+   check alone does not establish that a sync, download, or infrastructure
+   operation completed.
+
 ## Current tools
 
 - **Attio** — CRM context and relationship workflows through the public API by default.
