@@ -80,6 +80,11 @@ The control plane manages those sensitive `tfe_variable` resources and persists
 their complete input inventory for subsequent runs. Application resources remain
 in the owning repository's workspace.
 
+For automatic infrastructure PR plans, use the control plane's
+[GitHub App VCS workflow](../../infrastructure/hcp/README.md#automatic-infrastructure-pr-plans).
+Terraform manages the connection and triggers; applies require approval.
+Complete the documented one-time browser authorization before connecting.
+
 ## Unsupported operations and recovery
 
 A fallback may be needed when no maintained provider covers an operation,

@@ -79,3 +79,27 @@ variable "project_workspace_variables" {
     error_message = "Project variable keys must be valid identifiers and values must be non-null strings."
   }
 }
+
+variable "project_workspace_vcs" {
+  description = "Complete private GitHub App connection inventory for project workspaces."
+  type = map(object({
+    identifier                 = string
+    branch                     = string
+    working_directory          = string
+    github_app_installation_id = string
+  }))
+  default   = {}
+  nullable  = false
+  sensitive = true
+  validation {
+    condition = alltrue([
+      for vcs in values(var.project_workspace_vcs) :
+      can(regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", vcs.identifier)) &&
+      can(regex("^ghain-[A-Za-z0-9]+$", vcs.github_app_installation_id)) &&
+      can(regex("^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$", vcs.working_directory)) &&
+      !contains(split("/", vcs.working_directory), ".") && !contains(split("/", vcs.working_directory), "..") &&
+      length(trimspace(vcs.branch)) > 0
+    ])
+    error_message = "VCS inputs require a GitHub owner/repository, branch, relative working directory, and HCP ghain installation ID."
+  }
+}
