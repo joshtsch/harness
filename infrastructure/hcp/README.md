@@ -230,7 +230,7 @@ the installation ID is HCP's `ghain-` identifier, not GitHub's numeric installat
 ID. The working directory must be a nonempty repository-relative directory with
 no `.` or `..` segments. Root-directory configurations are outside this interface.
 
-As checked on 2026-10-22, connecting through the GitHub App requires two existing
+As checked on 22 October 2026, connecting through the GitHub App requires two existing
 permissions: the HCP token's user must have authorized the Terraform Cloud GitHub
 App, and the app installation must have access to the repository. Neither the API
 nor the provider can initiate the user's browser authorization. In HCP's
