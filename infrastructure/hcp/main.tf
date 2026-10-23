@@ -52,6 +52,10 @@ data "tfe_workspace" "platform_bootstrap" {
   # Cross-input checks use preconditions to support Terraform 1.6.
   lifecycle {
     precondition {
+      condition     = alltrue([for workspace in keys(var.project_workspace_variables) : contains(var.project_workspace_names, workspace)])
+      error_message = "Protected project inputs must reference registered project workspaces."
+    }
+    precondition {
       condition     = alltrue([for workspace, organization in var.project_workspace_organizations : contains(var.project_workspace_names, workspace) && contains(var.project_organization_names, organization)])
       error_message = "Dedicated organization mappings must reference configured project workspaces and managed project organizations."
     }

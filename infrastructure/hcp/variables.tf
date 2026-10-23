@@ -58,3 +58,24 @@ variable "tfe_provider_token" {
     error_message = "The supplied provider token must be nonempty."
   }
 }
+
+variable "project_workspace_variables" {
+  description = "Complete protected input inventory for registered project workspaces; all values are literal strings."
+  type = map(object({
+    environment = optional(map(string), {})
+    terraform   = optional(map(string), {})
+  }))
+  default   = {}
+  nullable  = false
+  sensitive = true
+  validation {
+    condition = alltrue(flatten([
+      for workspace, categories in var.project_workspace_variables : [
+        for category, variables in categories : [
+          for key, value in variables : can(regex("^[A-Za-z_][A-Za-z0-9_]*$", key)) && value != null
+        ]
+      ]
+    ]))
+    error_message = "Project variable keys must be valid identifiers and values must be non-null strings."
+  }
+}
