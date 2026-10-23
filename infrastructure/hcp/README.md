@@ -208,6 +208,63 @@ with a new complete input map, and keep state and configuration access limited
 to authorized administrators. Provider behavior is documented in the
 [`tfe_variable` reference](https://registry.terraform.io/providers/hashicorp/tfe/0.81.0/docs/resources/variable).
 
+### Protected project inputs
+
+The control plane manages provider credentials and literal Terraform inputs for
+registered project workspaces with `tfe_variable.project_input`. Supply the
+complete inventory as JSON in `TF_VAR_project_workspace_variables`, through a
+protected process environment or the ignored harness-root `.env`:
+
+```json
+{
+  "example-infrastructure": {
+    "environment": { "EXAMPLE_PROVIDER_TOKEN": "<from protected custody>" },
+    "terraform": { "region": "example-region" }
+  }
+}
+```
+
+Workspace names must match the merged registered inventory. Variable names must
+be identifiers and values must be strings. The two categories are `environment`
+and `terraform`; omitted categories are empty. Each individual value is a literal
+string (`hcl = false`) and sensitive, including private account metadata.
+Arbitrary HCL expressions are outside this interface.
+
+Load the private environment and run onboarding as described for organization
+contacts. The CLI validates the map without echoing it, escapes HCL template
+markers in temporary input, and removes its mode-`0600` tfvars after the run.
+Inspect existing variables and attached variable sets before applying; import
+existing workspace variables instead of creating duplicates. Do not override
+inherited provider credentials without reviewing their ownership and precedence.
+An individual variable address is the JSON-encoded tuple
+`[workspace, category, key]`, where category is `environment` or `terraform`:
+
+```sh
+terraform import 'tfe_variable.project_input["[\"example-infrastructure\",\"environment\",\"EXAMPLE_PROVIDER_TOKEN\"]"]' "$PROJECT_ORGANIZATION_NAME/$PROJECT_WORKSPACE_NAME/$PROJECT_VARIABLE_ID"
+```
+
+Use the local import prerequisites below, plus the complete protected project
+input map, when adopting existing variables. If the bootstrap aggregate already
+exists, import `tfe_variable.project_workspace_variables` with the bootstrap
+organization/workspace/variable ID before applying.
+
+After reviewing and applying the plan, Terraform persists the complete inventory
+as the sensitive HCL variable `project_workspace_variables` in `platform-bootstrap`.
+Template markers are escaped in this persisted aggregate as well. Remove the
+local override after successful persistence so subsequent runs use that protected
+input. For rotations, supply a new complete map including unchanged inputs for
+all managed workspaces. Omitting an existing managed input is blocked by
+`prevent_destroy`; intentional removal requires a separately reviewed lifecycle
+change. Changing a variable's category or key also changes its address.
+
+Values exist in encrypted remote state and uploaded run configuration, as well as
+the destination workspace. Sensitive flags redact values from routine output;
+they do not eliminate those stored copies. Restrict bootstrap state and run
+access accordingly. The provider cannot detect out-of-band edits to sensitive
+values; rotate through Terraform. Keep application inputs out of public project
+configuration and issues. This step configures execution inputs only; it does
+not provision application resources or release an application.
+
 ### CLI import prerequisites
 
 CLI import runs the provider locally, even with remote state. Supply a local
@@ -253,8 +310,8 @@ terraform import "tfe_workspace.project[\"$PROJECT_WORKSPACE_NAME\"]" "$PROJECT_
 terraform import "tfe_workspace_settings.project[\"$PROJECT_WORKSPACE_NAME\"]" "$PROJECT_ORGANIZATION_NAME/$PROJECT_WORKSPACE_NAME"
 ```
 
-New workspaces use remote execution. Configure provider credentials as sensitive
-environment variables in the target workspace's protected store. Application
+New workspaces use remote execution. Configure provider credentials through the
+[protected project inputs](#protected-project-inputs) workflow. Application
 resources belong to the owning repository's Terraform root, not this control
 plane. Existing resource adoption must not replace or destroy a workspace.
 

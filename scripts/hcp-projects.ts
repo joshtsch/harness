@@ -7,7 +7,7 @@ import { projectWorkspaceInventory } from "../src/hcp-project-workspaces.js";
 
 const [action, ...options] = process.argv.slice(2);
 
-function hclLiteral(value: string | Record<string, string>): string {
+function hclLiteral(value: unknown): string {
   return JSON.stringify(value).replace(/\$\{|%\{/g, (marker) => marker[0] + marker);
 }
 
@@ -55,6 +55,25 @@ try {
   const names = inventory.workspaceNames;
   if (names.length === 0) throw new Error("No Terraform projects are configured; refusing an empty workspace inventory");
 
+  let projectVariables: unknown;
+  const suppliedVariables = process.env.TF_VAR_project_workspace_variables;
+  if (suppliedVariables?.trim()) {
+    try {
+      const parsed: unknown = JSON.parse(suppliedVariables);
+      const mapping = (value: unknown): value is Record<string, unknown> =>
+        value !== null && typeof value === "object" && !Array.isArray(value);
+      if (!mapping(parsed) || !Object.entries(parsed).every(([workspace, categories]) =>
+        names.includes(workspace) && mapping(categories) && Object.entries(categories).every(([category, variables]) =>
+          ["environment", "terraform"].includes(category) && mapping(variables)
+          && Object.entries(variables).every(([key, value]) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(key) && typeof value === "string")))) {
+        throw new Error();
+      }
+      projectVariables = parsed;
+    } catch {
+      throw new Error("TF_VAR_project_workspace_variables must map registered workspaces to environment/terraform string maps");
+    }
+  }
+
   const terraformRoot = resolve("infrastructure/hcp");
   const variables = join(terraformRoot, "onboarding.auto.tfvars");
   let wroteVariables = false;
@@ -65,6 +84,7 @@ try {
       `project_organization_names = ${JSON.stringify(inventory.organizationNames)}`,
       ...(contactMap === undefined ? [] : [`project_organization_admin_emails = ${hclLiteral(contactMap)}`]),
       ...(providerCredential ? [`tfe_provider_token = ${hclLiteral(providerCredential)}`] : []),
+      ...(projectVariables === undefined ? [] : [`project_workspace_variables = ${hclLiteral(projectVariables)}`]),
     ].join("\n") + "\n", { mode: 0o600, flag: "wx" });
     wroteVariables = true;
     const environment: NodeJS.ProcessEnv = {

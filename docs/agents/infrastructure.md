@@ -74,6 +74,12 @@ for a user token whose account has the necessary permissions in each
 organization; [organization tokens are scoped to their organization](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens)
 and cannot manage other organizations.
 
+Provider credentials and literal Terraform inputs for registered project
+workspaces follow the [protected project inputs workflow](../../infrastructure/hcp/README.md#protected-project-inputs).
+The control plane manages those sensitive `tfe_variable` resources and persists
+their complete input inventory for subsequent runs. Application resources remain
+in the owning repository's workspace.
+
 ## Unsupported operations and recovery
 
 A fallback may be needed when no maintained provider covers an operation,
