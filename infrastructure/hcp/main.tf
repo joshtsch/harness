@@ -20,6 +20,21 @@ resource "tfe_workspace" "project" {
   description  = "Repository infrastructure state managed by the shared control plane."
   depends_on   = [tfe_organization.project]
 
+  auto_apply            = false
+  speculative_enabled   = true
+  file_triggers_enabled = true
+  working_directory     = try(var.project_workspace_vcs[each.key].working_directory, "")
+  trigger_patterns      = contains(keys(var.project_workspace_vcs), each.key) ? ["${var.project_workspace_vcs[each.key].working_directory}/**"] : []
+
+  dynamic "vcs_repo" {
+    for_each = contains(keys(var.project_workspace_vcs), each.key) ? [var.project_workspace_vcs[each.key]] : []
+    content {
+      identifier                 = vcs_repo.value.identifier
+      branch                     = vcs_repo.value.branch
+      github_app_installation_id = vcs_repo.value.github_app_installation_id
+    }
+  }
+
   lifecycle {
     prevent_destroy = true
     precondition {
@@ -51,6 +66,10 @@ data "tfe_workspace" "platform_bootstrap" {
 
   # Cross-input checks use preconditions to support Terraform 1.6.
   lifecycle {
+    precondition {
+      condition     = alltrue([for workspace in keys(var.project_workspace_vcs) : contains(var.project_workspace_names, workspace)])
+      error_message = "VCS connections must reference registered project workspaces."
+    }
     precondition {
       condition     = alltrue([for workspace in keys(var.project_workspace_variables) : contains(var.project_workspace_names, workspace)])
       error_message = "Protected project inputs must reference registered project workspaces."

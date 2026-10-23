@@ -208,6 +208,75 @@ with a new complete input map, and keep state and configuration access limited
 to authorized administrators. Provider behavior is documented in the
 [`tfe_variable` reference](https://registry.terraform.io/providers/hashicorp/tfe/0.81.0/docs/resources/variable).
 
+### Automatic infrastructure PR plans
+
+Project workspace VCS settings are owned by this control plane. Supply the
+complete private `TF_VAR_project_workspace_vcs` JSON map through protected
+process inputs or the ignored harness-root `.env`:
+
+```json
+{
+  "example-infrastructure": {
+    "identifier": "example-owner/example-repository",
+    "branch": "main",
+    "working_directory": "infrastructure",
+    "github_app_installation_id": "ghain-EXAMPLE"
+  }
+}
+```
+
+Workspace names must be registered. `identifier` is the GitHub owner/repository;
+the installation ID is HCP's `ghain-` identifier, not GitHub's numeric installation
+ID. The working directory must be a nonempty repository-relative directory with
+no `.` or `..` segments. Root-directory configurations are outside this interface.
+
+As checked on 2026-10-22, connecting through the GitHub App requires two existing
+permissions: the HCP token's user must have authorized the Terraform Cloud GitHub
+App, and the app installation must have access to the repository. Neither the API
+nor the provider can initiate the user's browser authorization. In HCP's
+workspace Settings → Version Control, choose GitHub.com and complete the GitHub
+authorization. If necessary, install or configure the app for the intended
+repository. Stop before saving the workspace connection: Terraform owns that
+setting. See HashiCorp's [GitHub App setup guide](https://developer.hashicorp.com/terraform/cloud-docs/vcs/github-app#authorizing).
+
+After authorization, inspect the [GitHub App installations API](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/github-app-installations)
+with the existing protected user token and select the matching accessible
+installation. Keep its ID and repository identity private. Installing or
+authorizing the app is a browser prerequisite; it does not justify changing
+Terraform-supported workspace settings through another transport.
+
+Run onboarding `plan`, review the complete changes, and apply within the approved
+scope. The workspace uses the selected base branch and working directory, with
+file triggers restricted to `<working_directory>/**`. Speculative plans are
+enabled and auto-apply is explicitly disabled. HCP reports PR plans to GitHub;
+merges to the configured branch can queue an ordinary plan that still requires
+apply approval. Existing GitHub Actions formatting, validation, and mock-provider
+checks remain useful alongside these real plans.
+
+PR Terraform code runs with workspace credentials. Enable this workflow only for
+repositories whose PR authors and reviewers are trusted with those credentials;
+review fork and collaborator access before connection. Sensitive variable flags
+do not prevent malicious Terraform code from reading environment credentials.
+Keep apply permissions restricted separately.
+
+The complete connection map persists as a sensitive bootstrap variable through
+`tfe_variable.project_workspace_vcs`; template markers are escaped for HCL reuse.
+Remove the local override after a successful apply. Later connection changes
+must supply the complete inventory so unrelated connections are preserved.
+Omitting an entry disconnects that workspace and restores its default working
+directory; review the plan before doing so. Import an existing bootstrap variable
+before adoption, using the same prerequisites as protected project inputs.
+Application workspaces already managed by the control plane keep their IDs and
+state. Inspect an existing connection before replacing it; do not reconnect a
+repository under a different workspace to bypass adoption.
+
+To verify activation, inspect live VCS settings, directory triggers, speculative
+enablement, and disabled auto-apply. Then confirm an infrastructure PR produces
+an HCP speculative plan and a GitHub status on its current commit. A saved
+connection or a manually queued plan alone does not prove PR triggering. Report
+authorization or missing-event blockers explicitly. This configuration does not
+make the HCP status a required GitHub branch-protection check.
+
 ### Protected project inputs
 
 The control plane manages provider credentials and literal Terraform inputs for
