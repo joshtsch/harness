@@ -10,6 +10,13 @@ metadata, and status. These are local authoring conventions, not additional OKF
 requirements. Record `verified` for actual checks, never as scaffold data. Use
 timezone-qualified timestamps and preserve unknown keys.
 
+Actor fields use `<producer>/<version>` for agents/tools, `process:<id>` for
+deterministic processes, and `human:<alias>` for actual human actions. If the
+producer version is unavailable, label it `unknown` rather than inventing one.
+`generated` is a mapping with `by` and `at`; `verified` is a mapping or list of
+those events. Prose such as "machine source comparison" describes the check in
+the body, not the actor identifier.
+
 Give cited sources stable IDs/resources and matching Markdown footnotes. Record
 capture/confirmation dates separately from page generation. Mark uncertain
 claims. Use explicit relative Markdown links; repair them on moves. Cite external

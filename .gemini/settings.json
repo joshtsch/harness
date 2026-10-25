@@ -3,6 +3,6 @@
     "fileName": ["AGENTS.md"]
   },
   "skills": {
-    "disabled": ["cavecrew", "caveman-explore", "grill-with-docs"]
+    "disabled": ["cavecrew", "caveman-explore", "grill-with-docs", "initialize-llm-wiki"]
   }
 }

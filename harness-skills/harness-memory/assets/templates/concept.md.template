@@ -7,7 +7,7 @@ sources:
   - id: "{{SOURCE_ID}}"
     resource: "{{SOURCE_URI_OR_RELATIVE_PATH}}"
     title: "{{SOURCE_TITLE}}"
-captured_at: "{{SOURCE_CAPTURE_TIME}}"
+    captured_at: "{{SOURCE_CAPTURE_TIME}}"
 generated:
   by: "{{PRODUCER_AND_VERSION}}"
   at: "{{GENERATED_AT}}"
