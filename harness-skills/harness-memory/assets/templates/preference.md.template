@@ -1,0 +1,24 @@
+---
+type: "Preference"
+title: "{{TITLE}}"
+description: "{{DESCRIPTION}}"
+category: "{{CATEGORY}}"
+scope:
+  user: "{{USER_SCOPE_ALIAS}}"
+preference: "{{EXACT_PREFERENCE}}"
+rationale: "{{RATIONALE}}"
+sources:
+  - id: "confirmation"
+    resource: "{{SANITIZED_CONFIRMATION_REFERENCE}}"
+generated:
+  by: "{{PRODUCER_AND_VERSION}}"
+  at: "{{GENERATED_AT}}"
+status: draft
+stale_after: "{{REVIEW_AT}}"
+---
+
+# {{TITLE}}
+
+{{SCOPE_AND_CONFIRMATION_STATE}}[^confirmation]
+
+[^confirmation]: {{CONFIRMATION_DATE_AND_SAFE_LOCATOR}}

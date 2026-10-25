@@ -55,11 +55,13 @@ launcher, hook-free operation, and fallback.
 
 ## Research destination routing
 
-Research belongs to the child wiki whose declared topics cover the source
-content, not automatically to the harness wiki. Before capturing sources, run
-`pnpm wikis --json`, inspect the sources, and select the unique relevant child
-wiki. Use its `raw` path for source materials or its `pages` path for authored
-synthesis. When no unique match exists, ask the user to choose a destination.
+General source placement uses `knowledge-routing`; vault work uses
+`harness-memory`. Follow [knowledge repository access](harness-memory.md#knowledge-repository-access)
+for discovery, verified checkouts, missing access, and write-workflow handoff.
+Neither role moves knowledge into a central vault by default.
+
+Research follows its owning topic/project, including standalone knowledge
+repositories. Ambiguous ownership needs a user decision before capture.
 
 These roles complement each other: `/implement` coordinates the loop, Ponytail
 produces code during implementation, Caveman shapes conversational prose, Humanizer

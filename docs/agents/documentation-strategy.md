@@ -5,6 +5,11 @@ not copy the same decision into several documents.
 
 For placement decisions, use the harness [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md). This table remains the authority for which surface owns each knowledge type; the skill applies it to scope, context layer, and activation path.
 
+For selected-vault operations use [`harness-memory`](../../harness-skills/harness-memory/SKILL.md).
+Its [contract and migration preview](harness-memory.md) preserve independent wiki
+repositories and general source routing. The paths below remain active until an
+approved data migration changes their retrieval pointers.
+
 | Knowledge | Authoritative surface |
 | --- | --- |
 | Agent rules | `AGENTS.md` and applicable skill files |
@@ -44,15 +49,10 @@ external custody or environment configuration. Apply
 The public harness records general rules and procedures; project-specific facts
 belong with their owning project.
 
-To retrieve harness wiki knowledge, read `docs/llm-wiki-harness/wiki/index.md`
-and search the wiki pages under that directory. For child wiki knowledge, run
-`pnpm wikis --json`, match the declared topics, then inspect the selected wiki's
-index and pages. If its configured repository checkout is missing or unreadable,
-mark inspection blocked and placement provisional. Do not infer page contents or
-claim the wiki was reviewed; state the setup or access needed before finalizing.
-
-The agent-facing wiki uses concise Caveman prose in maintained pages. Preserve original
-wording in `docs/llm-wiki-harness/raw/` and `docs/llm-wiki-harness/templates/`.
+The active harness-wiki entry point is `docs/llm-wiki-harness/wiki/index.md`.
+For additional repositories follow [knowledge repository access](harness-memory.md#knowledge-repository-access);
+for reading and maintenance use `harness-memory`. Prose ownership remains in
+[agent role routing](agent-roles.md).
 
 ## Enforcement
 

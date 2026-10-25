@@ -1,5 +1,10 @@
 # Decision memory
 
+This local store remains authoritative during the
+[`harness-memory` rollout](harness-memory.md#migration-preview). The new skill
+defines vault preference templates, but no data or caller migration has occurred.
+Continue using the CLI below; do not create a parallel preference store.
+
 Decision memory stores user-confirmed preferences. A category skill may retrieve
 relevant preferences and compare them with project configuration. Memory remains
 suggestive; current user instructions, policy, and clear project configuration

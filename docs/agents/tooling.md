@@ -138,12 +138,17 @@ scope must remain explicit:
   initialization links them into `.agents/skills/` and checks them alongside the
   external skill inventory. Add each skill to `capabilities.yml` and
   `agent-policy.yml`; do not add it to `skills-lock.json`.
+- `harness-memory` is the canonical vault workflow and depends one way on
+  `knowledge-routing`. The old `initialize-llm-wiki` entry is retired in capability
+  policy but retained in the external installation inventory. Use
+  `pnpm capabilities route codex harness-memory` (or provider `gemini`). Data
+  migration remains separate; see [the rollout preview](harness-memory.md#migration-preview).
 - Author skills that work unchanged outside this harness in the shared
   `joshtsch/skills` repository, then install them here with `pnpm dlx skills`.
   Keep existing installations intact until each skill is reviewed for ownership
   and migrated deliberately.
 - The current `joshtsch/skills` entries `harness-grill-with-docs`,
-  `initialize-llm-wiki`, `scope-router`, and `save` depend on harness policy or
+  `scope-router` and `save` depend on harness policy or
   workflows; migrate them to `harness-skills/` in a separate inventory change.
   `agent-system-audit` is the broadly reusable entry in that source set.
 - `mattpocock/skills` is an approved external skill source, not a native Codex

@@ -14,7 +14,7 @@ This harness improves its own workflows and coordinates work across independent 
 
 ## Context routing
 
-- Record newly learned durable facts and user corrections in their authoritative source before continuing dependent work. Invoke `$knowledge-routing` to choose the source and retrieval path; follow the [recording procedure](docs/agents/documentation-strategy.md#recording-and-retrieval) for provenance and privacy. Also invoke it when revising, moving, or assessing existing knowledge.
+- Record durable facts and user corrections at their authoritative source before dependent work; follow [recording and retrieval](docs/agents/documentation-strategy.md#recording-and-retrieval). Use `$knowledge-routing` when ownership or placement is unclear, and `$harness-memory` for selected-vault operations.
 - [Documentation strategy](docs/agents/documentation-strategy.md) defines the authoritative surface for each knowledge type. [Agent documentation map](docs/agents/README.md) routes to focused procedures; load only the guidance needed for the current operation.
 - Keep transient handoffs and recovery state under ignored `docs/.scratch/`.
 - For skill installation, check approved project-local sources before reporting a skill unavailable. See [skill and plugin guidance](docs/agents/tooling.md#skills-and-plugins).

@@ -31,23 +31,12 @@ and user approval when an exception is necessary.
 Before reporting completion, check whether the session produced reusable
 research, decisions, source material, or workflow knowledge.
 
-- Run `pnpm wikis --json` to inventory the harness and configured child wikis.
-- Compare the content with each wiki's declared topics. Route harness knowledge
-  to `docs/llm-wiki-harness/`; route project knowledge to the matching child
-  wiki. If coverage is unclear or multiple child wikis match, ask the user.
-- Put source material in the selected wiki's `raw` path and authored synthesis
-  in its `pages` path. Preserve source URLs, retrieval dates, and citations.
-- Update the selected wiki's index and append its log. Keep raw source records
-  immutable after ingestion; stage newly authored source captures according to
-  that wiki's `AGENTS.md` unless the user explicitly requests direct ingestion.
-- Verify wiki links, page reachability, source references, and sensitive-content
-  rules. Include wiki changes in the corresponding harness or child-project
-  commit and change request.
-- If the session produced no durable knowledge, record that wiki ingestion was
-  reviewed and not applicable.
-
-This stage applies to the harness wiki and every affected sub-project wiki; it
-does not require changing unrelated wikis.
+Use `knowledge-routing` when placement is unclear, then `harness-memory` for
+selected-vault capture, maintenance, and promotion checks. Its
+[rollout contract](harness-memory.md#migration-preview) keeps existing sources
+active until approved cutover. Include resulting changes in each owning
+repository's verification and change request. Report capture results or why
+durable capture was not applicable; leave unrelated vaults alone.
 
 ## 5. Check change-request traceability
 

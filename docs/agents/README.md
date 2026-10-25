@@ -18,6 +18,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | DNS failures, connection errors, and stalled network commands | [Sandbox network troubleshooting](tooling.md#sandbox-network-troubleshooting) |
 | Application deployment | [tooling.md](tooling.md#deployment) |
 | User-scoped decision memory | [decision-memory.md](decision-memory.md) |
+| Vault operations, repository access, promotion, and migration | [harness-memory.md](harness-memory.md) and [`harness-memory` skill](../../harness-skills/harness-memory/SKILL.md) |
 | Agent role routing | [agent-roles.md](agent-roles.md) |
 | Documentation strategy | [documentation-strategy.md](documentation-strategy.md) |
 | Durable knowledge placement | [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md) and [documentation-strategy.md](documentation-strategy.md) |
