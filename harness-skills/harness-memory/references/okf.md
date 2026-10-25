@@ -36,3 +36,7 @@ match applicable scopes; narrower wins; stale, conflicting, or incomparable
 preferences need confirmation. Memory suggests; instructions, policy, and project
 configuration prevail. Configuration rationale stays in project-owned docs.
 Retain only non-sensitive preferences in vaults.
+
+Until an approved backend cutover, the existing decision-memory store remains
+authoritative. Use its CLI and confirmation safeguards rather than creating a
+second vault store. A template does not establish an active preference backend.

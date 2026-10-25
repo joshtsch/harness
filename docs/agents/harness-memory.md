@@ -109,3 +109,22 @@ then switch discovery and consumers as one reviewed change. Retain old sources
 for rollback with moved-location pointers. If validation fails, keep old routing;
 if destination edits occurred later, reconcile them before restoring old
 authority. Deleting superseded files requires a separate bounded cleanup.
+
+## Behavioral evaluation
+
+Run `pnpm evaluate:harness-memory prepare [skill-directory]` to create a disposable
+snapshot and six isolated cases. Have agents independent of the skill author run
+the generated `runs/<case>/prompt.md` files, limiting writes to each fixture and
+response file. Use the same cases, order, and model settings for baseline and
+candidate skills; keep the variants' agent contexts separate and their results
+hidden from each other. No live accounts or vaults are
+needed. Fixtures and transcripts stay outside the repository.
+
+Then run `pnpm evaluate:harness-memory check <evaluation-root>`. A nonzero exit
+means a filesystem or generated-metadata check failed. A zero exit establishes
+only those checks: independently review each response/artifact against the case
+rubric before claiming behavioral success. Compare entry-point words/bytes,
+source preservation, read-only behavior, configured-path retrieval, provenance,
+preference confirmation, sensitive-input handling, and promotion reasoning.
+Keep real regressions as cases; do not grade phrasing or demand an exact answer
+string. One paired run is a regression sample, not proof of general equivalence.
