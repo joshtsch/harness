@@ -26,3 +26,5 @@ Wiki covers harness workflow, project boundaries, and shared cross-project knowl
 - [Repository intake](../../agents/repository-intake.md)
 
 - [Initialization and project clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones)
+
+- [Harness memory contract and migration preview](../../agents/harness-memory.md)

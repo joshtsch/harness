@@ -329,6 +329,18 @@ _Avoid_: Prompt hook, project hook, automation
 Evidence-backed observations, decision preferences, and candidate improvements retained for possible future use. Memory may suggest context but cannot override policy, explicit project configuration, or current user instructions.
 _Avoid_: Transcript, automatic truth
 
+**Vault**:
+An independently owned, Obsidian-compatible knowledge workspace containing source material, topic-organized wiki pages, outputs, templates, and agent guidance. A vault may belong to the harness, a project, or a standalone knowledge repository.
+_Avoid_: Central store (vaults can remain independent)
+
+**Knowledge repository**:
+An independent Git repository that owns a portable body of knowledge and its contribution/access lifecycle. The harness discovers it through registered project wiki metadata.
+_Avoid_: Package, copied wiki
+
+**Topic promotion**:
+The reviewed extraction of a coherent vault topic into its own knowledge repository, including recommendation, authorization, registration, migration, verification, and authority cutover. It does not promote memory into policy.
+_Avoid_: Automatic split, policy promotion
+
 **Context manifest**:
 An inspectable record of resolved context sources, exclusions, precedence decisions, conflicts, and estimated context cost.
 _Avoid_: Prompt dump, log

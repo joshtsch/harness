@@ -23,7 +23,8 @@ skills:
   grilling: { capability: grilling, state: canonical, codex: supported, gemini: supported }
   harness-grill-with-docs: { capability: harness-grill-with-docs, state: canonical, requires: [grill-with-docs, grilling, domain-modeling], codex: supported, gemini: degraded }
   impeccable: { capability: ui-design, state: canonical, codex: supported, gemini: supported }
-  initialize-llm-wiki: { capability: initialize-llm-wiki, state: canonical, codex: supported, gemini: degraded }
+  harness-memory: { capability: harness-memory, state: canonical, requires: [knowledge-routing], codex: supported, gemini: supported }
+  initialize-llm-wiki: { capability: harness-memory, state: retired, codex: unavailable, gemini: unavailable }
   knowledge-routing: { capability: knowledge-routing, state: canonical, codex: supported, gemini: supported }
   investigate-first: { capability: investigate-first, state: canonical, codex: supported, gemini: supported }
   lean-build: { capability: lean-build, state: canonical, codex: supported, gemini: supported }
@@ -35,6 +36,7 @@ skills:
   verify-and-stop: { capability: verify-and-stop, state: canonical, codex: supported, gemini: supported }
   worktree-location: { capability: worktree-location, state: canonical, codex: supported, gemini: supported }
 companions:
+  harness-memory: [knowledge-routing]
   harness-grill-with-docs: [scope-router]
   investigate-first: [cavecrew]
   lean-build: [cavecrew, caveman-explore, ui-design]

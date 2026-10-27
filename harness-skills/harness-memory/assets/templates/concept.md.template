@@ -1,0 +1,29 @@
+---
+type: "Concept"
+title: "{{TITLE}}"
+description: "{{DESCRIPTION}}"
+tags: []
+sources:
+  - id: "{{SOURCE_ID}}"
+    resource: "{{SOURCE_URI_OR_RELATIVE_PATH}}"
+    title: "{{SOURCE_TITLE}}"
+    captured_at: "{{SOURCE_CAPTURE_TIME}}"
+generated:
+  by: "{{PRODUCER_AND_VERSION}}"
+  at: "{{GENERATED_AT}}"
+status: draft
+---
+
+# {{TITLE}}
+
+{{CITED_SYNTHESIS}}[^{{SOURCE_ID}}]
+
+## Uncertainty
+
+{{KNOWN_GAPS_OR_CONTRADICTIONS}}
+
+## Related knowledge
+
+{{RELATIVE_MARKDOWN_LINKS}}
+
+[^{{SOURCE_ID}}]: {{SOURCE_TITLE_AND_LOCATOR}}

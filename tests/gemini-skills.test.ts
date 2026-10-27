@@ -1,7 +1,8 @@
 import { resolve } from "node:path";
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { geminiSkillPolicyDrift, verifyGeminiContextSettings } from "../src/gemini-skills.js";
-import type { CapabilityPolicy } from "../src/capability-policy.js";
+import { loadCapabilityPolicy, type CapabilityPolicy } from "../src/capability-policy.js";
 
 const root = "/tmp/harness-gemini-test";
 const policy = {
@@ -13,6 +14,16 @@ const policy = {
 } as unknown as CapabilityPolicy;
 
 describe("Gemini skill discovery", () => {
+  it("keeps checked-in skill exclusions aligned with capability policy", async () => {
+    const repository = resolve(import.meta.dirname, "..");
+    const configuredPolicy = await loadCapabilityPolicy(resolve(repository, "capabilities.yml"), resolve(repository, "agent-policy.yml"));
+    const settings = JSON.parse(await readFile(resolve(repository, ".gemini/settings.json"), "utf8"));
+    for (const [name, route] of Object.entries(configuredPolicy.skills)) {
+      const shouldDisable = route.state !== "canonical" || route.providers.gemini === "unavailable";
+      expect(settings.skills.disabled.includes(name), name).toBe(shouldDisable);
+    }
+  });
+
   it("requires the shared agent instructions as Gemini context", () => {
     expect(() => verifyGeminiContextSettings({ context: { fileName: ["AGENTS.md"] } })).not.toThrow();
     expect(() => verifyGeminiContextSettings({ context: { fileName: ["GEMINI.md"] } })).toThrow("must load AGENTS.md");

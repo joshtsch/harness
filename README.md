@@ -114,9 +114,8 @@ register durable projects in `projects.yml` or ignored `projects.local.yml`.
 This includes durable external skill-source repositories; one-off dependencies
 and temporary checkouts remain outside the project inventory.
 
-List configured child wikis with `pnpm wikis` or `pnpm wikis --json`.
-Research and source-capture requests route to the matching child wiki; harness
-wiki content is reserved for harness knowledge.
+Use `knowledge-routing` to select an authoritative source and `harness-memory`
+to work with a selected vault. See [vault discovery and access](docs/agents/harness-memory.md#knowledge-repository-access).
 
 ## MCP servers
 
@@ -310,7 +309,8 @@ names-only template; never commit `.env` or resolved credentials.
 
 ## Decision memory
 
-User-confirmed preferences can be stored locally and retrieved by category:
+During the [memory rollout](docs/agents/harness-memory.md#migration-preview),
+user-confirmed preferences remain in the local store and are retrieved by category:
 
 ```sh
 pnpm decision-memory get --category worktree-location --user local --project harness
@@ -336,7 +336,11 @@ pnpm config:restore -- --replace
 Backup validates the merged configuration before encrypting the complete local
 file into the harness-scoped Bitwarden secure record `projects-config`.
 
-The agent-facing wiki lives in [`docs/llm-wiki-harness/`](docs/llm-wiki-harness/). Custom skills are authored in [joshtsch/skills](https://github.com/joshtsch/skills).
+The current wiki stays in [`docs/llm-wiki-harness/`](docs/llm-wiki-harness/) until
+its separate migration. New vaults support topic directories, OKF templates,
+in-vault outputs, and reviewed promotion into standalone knowledge repositories.
+Harness-owned skills live in `harness-skills/`; portable shared skills belong in
+[joshtsch/skills](https://github.com/joshtsch/skills).
 Approved external skills sources, including [mattpocock/skills](https://github.com/mattpocock/skills)
 and [pbakaus/impeccable](https://github.com/pbakaus/impeccable),
 are recorded in `.codex/skill-sources.yml`. Use `pnpm dlx skills` for pushed

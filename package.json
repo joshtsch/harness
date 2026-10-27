@@ -13,6 +13,7 @@
     "check:docs": "node --import tsx scripts/check-documentation.ts",
     "decision-memory": "node --import tsx scripts/decision-memory.ts",
     "evaluate:code-graph": "node --import tsx scripts/evaluate-code-graph.ts",
+    "evaluate:harness-memory": "node --import tsx scripts/evaluate-harness-memory.ts",
     "clone": "node --import tsx scripts/clone-project.ts",
     "hcp:projects": "node --import tsx scripts/hcp-projects.ts",
     "create:project": "node --import tsx scripts/create-project.ts",

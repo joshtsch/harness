@@ -28,6 +28,8 @@
 
 - October 9, 2026: Indexed [initialization clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones). Plain init reports missing clones; explicit opt-in restores them. Existing repositories preserved.
 
+- October 25, 2026: Indexed [harness memory](../../agents/harness-memory.md). Skill replaces the initializer route; existing sources stay active pending separate data migration.
+
 ## Related pages
 
 - [[index]]

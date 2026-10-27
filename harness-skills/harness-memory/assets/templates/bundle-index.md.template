@@ -1,0 +1,15 @@
+---
+okf_version: "0.2"
+---
+
+# {{VAULT_TITLE}}
+
+{{VAULT_SCOPE}}
+
+## Topics
+
+- [{{TOPIC_TITLE}}]({{TOPIC_SLUG}}/index.md) - {{TOPIC_DESCRIPTION}}
+
+## History
+
+- [Updates](log.md) - Recorded content changes.
