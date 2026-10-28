@@ -1,8 +1,8 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { decideCapability, parseCapabilityPolicy, recordCapabilityUsage, routeCapability, routeMode, routeSkill, verifyCapabilityInventory } from "../src/capability-policy.js";
+import { capabilityInventory, decideCapability, parseCapabilityPolicy, recordCapabilityUsage, routeCapability, routeMode, routeSkill, verifyCapabilityInventory } from "../src/capability-policy.js";
 
 const catalog = `
 version: 1
@@ -28,6 +28,19 @@ companions:
 `;
 
 describe("capability policy", () => {
+  it("discovers task/mode kinds and real installed paths without inventing missing paths", async () => {
+    const parsed = parseCapabilityPolicy(catalog, policy);
+    const root = await realpath(await mkdtemp(resolve(tmpdir(), "capability-list-")));
+    const directory = resolve(root, "harness-skills/stylist");
+    await mkdir(directory, { recursive: true });
+    await writeFile(resolve(directory, "SKILL.md"), "# Stylist");
+    await mkdir(resolve(root, ".agents/skills"), { recursive: true });
+    await symlink(directory, resolve(root, ".agents/skills/stylist"), "junction");
+    const rows = await capabilityInventory(parsed, root);
+    expect(rows.find((item) => item.id === "style")).toMatchObject({ kind: "mode", skill: "stylist", installed: true, skillPath: resolve(directory, "SKILL.md") });
+    expect(rows.find((item) => item.id === "build")).toMatchObject({ kind: "task", skill: "builder", installed: false, skillPath: null });
+  });
+
   it("covers the lock and routes a canonical primary with an allowed companion", async () => {
     const parsed = parseCapabilityPolicy(catalog, policy);
     const root = await mkdtemp(resolve(tmpdir(), "capability-policy-"));

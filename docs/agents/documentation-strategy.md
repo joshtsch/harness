@@ -56,6 +56,10 @@ for reading and maintenance use `harness-memory`. Prose ownership remains in
 
 ## Enforcement
 
-`pnpm check:docs` verifies the required documentation surfaces and rejects the removed
-legacy root wiki paths. `/code-review` checks new decision-bearing files against this
+`pnpm check:docs` verifies required surfaces, wiki reachability, local paths and
+heading anchors, YAML source references, and keyed source footnotes. It checks new
+concepts for topic placement and topic-index entries while retaining existing
+legacy pages. Use `pnpm check:docs -- --base main` to assess the whole branch;
+the default checks additions against `HEAD`, including staged and untracked files.
+It rejects removed legacy root wiki paths. `/code-review` checks new decision-bearing files against this
 strategy and reports misplaced, duplicated, or missing documentation.

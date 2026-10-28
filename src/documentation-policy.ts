@@ -1,4 +1,5 @@
 import { posix } from "node:path";
+import { wikiIntegrityViolations } from "./wiki-integrity.js";
 
 export const requiredDocumentationPaths = [
   "AGENTS.md",
@@ -48,6 +49,7 @@ export interface DocumentationPolicyInput {
   contents?: Readonly<Record<string, string>>;
   duplicateAllowlist?: ReadonlySet<string>;
   wikiOrphanAllowlist?: ReadonlySet<string>;
+  newPaths?: Iterable<string>;
 }
 
 export function documentationGaps(existingPaths: Iterable<string>): string[] {
@@ -185,5 +187,5 @@ export function documentationViolations(input: DocumentationPolicyInput): string
     const uniquePaths = [...new Set(sectionPaths)].sort();
     if (uniquePaths.length > 1 && !input.duplicateAllowlist?.has(uniquePaths.join("|"))) violations.push(`duplicate documentation section: ${uniquePaths.join(", ")}`);
   }
-  return violations;
+  return [...violations, ...wikiIntegrityViolations({ paths: pathSet, contents: input.contents ?? {}, wikiRoot, newPaths: input.newPaths })];
 }

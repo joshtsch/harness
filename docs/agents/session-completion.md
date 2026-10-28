@@ -2,12 +2,19 @@
 
 Use this workflow before reporting a harness or project session complete.
 
+Apply these steps to the selected [contribution outcome](contributing.md#authorization-and-outcomes).
+Local capture finishes with a verified local artifact and an honest publication
+status; issue creation, pushing, and integration are outside that outcome.
+For public contributions, complete the lifecycle below within the user's existing
+authorization. Report any unapproved external step as pending, without retrying
+an approval rejection through another tool.
+
 ## 1. Establish scope
 
 - Confirm the intended repositories, branches, and change requests.
 - Inspect `git status` in each repository.
 - Preserve unrelated working-tree changes; modify them only when the user explicitly includes them.
-- Confirm every implementation change has an issue in that repository's configured issue tracker. If an outage prevented issue creation, confirm the provisional outage handoff exists and keep the work incomplete until the issue is linked.
+- Confirm every public contribution has an issue in that repository's configured issue tracker. If an outage prevented issue creation, confirm the provisional outage handoff exists and keep the work incomplete until the issue is linked.
 
 ## 2. Commit intended work
 
@@ -52,7 +59,7 @@ project's tracker and update the change request before merging.
 
 ## 6. Merge and synchronize
 
-- Merge only change requests that are review-ready and provider-eligible.
+- Merge only change requests that are review-ready, provider-eligible, and authorized for integration.
 - Fetch the target repository after merge.
 - Fast-forward the local target `main` branch only when it has no unrelated
   local commits or changes.

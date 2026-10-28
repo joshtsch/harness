@@ -2,6 +2,10 @@
 
 Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 
+Before an issue write, resolve the requested [contribution outcome and publication
+authorization](contributing.md#authorization-and-outcomes). Local capture does not
+require creating a public issue. Reuse approval already given in the session.
+
 ## Conventions
 
 - **Create an issue**: `gh issue create --label needs-triage --title "..." --body "..."`. The `needs-triage` label is mandatory intake state.

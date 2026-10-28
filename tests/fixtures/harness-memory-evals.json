@@ -53,5 +53,28 @@
     "files": {"wiki/index.md": "# Topics\n\n- [Topic](large-topic/index.md) - One project's notes.\n", "wiki/large-topic/index.md": "# Large topic\n\n150 pages are reported by the fixture owner, but only Project Copper uses the topic. No independent maintenance owner or sharing boundary has been proposed.\n"},
     "readOnly": true,
     "rubric": ["Do not recommend extraction solely from page count.", "Identify absent reuse/ownership/access evidence and consider index/directory refinement first.", "Do not claim that reported size establishes an independent owner or consumer."]
+  },
+  {
+    "id": "legacy-ingest",
+    "task": "Ingest raw/stages.md into this existing flat wiki. Preserve wiki/legacy.md and existing index entries. Add the new concept at wiki/citation-research/scoped-inputs.md with wiki/citation-research/index.md, link the topic from wiki/index.md, and record the update in wiki/log.md. Existing content must stay in place; no vault migration or external actions.",
+    "files": {
+      "wiki/index.md": "# Existing wiki\n\n- [Legacy](legacy.md) - Keep this entry.\n",
+      "wiki/legacy.md": "# Legacy knowledge\n\nPreserve this flat page unchanged.\n",
+      "raw/stages.md": "# Scoped inputs\n\nSynthetic source, captured 2026-10-28T12:00:00Z. Explicit stage inputs separate stable references from run evidence.\n"
+    },
+    "editable": [
+      "wiki/index.md"
+    ],
+    "required": [
+      "wiki/citation-research/index.md",
+      "wiki/citation-research/scoped-inputs.md",
+      "wiki/log.md"
+    ],
+    "concepts": true,
+    "rubric": [
+      "Preserve the accepted source and legacy page byte-for-byte, and retain existing index entries.",
+      "Place new concepts beneath the topic and make them reachable through root/topic indexes.",
+      "Use valid provenance and footnotes; do not migrate existing content or claim empirical performance evidence."
+    ]
   }
 ]

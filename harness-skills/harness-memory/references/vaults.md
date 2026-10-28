@@ -39,12 +39,6 @@ template, topic indexes from directory-index, and `wiki/log.md` from log. Render
 placeholders to real values; reusable templates copied into `templates/` keep
 their placeholders until a page is authored. YAML-quote substituted strings.
 
-Use lowercase hyphenated topic/concept names. Validate names and resolved paths
-against collisions, traversal, and existing non-vault content. Create initial
-topics justified by the request; add others during ingest. The wiki root lists
-topics, not every concept. Topic indexes list immediate pages/subtopics with
-one-line descriptions. Cross-link overlapping subjects; keep one canonical page.
-
 Preserve existing files and instructions on rerun. Compare before updating and
 explain collisions; a conflicting guide or legacy layout needs a bounded
 migration plan, not an overwrite. Ordinary initialization adds no `.obsidian/`,
@@ -54,3 +48,20 @@ Obsidian is the browsing interface, not a runtime dependency.
 Check required paths, rendered guide/index values, template availability, topic
 reachability, and source/link resolution. Verify a second initialization leaves
 user-edited files intact. An unchanged rerun adds no log entry.
+
+## Topic placement
+
+Use lowercase hyphenated topic/concept names. Validate names and resolved paths
+against collisions, traversal, and existing non-vault content. Create topics
+justified by the request; add others during ingest. Put new concepts beneath
+`wiki/<topic>/`, with an entry in that topic's `index.md`. Link the topic index
+from the wiki root, which lists topics rather than individual new concepts.
+Topic indexes list immediate pages/subtopics with one-line descriptions.
+Cross-link overlapping subjects; keep one canonical page.
+
+Apply this placement when adding new concepts to an existing flat wiki too.
+Preserve existing pages, index entries, and accepted sources. Updating an existing
+concept keeps its current path. A new topic alongside legacy pages does not
+migrate the vault. Broader moves, conflicting local guides, and source-authority
+cutovers need their own bounded migration scope. Preserve old links with a
+concise moved-page pointer when an authorized move needs compatibility.

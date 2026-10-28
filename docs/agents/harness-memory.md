@@ -113,7 +113,7 @@ authority. Deleting superseded files requires a separate bounded cleanup.
 ## Behavioral evaluation
 
 Run `pnpm evaluate:harness-memory prepare [skill-directory]` to create a disposable
-snapshot and six isolated cases. Have agents independent of the skill author run
+snapshot and seven isolated cases. Have agents independent of the skill author run
 the generated `runs/<case>/prompt.md` files, limiting writes to each fixture and
 response file. Use the same cases, order, and model settings for baseline and
 candidate skills; keep the variants' agent contexts separate and their results

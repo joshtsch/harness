@@ -2,11 +2,14 @@
 
 **Summary**: Table of contents for harness knowledge and cross-project information.
 **Sources**: ../../../AGENTS.md
-**Last updated**: October 9, 2026
+**Last updated**: October 28, 2026
 
 Wiki covers harness workflow, project boundaries, and shared cross-project knowledge.
 
 ## Related pages
+
+- [Repository checks and hooks](../../agents/tooling.md#repository-checks-and-hooks)
+- [Local capture and public contribution outcomes](../../agents/contributing.md#authorization-and-outcomes)
 
 - [Impeccable UI design routing](../../agents/agent-roles.md#ui-design-routing)
 - [[log]]

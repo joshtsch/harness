@@ -2,7 +2,15 @@
 
 **Summary**: Append-only record of wiki updates.
 **Sources**: ../../../AGENTS.md
-**Last updated**: October 9, 2026
+**Last updated**: October 28, 2026
+
+## 2026-10-28
+
+- Indexed [repository guardrails](../../agents/tooling.md#repository-checks-and-hooks)
+  and [contribution outcomes](../../agents/contributing.md#authorization-and-outcomes).
+  Topic ingestion and source validation remain documented in their owning skill and checker.
+
+## Historical entries
 
 - 2026-09-16: Initialized wiki for harness knowledge and cross-project information. Created starter structure. Preserved existing root `AGENTS.md`.
 - 2026-09-16: Moved wiki into `docs/llm-wiki-harness/` to isolate agent-facing knowledge from harness implementation docs.
