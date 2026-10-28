@@ -61,16 +61,9 @@ const finalize = createSessionFinalizer();
 const optimizationHook = createSessionOptimizationHook({
   harnessRoot,
   enabled: process.env.HARNESS_OPTIMIZATION_ENABLED !== "0",
-  onDiagnostic: async (diagnostic) => recordSetupEvent(
-    { logDirectory: resolve("docs/.scratch/setup"), sessionId },
-    { type: "optimization-hook-failed", ...diagnostic },
-  ),
-  onRuleSuggestion: async (suggestion) => {
-    console.warn(`Rule suggestion: ${suggestion.issueTitle}`);
-    await recordSetupEvent(
-      { logDirectory: resolve("docs/.scratch/setup"), sessionId },
-      { type: "rule-suggestion", suggestion: { id: suggestion.id, source: suggestion.source, issueTitle: suggestion.issueTitle, rule: suggestion.rule } },
-    );
+  onDiagnostic: () => { console.warn("Memory dry run failed; no memory was saved."); },
+  onProposal: (proposal) => {
+    console.log(JSON.stringify({ memoryProposal: proposal }, null, 2));
   },
 });
 const finalizeSession = async (status: SessionFinalizationStatus): Promise<void> => {

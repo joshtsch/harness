@@ -32,11 +32,14 @@ Before reporting completion, check whether the session produced reusable
 research, decisions, source material, or workflow knowledge.
 
 Use `knowledge-routing` when placement is unclear, then `harness-memory` for
-selected-vault capture, maintenance, and promotion checks. Its
+selected-vault capture, maintenance, and promotion checks. Memory capture follows
+[dry-run-first review](harness-memory.md#dry-run-first-memory-changes); return the
+unsaved proposal and await approval. An unattended completion skips capture when
+no review channel exists. The
 [rollout contract](harness-memory.md#migration-preview) keeps existing sources
 active until approved cutover. Include resulting changes in each owning
-repository's verification and change request. Report capture results or why
-durable capture was not applicable; leave unrelated vaults alone.
+repository's verification and change request. Report capture results, pending
+unsaved review, or why durable capture was not applicable; leave unrelated vaults alone.
 
 ## 5. Check change-request traceability
 

@@ -26,7 +26,8 @@ still provide evidence without producing side effects. Hook failures are diagnos
 not session failures.
 
 The setup lifecycle enables the hook by default. Set `HARNESS_OPTIMIZATION_ENABLED=0`
-to disable collection and persistence for a session; setup completion is unaffected.
+to disable proposal generation for a session; setup completion is unaffected.
+Enabled hooks still follow [dry-run-first review](harness-memory.md#dry-run-first-memory-changes).
 
 ## Initialization and project clones
 
@@ -109,9 +110,10 @@ applying the intended list changes again.
 
 The end-to-end path is:
 
-`SessionFinalization` -> redacted adapter input -> evaluation gates -> observation persistence -> review-only handoff.
+`SessionFinalization` -> redacted adapter input -> evaluation gates -> unsaved memory proposal and review-only handoff -> explicit approval -> evidence persistence.
 
-Evidence is stored only for the session under
+After [dry-run review and separate approval](harness-memory.md#dry-run-first-memory-changes),
+evidence may be stored for the session under
 `docs/.scratch/setup/<session-id>/observations.jsonl`. Each line contains a
 trace-scoped observation; raw prompts, transcripts, credentials, PII, and
 project implementation details are excluded. Inspect this file locally when
@@ -120,10 +122,11 @@ rollback path for human review. A candidate is not an accepted or promoted
 change, and this workflow never applies it automatically.
 
 If collection is unavailable or not wanted, run setup with
-`HARNESS_OPTIMIZATION_ENABLED=0`. A hook failure is recorded as a diagnostic
-and does not change the primary session result. Failed safety, outcome,
-artifact, or observed-state gates can leave evidence for diagnosis but produce
-no handoff.
+`HARNESS_OPTIMIZATION_ENABLED=0`. The setup command displays dry-run proposals
+and diagnostics without saving them to session logs. Hooks without a display callback skip capture. A hook
+failure does not change the primary session result. Failed safety, outcome,
+artifact, or observed-state gates produce no handoff; their evidence remains
+unsaved unless its dry run is separately approved.
 
 ```ts
 const finalization = finalize({

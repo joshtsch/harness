@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { findSensitiveContent } from "./sensitive-content.js";
+import { assertMemoryApproval, createMemoryProposal, requestsMemoryApply, type MemoryApproval, type MemoryProposal } from "./memory-proposal.js";
 
 const schemaVersion = 1;
 const maximumFileBytes = 1024 * 1024;
@@ -59,10 +60,15 @@ export interface DecisionMemoryResult {
   deviation: DecisionDeviation;
 }
 
+export interface DecisionMemoryWriteResult {
+  mode: "dry-run" | "applied";
+  proposal: MemoryProposal;
+}
+
 export interface DecisionMemoryProvider {
   list(): Promise<DecisionMemoryRecord[]>;
-  record(record: DecisionMemoryRecord, options: { confirmed: boolean; replaceId?: string }): Promise<void>;
-  forget(id: string, options: { confirmed: boolean }): Promise<void>;
+  record(record: DecisionMemoryRecord, options?: MemoryApproval & { replaceId?: string }): Promise<DecisionMemoryWriteResult>;
+  forget(id: string, options?: MemoryApproval): Promise<DecisionMemoryWriteResult>;
 }
 
 export function decisionMemoryFilePath(home = homedir()): string {
@@ -122,6 +128,10 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
   }
 
   async list(): Promise<DecisionMemoryRecord[]> {
+    return (await this.readDocument()).records;
+  }
+
+  private async readDocument(): Promise<{ records: DecisionMemoryRecord[]; source: string | null }> {
     assertSupportedPlatform();
     try {
       await this.assertSecureDirectory(false);
@@ -130,54 +140,67 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
         throw new Error("decision memory file permissions are unsafe");
       }
       if (fileInfo.size > maximumFileBytes) throw new Error("decision memory file exceeds the size limit");
-      const document = parseDocument(await readFile(this.filePath, "utf8"));
-      return document.records;
+      const source = await readFile(this.filePath, "utf8");
+      return { records: parseDocument(source).records, source };
     } catch (error) {
-      if (isMissing(error)) return [];
+      if (isMissing(error)) return { records: [], source: null };
       if (error instanceof SyntaxError || error instanceof TypeError) throw new Error("invalid decision memory data");
       throw error;
     }
   }
 
-  async record(record: DecisionMemoryRecord, options: { confirmed: boolean; replaceId?: string }): Promise<void> {
-    assertSupportedPlatform();
-    if (!options.confirmed) throw new Error("decision memory writes require explicit user confirmation");
-    validateRecord(record);
-    const confirmedRecord: DecisionMemoryRecord = {
-      ...record,
-      provenance: { authority: "user-confirmed", confirmedAt: new Date().toISOString(), source: "explicit-user-confirmation" },
-    };
-    await this.withWriteLock(async () => {
-      const current = await this.list();
-      const existingById = current.find((candidate) => candidate.id === confirmedRecord.id);
-      const sameScope = current.find((candidate) => candidate.id !== confirmedRecord.id
-        && candidate.category === confirmedRecord.category && scopesEqual(candidate.scope, confirmedRecord.scope));
-
+  async record(record: DecisionMemoryRecord, options: MemoryApproval & { replaceId?: string } = {}): Promise<DecisionMemoryWriteResult> {
+    const input = structuredClone(record);
+    validateRecord(input);
+    const prepare = async () => {
+      const { records: current, source } = await this.readDocument();
+      const existingById = current.find((candidate) => candidate.id === input.id);
+      const sameScope = current.find((candidate) => candidate.id !== input.id
+        && candidate.category === input.category && scopesEqual(candidate.scope, input.scope));
       if (options.replaceId) {
         const target = current.find((candidate) => candidate.id === options.replaceId);
-        if (!target || target.id !== confirmedRecord.id) throw new Error("replacement target must match the existing record id");
-        if (target.category !== confirmedRecord.category || !scopesEqual(target.scope, confirmedRecord.scope)) {
+        if (!target || target.id !== input.id) throw new Error("replacement target must match the existing record id");
+        if (target.category !== input.category || !scopesEqual(target.scope, input.scope)) {
           throw new Error("replacement must keep the existing category and scope");
         }
       } else if (existingById || sameScope) {
         throw new Error("an existing record requires explicit replacement");
       }
-
       const next = options.replaceId
-        ? current.map((candidate) => candidate.id === options.replaceId ? confirmedRecord : candidate)
-        : [...current, confirmedRecord];
-      await this.writeDocumentUnlocked(next);
-    });
+        ? current.map((candidate) => candidate.id === options.replaceId ? input : candidate)
+        : [...current, input];
+      return { next, proposal: this.proposal(source, next, ["record", input.provenance.source, input.provenance.confirmedAt, options.replaceId ?? "new record"]) };
+    };
+    return this.writeReviewed(prepare, options);
   }
 
-  async forget(id: string, options: { confirmed: boolean }): Promise<void> {
-    assertSupportedPlatform();
-    if (!options.confirmed) throw new Error("removing decision memory requires explicit user confirmation");
+  async forget(id: string, options: MemoryApproval = {}): Promise<DecisionMemoryWriteResult> {
     if (!identifierPattern.test(id)) throw new Error("invalid decision memory id");
-    await this.withWriteLock(async () => {
-      const current = await this.list();
+    const prepare = async () => {
+      const { records: current, source } = await this.readDocument();
       if (!current.some((record) => record.id === id)) throw new Error("decision memory record was not found");
-      await this.writeDocumentUnlocked(current.filter((record) => record.id !== id));
+      const next = current.filter((record) => record.id !== id);
+      return { next, proposal: this.proposal(source, next, ["forget", id]) };
+    };
+    return this.writeReviewed(prepare, options);
+  }
+
+  private proposal(before: string | null, next: DecisionMemoryRecord[], evidence: string[]): MemoryProposal {
+    const after = JSON.stringify({ version: schemaVersion, records: next }, null, 2);
+    if (Buffer.byteLength(after) > maximumFileBytes) throw new Error("decision memory file exceeds the size limit");
+    return createMemoryProposal([{ destination: this.filePath, before, after }],
+      evidence, ["record schema, scope, privacy, replacement and owner-only storage checked"]);
+  }
+
+  private async writeReviewed(prepare: () => Promise<{ next: DecisionMemoryRecord[]; proposal: MemoryProposal }>, approval: MemoryApproval): Promise<DecisionMemoryWriteResult> {
+    const review = await prepare();
+    if (!requestsMemoryApply(approval)) return { mode: "dry-run", proposal: review.proposal };
+    assertMemoryApproval(review.proposal, approval);
+    return this.withWriteLock(async () => {
+      const fresh = await prepare();
+      assertMemoryApproval(fresh.proposal, approval);
+      await this.writeDocumentUnlocked(fresh.next);
+      return { mode: "applied", proposal: fresh.proposal };
     });
   }
 

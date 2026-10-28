@@ -38,7 +38,9 @@ describe("rule suggestions", () => {
         observedState: [],
         ruleSignals: [{ source: "agent" as const, statement: "Secret values must never be passed as process arguments.", rationale: "A command-runner test can enforce this." }],
       };
-      const result = await adaptPromptSession(input);
+      const preview = await adaptPromptSession(input);
+      await expect(readFile(join(root, "docs/.scratch/setup/session-1/rule-suggestions.jsonl"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      const result = await adaptPromptSession(input, { confirmed: true, approvedProposalId: preview.proposal.approvalId });
       expect(result.ruleSuggestions.map(({ source }) => source)).toEqual(["user", "agent"]);
       const persisted = await readFile(join(root, "docs/.scratch/setup/session-1/rule-suggestions.jsonl"), "utf8");
       expect(persisted).toContain(".env.example");

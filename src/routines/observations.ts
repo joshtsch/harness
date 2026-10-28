@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { findSensitiveContent } from "../sensitive-content.js";
 
@@ -83,12 +83,6 @@ export function addRuntimeEvent(observation: Observation, event: RuntimeEvent): 
 export function observationStatePath(harnessRoot: string, sessionId: string): string {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(sessionId)) throw new Error("session ID must be a non-empty slug");
   return join(harnessRoot, "docs", ".scratch", "setup", sessionId, "observations.jsonl");
-}
-
-export async function appendObservation(harnessRoot: string, sessionId: string, observation: Observation): Promise<void> {
-  const path = observationStatePath(harnessRoot, sessionId);
-  await mkdir(join(harnessRoot, "docs", ".scratch", "setup", sessionId), { recursive: true });
-  await appendFile(path, JSON.stringify(createObservation(observation)) + "\n", "utf8");
 }
 
 export async function loadObservations(harnessRoot: string, sessionId: string): Promise<Observation[]> {

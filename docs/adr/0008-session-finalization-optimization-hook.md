@@ -1,5 +1,7 @@
 # Harness-owned session-finalization optimization hook
 
+Evidence persistence is superseded by the [dry-run-first memory policy](../agents/harness-memory.md#dry-run-first-memory-changes); the hook now returns unsaved proposals for review. The original decision follows.
+
 **Status:** accepted
 
 The harness will invoke self-optimization from a best-effort session-finalization hook after structured session state is complete, including failed sessions. The hook persists only redacted, session-scoped evidence and returns a review-only optimization handoff; it will not modify harness or project code, create automations, or promote candidates. Keeping the hook in the harness preserves one lifecycle boundary across independent projects while the manual handoff keeps promotion under review.

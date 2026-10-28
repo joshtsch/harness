@@ -322,12 +322,16 @@ Current issue, projects, worktrees, tools, and state for one coordinated unit of
 _Avoid_: Global memory, prompt history
 
 **Session-finalization hook**:
-A harness-owned boundary that runs after a session's worktrees, artifacts, and observed state are finalized and submits structured evidence to self-optimization. It is best-effort and review-only; it cannot apply changes or enable automations.
+A harness-owned boundary that runs after a session's worktrees, artifacts, and observed state are finalized and prepares structured evidence for self-optimization review. It is best-effort and returns unsaved memory proposals; approved evidence capture remains separate from applying changes or enabling automations.
 _Avoid_: Prompt hook, project hook, automation
 
 **Memory**:
 Evidence-backed observations, decision preferences, and candidate improvements retained for possible future use. Memory may suggest context but cannot override policy, explicit project configuration, or current user instructions.
 _Avoid_: Transcript, automatic truth
+
+**Memory proposal**:
+An unsaved review package describing a proposed memory change, its destination, supporting evidence, and validation results. It becomes eligible for saving only after the user reviews and approves it.
+_Avoid_: Saved memory, pending record
 
 **Vault**:
 An independently owned, Obsidian-compatible knowledge workspace containing source material, topic-organized wiki pages, outputs, templates, and agent guidance. A vault may belong to the harness, a project, or a standalone knowledge repository.

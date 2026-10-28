@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createRequire } from "node:module";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -30,20 +30,31 @@ async function fixture() {
     provenance: { authority: "user-confirmed", confirmedAt: "2026-10-10T00:00:00.000Z", source: "explicit-user-confirmation" },
     reviewAfter: "2027-10-10T00:00:00.000Z",
   }));
-  const run = (args: string[]) => exec(process.execPath, ["--import", tsx, resolve(repoRoot, "scripts/decision-memory.ts"), ...args], {
+  const run = (args: string[], stdin?: string) => {
+    const running = exec(process.execPath, ["--import", tsx, resolve(repoRoot, "scripts/decision-memory.ts"), ...args], {
     cwd: repoRoot,
     env: { ...process.env, HOME: home },
   });
-  return { root, home, input, run };
+    if (stdin !== undefined) running.child.stdin?.end(stdin);
+    return running;
+  };
+  const apply = async (args: string[]) => {
+    const preview = JSON.parse((await run(args)).stdout);
+    return run([...args, "--confirm", "--approve", preview.proposal.approvalId]);
+  };
+  return { root, home, input, run, apply };
 }
 
 describe.skipIf(process.platform === "win32")("decision-memory CLI", () => {
   it("retrieves a scoped user preference after explicit recording confirmation", async () => {
-    const { home, input, run } = await fixture();
+    const { home, input, run, apply } = await fixture();
     await expect(run(["get", "--category", "worktree-location", "--project", "harness"]))
       .resolves.toMatchObject({ stdout: expect.stringContaining('"status": "not-found"') });
-    await expect(run(["record", "--input", input])).rejects.toMatchObject({ code: 1 });
-    await run(["record", "--input", input, "--confirm"]);
+    const preview = await run(["record", "--input", input]);
+    expect(JSON.parse(preview.stdout).mode).toBe("dry-run");
+    expect(await readdir(home)).toEqual([]);
+    await expect(run(["record", "--input", input, "--confirm"])).rejects.toMatchObject({ code: 1 });
+    await apply(["record", "--input", input]);
 
     const result = await run(["get", "--category", "worktree-location", "--project", "harness"]);
     expect(JSON.parse(result.stdout)).toMatchObject({ status: "available", preference: { id: "worktree-root", preference: "~/worktrees" } });
@@ -52,15 +63,15 @@ describe.skipIf(process.platform === "win32")("decision-memory CLI", () => {
   });
 
   it("returns only records matching the requested category", async () => {
-    const { run, input } = await fixture();
-    await run(["record", "--input", input, "--confirm"]);
+    const { run, input, apply } = await fixture();
+    await apply(["record", "--input", input]);
     const result = await run(["list", "--category", "deployment"]);
     expect(JSON.parse(result.stdout)).toEqual([]);
   });
 
   it("reports a deviation as documented only when the absolute project record verifies", async () => {
-    const { root, input, run } = await fixture();
-    await run(["record", "--input", input, "--confirm"]);
+    const { root, input, run, apply } = await fixture();
+    await apply(["record", "--input", input]);
     const projectRoot = join(root, "project");
     await mkdir(projectRoot);
     const recordPath = join(projectRoot, "project-decision.md");
@@ -134,4 +145,22 @@ describe.skipIf(process.platform === "win32")("decision-memory CLI", () => {
     const outsideProject = await run([...args, "--project-root", projectRoot, "--decision-record", join(root, "outside-project.md")]);
     expect(JSON.parse(outsideProject.stdout).deviation.status).toBe("undocumented");
   });
+  it("previews stdin without a proposal file and rejects changed input before writing", async () => {
+    const { home, input, run } = await fixture();
+    const source = await readFile(input, "utf8");
+    const preview = JSON.parse((await run(["record", "--input", "-"], source)).stdout);
+    expect(preview.mode).toBe("dry-run");
+    expect(preview.proposal.evidence).toContain("explicit-user-confirmation");
+    expect(await readdir(home)).toEqual([]);
+    const changed = JSON.stringify({ ...JSON.parse(source), preference: "~/different" });
+    await expect(run(["record", "--input", "-", "--approve", preview.proposal.approvalId, "--confirm"], changed))
+      .rejects.toMatchObject({ stderr: expect.stringContaining("missing or stale") });
+    expect(await readdir(home)).toEqual([]);
+    await run(["record", "--input", "-", "--approve", preview.proposal.approvalId, "--confirm"], source);
+    const removal = JSON.parse((await run(["forget", "--id", "worktree-root"])).stdout);
+    expect(removal.mode).toBe("dry-run");
+    await run(["forget", "--id", "worktree-root", "--approve", removal.proposal.approvalId, "--confirm"]);
+    expect(JSON.parse((await run(["list"])).stdout)).toEqual([]);
+  });
+
 });

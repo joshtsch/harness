@@ -38,15 +38,11 @@ harness policy, and current project configuration take precedence.
    - `not-found`: continue with current policy and configuration.
    - `deviation.status: undocumented`: report the project setting and missing
      rationale, then follow the clear project configuration. Do not block.
-5. Record or replace a preference only after the user explicitly confirms the
-   exact value. Run:
-
-   ```sh
-   pnpm --dir "${HARNESS_ROOT:-.}" decision-memory record \
-     --input <reviewed-json-file> --confirm
-   ```
-
-   Replacement also requires `--replace-id <record-id>`.
+5. For recording, replacement, or removal, follow the
+   [dry-run-first preference workflow](../../docs/agents/decision-memory.md#record-or-replace).
+   Show the unsaved preview, obtain separate approval, and pass its fingerprint
+   with `--approve` and `--confirm`. An initial value confirmation does not
+   authorize saving it before review.
 
 Project rationale belongs in project-owned documentation, not local memory.
 Use the project's documented decision-record destination or

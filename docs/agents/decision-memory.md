@@ -68,7 +68,9 @@ project setting remains in effect.
 
 ## Record or replace
 
-Prepare a reviewed JSON file outside the repository. Example fields:
+Follow the [dry-run-first memory policy](harness-memory.md#dry-run-first-memory-changes).
+Use an existing input source or send JSON on standard input; do not create a
+proposal file to supply the command. Example record fields:
 
 ```json
 {
@@ -87,23 +89,43 @@ Prepare a reviewed JSON file outside the repository. Example fields:
 }
 ```
 
-Review the exact value with the user before writing it:
+Start with the default dry run. With `--input -`, paste the record JSON on standard
+input and finish with Ctrl-D; `--input /path/to/existing-source.json` can read an
+existing source instead. No destination directory, lock, file, or log is created.
 
 ```sh
-pnpm --dir "${HARNESS_ROOT:-.}" decision-memory record --input /path/to/preference.json --confirm
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory record --input -
 ```
 
-Replacing a record requires both its existing ID and a fresh confirmation:
+Review the returned `proposal`: it includes exact before/after content, destination,
+evidence, validation, and an `approvalId`. After separate user approval, submit the
+same input again with that ID:
 
 ```sh
-pnpm --dir "${HARNESS_ROOT:-.}" decision-memory record --input /path/to/preference.json \
-  --replace-id worktree-root --confirm
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory record --input - \
+  --approve <approval-id> --confirm
 ```
 
-Remove one record only after reviewing its ID:
+`--confirm` alone cannot write. Changes to input, destination, or existing store
+invalidate approval. Record provenance, including the supplied `confirmedAt`, is
+preserved exactly so the saved record matches the reviewed content. This date
+records the preference's confirmation evidence; it is not an apply-time audit log.
+An explicit `--dry-run` is also available and cannot be combined with approval.
+
+For replacement, include `--replace-id <existing-id>` in both preview and apply.
+The replacement keeps its existing ID, category, and scope.
+
+Removal also starts with a dry run, showing the existing record and resulting store:
 
 ```sh
-pnpm --dir "${HARNESS_ROOT:-.}" decision-memory forget --id worktree-root --confirm
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory forget --id worktree-root
+```
+
+After separate approval of that proposal:
+
+```sh
+pnpm --dir "${HARNESS_ROOT:-.}" decision-memory forget --id worktree-root \
+  --approve <approval-id> --confirm
 ```
 
 The command refuses duplicate IDs or category/scope pairs without explicit

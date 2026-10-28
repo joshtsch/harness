@@ -26,21 +26,27 @@ approved data migration changes their retrieval pointers.
 ## Recording and retrieval
 
 1. Classify the information before writing it.
-2. Write the decision to its authoritative surface.
+2. Use the applicable write workflow for the authoritative surface, as described below.
 3. Link supporting or dependent surfaces instead of duplicating the decision.
 4. Update `CONTEXT.md` when terminology changes.
 5. Create an ADR only for a hard-to-reverse, surprising trade-off.
-6. Keep transient handoffs and recovery metadata in ignored `docs/.scratch/`.
+6. Keep non-memory transient handoffs and recovery metadata in ignored `docs/.scratch/`.
 7. Run `pnpm check:docs` before review.
 
-For newly learned operational facts and user corrections, record the source and
-confirmation date with the fact, and ensure later work can retrieve it through
+Ordinary policy, code, and documentation edits follow the normal
+[contribution workflow](contributing.md). Memory capture, including corrections
+to existing memory, follows [dry-run-first review and approval](harness-memory.md#dry-run-first-memory-changes).
+Keep unapproved memory proposals in the active review channel, without saving
+them to scratch. A requirement to record facts before dependent work does not
+authorize a memory write; while approval is pending, treat the fact as provisional
+in the active session and state that limitation when relying on it.
+
+For newly learned operational facts and user corrections, include the source and
+confirmation date in the proposed record. Distinguish user-confirmed facts from
+independently verified observations; label uncertain claims before relying on
+them. After an approved write, ensure later work can retrieve the fact through
 the relevant project configuration, index, or focused documentation pointer.
-Distinguish user-confirmed facts from independently verified observations; label
-uncertain claims before relying on them. Update an existing authoritative record
-when correcting a fact. Follow the applicable contribution and write-authorization
-gates; when capture is blocked, report the blocker and keep the fact provisional
-in session scratch.
+When capture is blocked, report the blocker and keep the proposal unsaved.
 
 Keep private domain, account, and provider mappings in the ignored project
 configuration overlay and its encrypted portable record. Keep credentials in

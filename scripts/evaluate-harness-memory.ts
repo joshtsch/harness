@@ -52,14 +52,14 @@ export async function prepareMemoryEvaluation(skillDirectory: string): Promise<s
   for (const scenario of scenarios) {
     const run = join(root, "runs", scenario.id);
     const vault = join(run, "vault");
-    const files = { "AGENTS.md": "# Handwritten fixture guide\n\nDisposable evaluation vault. Local fixture writes only when requested. Preserve this guide and accepted raw sources. No external services, real stores, repositories, commits, or package installation.\n", ...scenario.files };
+    const files = { "AGENTS.md": "# Handwritten fixture guide\n\nDisposable evaluation vault. Every memory request starts with an unsaved dry run; no post-review approval has been given. Preserve this guide and accepted raw sources. No external services, real stores, repositories, commits, or package installation.\n", ...scenario.files };
     for (const [name, contents] of Object.entries(files)) {
       const target = resolve(vault, name);
       if (!target.startsWith(`${vault}${sep}`)) throw new Error("Fixture path escapes its vault");
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, contents);
     }
-    const prompt = `Use $harness-memory at ${join(root, "harness-skills/harness-memory/SKILL.md")} for the following request.\n\n${scenario.task}\n\nSelected vault: ${vault}\nThis is a disposable fixture with established ownership, not a durable project requiring registration or provisioning. Read the fixture guide. Writes are limited to this vault; put your final response in ${join(run, "response.md")} as an evaluation transcript outside the vault. Record necessary confirmation questions in that response rather than calling user-input tools. Do not inspect the evaluation manifest or other cases. No external actions, live stores, or harness edits.\n`;
+    const prompt = `Use $harness-memory at ${join(root, "harness-skills/harness-memory/SKILL.md")} for the following request.\n\n${scenario.task}\n\nSelected vault: ${vault}\nThis is a disposable fixture with established ownership, not a durable project requiring registration or provisioning. Read the fixture guide. This case is the initial request only, without post-preview approval. Leave the vault completely unchanged, including logs and directories. The evaluation harness explicitly authorizes recording the synthetic test response outside the vault in ${join(run, "response.md")} as a test transcript, not a saved memory proposal for a live workflow. Record necessary confirmation questions in that response rather than calling user-input tools. Do not inspect the evaluation manifest or other cases. No external actions, live stores, or harness edits.\n`;
     await writeFile(join(run, "prompt.md"), prompt);
     cases.push({ scenario, before: await snapshot(vault) });
   }

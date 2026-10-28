@@ -20,9 +20,18 @@ freshness. Mark draft, stable, or deprecated content honestly. Update affected
 indexes and the log for changes. Read-only queries and dry runs leave files
 unchanged. Preserve user edits and existing metadata.
 
-Within an authorized task, capture cited facts. Confirm inferred preferences
-and conflicting decisions before making them current. Memory stays suggestive;
-current instructions, policy, and explicit project configuration prevail.
+Start every memory change with an unsaved dry run, including explicit remember
+requests, replacements, and deletions. Show exact content, destinations, evidence,
+and validation, including affected indexes and logs. Create no files, logs,
+locks, or directories during this first pass. Save only after separate user
+approval of the reviewed proposal; changed content, destination, or relevant
+existing state requires a fresh review. One approval may cover an explicitly
+listed batch, subject to each item's checks. Unattended runs leave proposals
+unsaved and skip capture without a review channel.
+
+Confirm inferred preferences and conflicting decisions before making them
+current. Memory stays suggestive; current instructions, policy, and explicit
+project configuration prevail.
 
 Through the harness, use `knowledge-routing` for ownership and `harness-memory`
 for vault operations and topic-promotion recommendations. Outside it, follow
