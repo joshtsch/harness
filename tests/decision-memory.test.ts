@@ -1,4 +1,4 @@
-import { chmod, mkdtemp, readFile, readdir, stat } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, readdir, realpath, stat, symlink, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -180,6 +180,43 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
 });
 
 describe.skipIf(process.platform === "win32")("mandatory write-free preference previews", () => {
+  it("requires fresh approval when an ancestor symlink changes the physical destination", async () => {
+    const root = await realpath(await fixture());
+    const first = join(root, "first");
+    const second = join(root, "second");
+    const alias = join(root, "current");
+    await Promise.all([mkdir(first, { mode: 0o700 }), mkdir(second, { mode: 0o700 })]);
+    await symlink(first, alias);
+    const store = new LocalJsonDecisionMemoryStore(join(alias, "state", "memory.json"));
+    const value = record("one", "~/one");
+    const preview = await store.record(value);
+    expect(preview.proposal.changes[0].destination).toBe(join(first, "state", "memory.json"));
+    expect(await readdir(first)).toEqual([]);
+
+    await unlink(alias);
+    await symlink(second, alias);
+    await expect(store.record(value, { confirmed: true, approvedProposalId: preview.proposal.approvalId })).rejects.toThrow("missing or stale");
+    expect(await readdir(first)).toEqual([]);
+    expect(await readdir(second)).toEqual([]);
+    const fresh = await store.record(value);
+    expect(fresh.proposal.approvalId).not.toBe(preview.proposal.approvalId);
+    expect(fresh.proposal.changes[0].destination).toBe(join(second, "state", "memory.json"));
+    expect(await readdir(second)).toEqual([]);
+
+    await store.record(value, { confirmed: true, approvedProposalId: fresh.proposal.approvalId });
+    expect(await readFile(join(second, "state", "memory.json"), "utf8")).toBe(fresh.proposal.changes[0].after);
+    expect(await readdir(join(second, "state"))).toEqual(["memory.json"]);
+    expect(await readdir(first)).toEqual([]);
+  });
+
+  it("rejects dangling ancestor symlinks without initializing their targets", async () => {
+    const root = await fixture();
+    await symlink(join(root, "missing"), join(root, "current"));
+    const store = new LocalJsonDecisionMemoryStore(join(root, "current", "state", "memory.json"));
+    await expect(store.record(record("one", "~/one"))).rejects.toThrow("unresolved symbolic link");
+    expect(await readdir(root)).toEqual(["current"]);
+  });
+
   it("creates no directory, lock or file even when confirmation omits the reviewed fingerprint", async () => {
     const root = await fixture();
     const store = new LocalJsonDecisionMemoryStore(join(root, "absent", "memory.json"));

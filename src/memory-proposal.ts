@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
+import { lstat, realpath } from "node:fs/promises";
 
 export interface MemoryChange {
   destination: string;
@@ -18,6 +19,27 @@ export interface MemoryProposal {
 export interface MemoryApproval {
   confirmed?: boolean;
   approvedProposalId?: string;
+}
+
+/** Resolve existing ancestors without creating a missing destination. Dangling links fail closed. */
+export async function resolveMemoryDestination(destination: string): Promise<string> {
+  let ancestor = resolve(destination);
+  const missing: string[] = [];
+  for (;;) {
+    try { return resolve(await realpath(ancestor), ...missing); } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      try {
+        await lstat(ancestor);
+        throw new Error("memory destination contains an unresolved symbolic link");
+      } catch (infoError) {
+        if ((infoError as NodeJS.ErrnoException).code !== "ENOENT") throw infoError;
+      }
+      const parent = dirname(ancestor);
+      if (parent === ancestor) throw new Error("memory destination has no accessible ancestor");
+      missing.unshift(basename(ancestor));
+      ancestor = parent;
+    }
+  }
 }
 
 /** Bind review to the exact batch, destinations, evidence and existing contents, without saving a proposal. */

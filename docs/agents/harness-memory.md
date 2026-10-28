@@ -54,7 +54,9 @@ batch whose items and destinations were all shown. Each item still requires its
 normal validation and write checks, and unlisted changes remain unapproved.
 
 Executable apply paths bind approval to the reviewed proposal and relevant
-existing state with proposal fingerprints. A fingerprint establishes which
+existing state with proposal fingerprints. Destinations resolve through existing
+filesystem ancestors without creating missing paths; repointed symbolic links
+require fresh review, and unresolved links fail closed. A fingerprint establishes which
 proposal the approval covers; it does not authenticate the user's identity or
 replace the agent's responsibility to obtain actual user confirmation.
 

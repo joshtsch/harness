@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { findSensitiveContent } from "./sensitive-content.js";
-import { assertMemoryApproval, createMemoryProposal, requestsMemoryApply, type MemoryApproval, type MemoryProposal } from "./memory-proposal.js";
+import { assertMemoryApproval, createMemoryProposal, requestsMemoryApply, resolveMemoryDestination, type MemoryApproval, type MemoryProposal } from "./memory-proposal.js";
 
 const schemaVersion = 1;
 const maximumFileBytes = 1024 * 1024;
@@ -131,8 +131,9 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
     return (await this.readDocument()).records;
   }
 
-  private async readDocument(): Promise<{ records: DecisionMemoryRecord[]; source: string | null }> {
+  private async readDocument(): Promise<{ records: DecisionMemoryRecord[]; source: string | null; destination: string }> {
     assertSupportedPlatform();
+    const destination = await resolveMemoryDestination(this.filePath);
     try {
       await this.assertSecureDirectory(false);
       const fileInfo = await lstat(this.filePath);
@@ -140,10 +141,10 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
         throw new Error("decision memory file permissions are unsafe");
       }
       if (fileInfo.size > maximumFileBytes) throw new Error("decision memory file exceeds the size limit");
-      const source = await readFile(this.filePath, "utf8");
-      return { records: parseDocument(source).records, source };
+      const source = await readFile(destination, "utf8");
+      return { records: parseDocument(source).records, source, destination };
     } catch (error) {
-      if (isMissing(error)) return { records: [], source: null };
+      if (isMissing(error)) return { records: [], source: null, destination };
       if (error instanceof SyntaxError || error instanceof TypeError) throw new Error("invalid decision memory data");
       throw error;
     }
@@ -153,7 +154,7 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
     const input = structuredClone(record);
     validateRecord(input);
     const prepare = async () => {
-      const { records: current, source } = await this.readDocument();
+      const { records: current, source, destination } = await this.readDocument();
       const existingById = current.find((candidate) => candidate.id === input.id);
       const sameScope = current.find((candidate) => candidate.id !== input.id
         && candidate.category === input.category && scopesEqual(candidate.scope, input.scope));
@@ -169,7 +170,7 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
       const next = options.replaceId
         ? current.map((candidate) => candidate.id === options.replaceId ? input : candidate)
         : [...current, input];
-      return { next, proposal: this.proposal(source, next, ["record", input.provenance.source, input.provenance.confirmedAt, options.replaceId ?? "new record"]) };
+      return { next, proposal: this.proposal(source, next, ["record", input.provenance.source, input.provenance.confirmedAt, options.replaceId ?? "new record"], destination) };
     };
     return this.writeReviewed(prepare, options);
   }
@@ -177,18 +178,18 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
   async forget(id: string, options: MemoryApproval = {}): Promise<DecisionMemoryWriteResult> {
     if (!identifierPattern.test(id)) throw new Error("invalid decision memory id");
     const prepare = async () => {
-      const { records: current, source } = await this.readDocument();
+      const { records: current, source, destination } = await this.readDocument();
       if (!current.some((record) => record.id === id)) throw new Error("decision memory record was not found");
       const next = current.filter((record) => record.id !== id);
-      return { next, proposal: this.proposal(source, next, ["forget", id]) };
+      return { next, proposal: this.proposal(source, next, ["forget", id], destination) };
     };
     return this.writeReviewed(prepare, options);
   }
 
-  private proposal(before: string | null, next: DecisionMemoryRecord[], evidence: string[]): MemoryProposal {
+  private proposal(before: string | null, next: DecisionMemoryRecord[], evidence: string[], destination: string): MemoryProposal {
     const after = JSON.stringify({ version: schemaVersion, records: next }, null, 2);
     if (Buffer.byteLength(after) > maximumFileBytes) throw new Error("decision memory file exceeds the size limit");
-    return createMemoryProposal([{ destination: this.filePath, before, after }],
+    return createMemoryProposal([{ destination, before, after }],
       evidence, ["record schema, scope, privacy, replacement and owner-only storage checked"]);
   }
 
@@ -196,28 +197,30 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
     const review = await prepare();
     if (!requestsMemoryApply(approval)) return { mode: "dry-run", proposal: review.proposal };
     assertMemoryApproval(review.proposal, approval);
+    if (review.proposal.changes.every((change) => change.before === change.after)) return { mode: "applied", proposal: review.proposal };
+    const destination = review.proposal.changes[0].destination;
     return this.withWriteLock(async () => {
       const fresh = await prepare();
       assertMemoryApproval(fresh.proposal, approval);
-      await this.writeDocumentUnlocked(fresh.next);
+      await this.writeDocumentUnlocked(fresh.next, destination);
       return { mode: "applied", proposal: fresh.proposal };
-    });
+    }, destination);
   }
 
-  private async assertSecureDirectory(create: boolean): Promise<void> {
+  private async assertSecureDirectory(create: boolean, directory = this.directory): Promise<void> {
     if (create) {
-      const created = await mkdir(this.directory, { recursive: true, mode: 0o700 });
-      if (created) await chmod(this.directory, 0o700).catch(() => { throw new Error("unable to secure decision memory directory"); });
+      const created = await mkdir(directory, { recursive: true, mode: 0o700 });
+      if (created) await chmod(directory, 0o700).catch(() => { throw new Error("unable to secure decision memory directory"); });
     }
-    const info = await lstat(this.directory);
+    const info = await lstat(directory);
     if (!info.isDirectory() || info.isSymbolicLink() || unsafeMode(info.mode) || !ownedByCurrentUser(info.uid)) {
       throw new Error("decision memory directory permissions are unsafe");
     }
   }
 
-  private async withWriteLock<T>(operation: () => Promise<T>): Promise<T> {
-    await this.assertSecureDirectory(true);
-    const lockPath = `${this.filePath}.lock`;
+  private async withWriteLock<T>(operation: () => Promise<T>, destination: string): Promise<T> {
+    await this.assertSecureDirectory(true, dirname(destination));
+    const lockPath = `${destination}.lock`;
     const lock = await acquireWriteLock(lockPath);
     try {
       return await operation();
@@ -227,8 +230,8 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
     }
   }
 
-  private async writeDocumentUnlocked(records: DecisionMemoryRecord[]): Promise<void> {
-    const temporaryPath = join(this.directory, `.decision-memory-${randomUUID()}.tmp`);
+  private async writeDocumentUnlocked(records: DecisionMemoryRecord[], destination: string): Promise<void> {
+    const temporaryPath = join(dirname(destination), `.decision-memory-${randomUUID()}.tmp`);
     try {
       const temporary = await open(temporaryPath, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600);
       try {
@@ -237,7 +240,7 @@ export class LocalJsonDecisionMemoryStore implements DecisionMemoryProvider {
       } finally {
         await temporary.close();
       }
-      await rename(temporaryPath, this.filePath);
+      await rename(temporaryPath, destination);
     } finally {
       await rm(temporaryPath, { force: true });
     }

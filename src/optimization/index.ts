@@ -16,7 +16,7 @@ import { findSensitiveContent } from "../sensitive-content.js";
 import type { SessionFinalizationHook } from "../session/session-finalization.js";
 import { collectSessionEvidence } from "./session-evidence.js";
 import { collectRuleSuggestions, createRuleSuggestion, type RuleSignal, type RuleSuggestion } from "../rule-suggestions.js";
-import { assertMemoryApproval, createMemoryProposal, requestsMemoryApply, type MemoryApproval, type MemoryProposal } from "../memory-proposal.js";
+import { assertMemoryApproval, createMemoryProposal, requestsMemoryApply, resolveMemoryDestination, type MemoryApproval, type MemoryProposal } from "../memory-proposal.js";
 export { collectSessionEvidence } from "./session-evidence.js";
 
 type SessionEvaluationInput = Parameters<typeof evaluateSession>[0];
@@ -336,7 +336,8 @@ export async function adaptPromptSession(input: PromptSessionInput, approval: Me
     }
   };
   const prepare = async (): Promise<{ proposal: MemoryProposal; ruleSuggestions: RuleSuggestion[] }> => {
-    const [beforeObservations, beforeSuggestions] = await Promise.all([readOptional(statePath), readOptional(suggestionPath)]);
+    const [observationDestination, suggestionDestination] = await Promise.all([resolveMemoryDestination(statePath), resolveMemoryDestination(suggestionPath)]);
+    const [beforeObservations, beforeSuggestions] = await Promise.all([readOptional(observationDestination), readOptional(suggestionDestination)]);
     for (const source of [beforeObservations, beforeSuggestions]) {
       if (source !== null && findSensitiveContent(source.split("\n").map((line) => `+${line}`).join("\n")).length > 0) throw new Error("persisted optimization evidence contains sensitive content");
     }
@@ -371,8 +372,8 @@ export async function adaptPromptSession(input: PromptSessionInput, approval: Me
     return {
       ruleSuggestions,
       proposal: createMemoryProposal([
-        { destination: statePath, before: beforeObservations, after: appendLines(beforeObservations, addedObservations) },
-        { destination: suggestionPath, before: beforeSuggestions, after: appendLines(beforeSuggestions, ruleSuggestions) },
+        { destination: observationDestination, before: beforeObservations, after: appendLines(beforeObservations, addedObservations) },
+        { destination: suggestionDestination, before: beforeSuggestions, after: appendLines(beforeSuggestions, ruleSuggestions) },
       ], evidence, ["Trace provenance and sensitive content validated", "Observation and rule suggestion identities validated", `Session evaluation: ${baseResult.evaluation.status}`]),
     };
   };
@@ -381,22 +382,24 @@ export async function adaptPromptSession(input: PromptSessionInput, approval: Me
   if (requestsMemoryApply(approval)) {
     // Reject missing or stale approval before lock acquisition creates any directories.
     assertMemoryApproval(prepared.proposal, approval);
-    const previous = persistenceLocks.get(statePath) ?? Promise.resolve();
-    const persist = previous.catch(() => undefined).then(async () => {
-      const fresh = await prepare();
-      assertMemoryApproval(fresh.proposal, approval);
-      await withPersistenceLock(statePath, async () => {
-        const locked = await prepare();
-        assertMemoryApproval(locked.proposal, approval);
-        for (const change of locked.proposal.changes) {
-          if (change.after !== null && change.after !== change.before) await writeFile(change.destination, change.after, "utf8");
-        }
-        prepared = locked;
+    if (prepared.proposal.changes.some((change) => change.before !== change.after)) {
+      const previous = persistenceLocks.get(statePath) ?? Promise.resolve();
+      const persist = previous.catch(() => undefined).then(async () => {
+        const fresh = await prepare();
+        assertMemoryApproval(fresh.proposal, approval);
+        await withPersistenceLock(await resolveMemoryDestination(statePath), async () => {
+          const locked = await prepare();
+          assertMemoryApproval(locked.proposal, approval);
+          for (const change of locked.proposal.changes) {
+            if (change.after !== null && change.after !== change.before) await writeFile(change.destination, change.after, "utf8");
+          }
+          prepared = locked;
+        });
       });
-    });
-    persistenceLocks.set(statePath, persist);
-    try { await persist; } finally {
-      if (persistenceLocks.get(statePath) === persist) persistenceLocks.delete(statePath);
+      persistenceLocks.set(statePath, persist);
+      try { await persist; } finally {
+        if (persistenceLocks.get(statePath) === persist) persistenceLocks.delete(statePath);
+      }
     }
     mode = "applied";
   }

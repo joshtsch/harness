@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { adaptPromptSession, collectSessionEvidence, createSessionOptimizationHook, submitOptimization, type OptimizationSubmission, type PromptSessionInput } from "../index.js";
@@ -73,7 +73,7 @@ describe("prompt/session optimization adapter", () => {
   };
 
   it("defaults to a deterministic zero-write preview with a traced candidate handoff", async () => {
-    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    const root = await realpath(await mkdtemp(join(tmpdir(), "optimization-adapter-")));
     try {
       const input = promptSession(root, { prompt: "Always update .env.example whenever variables are added" });
       const before = await snapshot(root);
@@ -91,7 +91,7 @@ describe("prompt/session optimization adapter", () => {
   });
 
   it("writes exactly the approved batch and preserves populated state during later previews", async () => {
-    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    const root = await realpath(await mkdtemp(join(tmpdir(), "optimization-adapter-")));
     try {
       const input = promptSession(root, { prompt: "Always update .env.example whenever variables are added" });
       const preview = await adaptPromptSession(input);
@@ -106,6 +106,18 @@ describe("prompt/session optimization adapter", () => {
       const next = await adaptPromptSession(promptSession(root, { traceId: "trace-2", resolvedContext: { id: "context-2", provenance: "trace-2:context", summary: "context" }, artifacts: [], observedState: [] }));
       expect(next.proposal.changes.find(({ destination }) => destination === paths(root).observations)?.before).toBe(await readFile(paths(root).observations, "utf8"));
       expect(await snapshot(root)).toEqual(before);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("keeps an approved empty proposal write-free when the destination is absent", async () => {
+    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    try {
+      const input = promptSession(root, { feedback: [] });
+      const preview = await adaptPromptSession(input);
+      expect(preview.proposal.changes.every(({ before, after }) => before === null && after === null)).toBe(true);
+      const applied = await adaptPromptSession(input, { confirmed: true, approvedProposalId: preview.proposal.approvalId });
+      expect(applied.mode).toBe("applied");
+      expect(await snapshot(root)).toEqual([]);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 
@@ -128,6 +140,51 @@ describe("prompt/session optimization adapter", () => {
       await expect(adaptPromptSession(input, approved)).rejects.toThrow("stale");
       expect(await snapshot(root)).toEqual(before);
     } finally { await Promise.all([root, other].map((path) => rm(path, { recursive: true, force: true }))); }
+  });
+
+  it.skipIf(process.platform === "win32")("requires fresh approval after a session-directory symlink changes physical destinations", async () => {
+    const root = await realpath(await mkdtemp(join(tmpdir(), "optimization-adapter-")));
+    try {
+      const first = join(root, "first");
+      const second = join(root, "second");
+      const session = join(root, "docs/.scratch/setup/session-1");
+      await Promise.all([mkdir(first), mkdir(second), mkdir(join(root, "docs/.scratch/setup"), { recursive: true })]);
+      await symlink(first, session);
+      const input = promptSession(root, { prompt: "Always update .env.example whenever variables are added" });
+      const preview = await adaptPromptSession(input);
+      expect(preview.proposal.changes.map(({ destination }) => destination)).toEqual([
+        join(first, "observations.jsonl"), join(first, "rule-suggestions.jsonl"),
+      ]);
+      expect(await readdir(first)).toEqual([]);
+
+      await unlink(session);
+      await symlink(second, session);
+      const before = await snapshot(root);
+      await expect(adaptPromptSession(input, { confirmed: true, approvedProposalId: preview.proposal.approvalId })).rejects.toThrow("missing or stale");
+      expect(await snapshot(root)).toEqual(before);
+      const fresh = await adaptPromptSession(input);
+      expect(fresh.proposal.approvalId).not.toBe(preview.proposal.approvalId);
+      expect(fresh.proposal.changes.map(({ destination }) => destination)).toEqual([
+        join(second, "observations.jsonl"), join(second, "rule-suggestions.jsonl"),
+      ]);
+      expect(await snapshot(root)).toEqual(before);
+
+      await adaptPromptSession(input, { confirmed: true, approvedProposalId: fresh.proposal.approvalId });
+      for (const change of fresh.proposal.changes) expect(await readFile(change.destination, "utf8")).toBe(change.after);
+      expect(await readdir(first)).toEqual([]);
+      expect((await readdir(second)).sort()).toEqual(["observations.jsonl", "rule-suggestions.jsonl"]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it.skipIf(process.platform === "win32")("rejects a dangling session-directory symlink without initializing its target", async () => {
+    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    try {
+      await mkdir(join(root, "docs/.scratch/setup"), { recursive: true });
+      await symlink(join(root, "missing"), join(root, "docs/.scratch/setup/session-1"));
+      await expect(adaptPromptSession(promptSession(root))).rejects.toThrow("unresolved symbolic link");
+      expect((await readdir(root)).sort()).toEqual(["docs"]);
+      expect(await readdir(join(root, "docs/.scratch/setup"))).toEqual(["session-1"]);
+    } finally { await rm(root, { recursive: true, force: true }); }
   });
 
   it("serializes concurrent applies and rejects approval made stale by the first writer", async () => {
