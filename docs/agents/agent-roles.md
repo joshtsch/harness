@@ -19,6 +19,12 @@ Use one role for each kind of work:
   two-axis standards/spec review and creates the GitHub change request after the
   readiness gate passes.
 
+Route this capability before reviewing a branch:
+
+```sh
+pnpm capabilities route codex code-review
+```
+
 ## UI design routing
 
 Impeccable is the default skill for frontend UI shaping, critique, and polish.

@@ -11,13 +11,13 @@ Harness changes are developed on feature branches, never directly on `main`.
 4. Create a feature branch using the repository's `codex/` branch convention when working through Codex, and include the issue number when the provider supports it.
 5. Implement the change and run relevant tests, typechecking, and build checks.
 6. Run `code-review` against `main`. The review must cover both documented standards and the originating GitHub issue or specification.
-7. Resolve or explicitly accept review findings.
+7. Follow the [`code-review` resolution loop](../../harness-skills/code-review/SKILL.md#6-resolve-findings-and-repeat); open only after its final two-axis review has no unresolved actionable findings and required checks pass.
 8. Open a GitHub merge request (shown as a pull request by GitHub) that links the issue and includes verification results.
 
 If an issue tracker outage prevents issue creation, record a redacted outage handoff under `docs/.scratch/` with the intended title, attempted operation, timestamp, and exact blocker. Mark the branch provisional; do not push or open a merge request until the issue is created and linked. A local commit is allowed only when the user explicitly authorizes a provisional commit, and it must not be presented as review-ready.
 
-Do not open a merge request before the review is complete. Do not push directly to `main` or use the harness CLI to manage the harness repository itself.
+Do not open a merge request before the review loop in the [`code-review` skill](../../harness-skills/code-review/SKILL.md#6-resolve-findings-and-repeat) is complete. Do not push directly to `main` or use the harness CLI to manage the harness repository itself.
 
 ## Completion rule
 
-Requests to pick up, work on, or implement a backlog issue are end-to-end development requests. Selecting an issue or producing a locally verified patch is an intermediate state, not completion. Continue through the review loop and open the merge request after all review gates pass. Report completion only after the merge request exists, or state the exact blocker and next required action.
+Requests to pick up, work on, or implement a backlog issue are end-to-end development requests. Selecting an issue or producing a locally verified patch is an intermediate state, not completion. Continue through the iterative two-axis review loop and open the merge request only after the review skill's readiness gate and all required checks pass. Report completion only after the merge request exists, or state the exact blocker and next required action.
