@@ -15,9 +15,9 @@ and dedicated topic repositories are supported. A user-supplied existing locatio
 takes precedence. Never invent a remote, change visibility, or create an
 in-harness vault as a fallback for missing registration.
 
-Inspect the destination, confirm its owner and scope, and list planned changes.
-A dry run performs no writes, including logs. For authorized initialization,
-create missing paths from the templates:
+Inspect the destination, confirm its owner and scope, and show the proposed
+files without creating them. Follow the [dry-run-first review](../../../docs/agents/harness-memory.md#dry-run-first-memory-changes); initialize only after separate approval of the exact scaffold.
+Create approved missing paths from the templates:
 
 ```text
 <vault>/

@@ -35,7 +35,7 @@ Follow [decision-memory precedence](../../../docs/agents/decision-memory.md):
 match applicable scopes; narrower wins; stale, conflicting, or incomparable
 preferences need confirmation. Memory suggests; instructions, policy, and project
 configuration prevail. Configuration rationale stays in project-owned docs.
-Retain only non-sensitive preferences in vaults.
+Retain only non-sensitive preferences in vaults, subject to [dry-run-first review](../../../docs/agents/harness-memory.md#dry-run-first-memory-changes).
 
 Until an approved backend cutover, the existing decision-memory store remains
 authoritative. Use its CLI and confirmation safeguards rather than creating a

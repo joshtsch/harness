@@ -40,7 +40,7 @@ const inputFromFinalization = (harnessRoot: string, finalization: SessionFinaliz
 });
 
 describe("end-to-end self-optimization workflow", () => {
-  it("finalizes, persists one observation, and returns a review-only handoff deterministically", async () => {
+  it("previews finalized evidence, persists only after review, and returns a review-only handoff", async () => {
     const root = await mkdtemp(join(tmpdir(), "self-optimization-e2e-"));
     try {
       const finalization = createSessionFinalizer()(createFinalization());
@@ -48,6 +48,8 @@ describe("end-to-end self-optimization workflow", () => {
       const second = await adaptPromptSession(inputFromFinalization(root, finalization));
 
       expect(second).toEqual(first);
+      await expect(readFile(join(root, "docs/.scratch/setup/session-e2e/observations.jsonl"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await adaptPromptSession(inputFromFinalization(root, finalization), { confirmed: true, approvedProposalId: first.proposal.approvalId });
       expect(first.observations).toHaveLength(1);
       expect(first.handoff).toMatchObject({ metadata: { status: "candidate", sessionId: "session-e2e", traceId: "trace-e2e" } });
       expect(first.handoff?.metadata).not.toHaveProperty("promoted");
@@ -63,7 +65,7 @@ describe("end-to-end self-optimization workflow", () => {
     ["failed event", { events: [{ ...createFinalization().events[0], result: "failure" as const, failureCategory: "validation" }] }],
     ["missing artifact", { artifacts: [{ id: "report", provenance: "trace-e2e:artifact:report", exists: false, valid: false }] }],
     ["mismatched observed state", { observedState: [{ id: "working-tree", provenance: "trace-e2e:state:working-tree", matches: false }] }],
-  ])("records %s without producing a handoff", async (_name, overrides) => {
+  ])("previews %s without producing a handoff", async (_name, overrides) => {
     const root = await mkdtemp(join(tmpdir(), "self-optimization-e2e-failure-"));
     try {
       const finalization = createSessionFinalizer()(createFinalization(overrides));

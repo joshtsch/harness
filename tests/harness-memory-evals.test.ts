@@ -38,4 +38,20 @@ describe("harness-memory behavioral evaluation", () => {
     expect(failures).toContain("wiki/topic/leak.md: Invalid actor/time metadata");
     expect(failures).toContain("Unresolved local link in wiki/topic/leak.md: missing.md");
   });
+  it("requires default dry runs for ingest, initialization and remember requests without demanding generated files", async () => {
+    const root = await fixture();
+    const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
+    for (const { scenario } of manifest.cases) {
+      expect(scenario.readOnly).toBe(true);
+      await writeFile(join(root, "runs", scenario.id, "response.md"), "Unsaved dry run shown; awaiting separate approval.\n");
+    }
+    const results = await checkMemoryEvaluation(root);
+    expect(results.cases.every((item) => item.automatedPass)).toBe(true);
+    const init = join(root, "runs/initialize-preserve/vault");
+    await mkdir(join(init, "wiki"));
+    await writeFile(join(init, "wiki/log.md"), "Dry run logged\n");
+    const changed = await checkMemoryEvaluation(root);
+    expect(changed.cases.find((item) => item.case === "initialize-preserve")?.failures).toContain("Read-only operation created paths");
+  });
+
 });

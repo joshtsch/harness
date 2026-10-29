@@ -352,7 +352,7 @@ Impeccable is the default for UI shaping, critique, and polish. See
 
 ## Prompt/session optimization adapter
 
-Normal harness work can submit a session trace through `adaptPromptSession`. Pass a session-scoped prompt, resolved context, operational events, artifacts, feedback, and observed state. The adapter validates trace provenance and sensitive content, derives open observations and ranked candidate improvements, writes only those observations to `docs/.scratch/setup/<session-id>/observations.jsonl`, and returns a candidate handoff only when safety and outcome gates pass. Handoffs remain review-only; callers must not promote or apply them automatically.
+Normal harness work can submit a session trace through `adaptPromptSession`. Pass a session-scoped prompt, resolved context, operational events, artifacts, feedback, and observed state. The adapter validates trace provenance and sensitive content, derives open observations and ranked candidate improvements, returns an unsaved dry-run proposal, and returns a candidate handoff only when safety and outcome gates pass. Handoffs remain review-only; callers must not promote or apply them automatically.
 
 ```ts
 import { adaptPromptSession, type PromptSessionInput } from "./src/optimization/index.js";
@@ -366,13 +366,21 @@ const input: PromptSessionInput = {
   observedState: [{ id: "working-tree", provenance: "trace-1:state:working-tree", matches: true }],
   feedback: [{ id: "feedback-1", source: "deterministic", summary: "diff check passed", proposedChange: "Suggest review mode for diff-only tasks", expectedBenefit: "fewer unrelated edits", risk: "false recommendation", confidence: 0.8, rollbackPath: "remove recommendation rule", verification: ["run tests"], scope: "harness", expectedBenefitScore: 0.8, cost: 0.1, riskScore: 0.1, evidenceStrength: 0.9 }],
 };
-const result = await adaptPromptSession(input);
+const result = await adaptPromptSession(input); // Read-only; display result.proposal for review.
+// Only after separate user approval of this exact proposal:
+const applied = await adaptPromptSession(input, {
+  confirmed: true, approvedProposalId: result.proposal.approvalId,
+});
 ```
 
 The adapter also returns review-only `ruleSuggestions` when a user states a
 repeatable expectation, or when the caller supplies a bounded agent
 `ruleSignals` entry. Each suggestion includes a proposed issue title and body,
 but the harness does not create or publish a GitHub issue automatically. During
-session setup, suggestions are printed as `Rule suggestion: ...`, recorded in
-the session event log, and persisted as namespaced scratch state under
-`docs/.scratch/setup/<session-id>/rule-suggestions.jsonl`.
+session setup, proposals are displayed without saving observations, suggestions,
+or proposal contents in the session event log. The
+[dry-run-first memory policy](docs/agents/harness-memory.md#dry-run-first-memory-changes)
+requires separate approval before the adapter can persist the exact reviewed
+batch to `observations.jsonl` and `rule-suggestions.jsonl` under
+`docs/.scratch/setup/<session-id>/`. Changed proposals or relevant existing state
+require fresh review; hooks without a display channel skip capture.

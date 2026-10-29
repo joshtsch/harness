@@ -7,6 +7,9 @@ description: "Use when deciding where durable agent knowledge belongs, adding, m
 
 Recommend where knowledge belongs and how an agent should reach it when needed. Produce a placement plan; do not write, move, or persist knowledge unless the user separately asks for that work.
 
+For a memory destination, a write request authorizes only preparation until the
+[dry-run-first review](../../docs/agents/harness-memory.md#dry-run-first-memory-changes) is approved.
+
 ## Process
 
 1. **Bound the item.** Restate the smallest useful knowledge unit. Separate composite guidance into independently owned rules, facts, procedures, preferences, or temporary state.

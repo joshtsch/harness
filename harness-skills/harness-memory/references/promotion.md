@@ -2,13 +2,17 @@
 
 ## Content lifecycle
 
+Every durable transition below requires [dry-run-first review and approval](../../../docs/agents/harness-memory.md#dry-run-first-memory-changes).
+Task authorization permits preparing the proposal; the table describes approved
+writes.
+
 | Stage | Entry and exit evidence | Authority |
 | --- | --- | --- |
-| Source intake | Classify scope/sensitivity; retain a sanitized capture or secure-record reference with source URI and capture date. | Task-authorized capture; sensitive originals use encrypted storage. |
+| Source intake | Classify scope/sensitivity; retain a sanitized capture or secure-record reference with source URI and capture date. | Approved capture; sensitive originals use encrypted storage. |
 | Accepted source | A durable source in `raw/` has identified provenance and is immutable. New evidence is a new source. | Acceptance establishes provenance, not truth. |
-| Draft synthesis | Create/update topic concepts with `status: draft`, source IDs, claim citations, uncertainty, and related links. | Cited factual drafting may proceed within the task. |
+| Draft synthesis | Create/update topic concepts with `status: draft`, source IDs, claim citations, uncertainty, and related links. | Cited factual drafting proceeds after proposal review and approval. |
 | Checked knowledge | Validate claims against accessible evidence, scope, citations, and contradictions; record real verifier/time and set `status: stable` when usable. | Machine checks are machine verification. Record human review only when it happened; confirm inferred preferences and conflicting decisions with the user. |
-| Derived output | Produce the requested artifact with a source/revision note under `output/`. | Task authorization permits the artifact; output generation adds no verification. |
+| Derived output | Produce the requested artifact with a source/revision note under `output/`. | Approved proposal permits the artifact; output generation adds no verification. |
 | Review or supersession | A due `stale_after`, changed evidence, or contradiction triggers review. Qualify affected claims. Mark superseded concepts `deprecated` and link replacements. | Preserve history and surface unresolved state during retrieval. |
 
 New claims on a stable page are draft until checked. Preserve verification only
@@ -52,6 +56,6 @@ not repair existing exposure.
 | Rollback or retirement | On failed verification retain the old source and revert routing. On later rollback reconcile destination edits before restoring authority. Remove old content only through authorized cleanup after accounting for links/consumers. |
 
 Recommend in the operation report. Save a sanitized candidate in the topic's
-indexed concept page only when maintenance writes are authorized; otherwise
-return it in conversation. A recommendation alone creates no issue, repository,
-schedule, or message. The current rollout stops at a preview.
+indexed concept page only after separate approval of its dry run; otherwise
+return it unsaved in conversation. A recommendation alone creates no issue,
+repository, schedule, or message. The current rollout stops at a preview.

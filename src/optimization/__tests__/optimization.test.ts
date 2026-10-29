@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { adaptPromptSession, collectSessionEvidence, createSessionOptimizationHook, submitOptimization, type OptimizationSubmission, type PromptSessionInput } from "../index.js";
@@ -59,32 +59,167 @@ const promptSession = (harnessRoot: string, overrides: Partial<PromptSessionInpu
 });
 
 describe("prompt/session optimization adapter", () => {
-  it("is deterministic, persists redacted evidence, and returns a traced candidate handoff", async () => {
+  const paths = (root: string) => ({
+    observations: join(root, "docs/.scratch/setup/session-1/observations.jsonl"),
+    suggestions: join(root, "docs/.scratch/setup/session-1/rule-suggestions.jsonl"),
+  });
+  const snapshot = async (root: string) => {
+    const entries = await readdir(root, { recursive: true });
+    return Promise.all(entries.sort().map(async (entry) => [entry, (await stat(join(root, entry))).isFile() ? await readFile(join(root, entry), "utf8") : null]));
+  };
+  const apply = async (input: PromptSessionInput) => {
+    const preview = await adaptPromptSession(input);
+    return adaptPromptSession(input, { confirmed: true, approvedProposalId: preview.proposal.approvalId });
+  };
+
+  it("defaults to a deterministic zero-write preview with a traced candidate handoff", async () => {
+    const root = await realpath(await mkdtemp(join(tmpdir(), "optimization-adapter-")));
+    try {
+      const input = promptSession(root, { prompt: "Always update .env.example whenever variables are added" });
+      const before = await snapshot(root);
+      const first = await adaptPromptSession(input);
+      expect(await adaptPromptSession(input)).toEqual(first);
+      expect(await snapshot(root)).toEqual(before);
+      expect(first.mode).toBe("dry-run");
+      expect(first.proposal.changes).toHaveLength(2);
+      expect(first.proposal.changes.every(({ before }) => before === null)).toBe(true);
+      expect(first.proposal.evidence).toContain("trace-1:artifact:report");
+      expect(first.observations[0]).toMatchObject({ traceId: "trace-1", status: "open" });
+      expect(first.handoff).toMatchObject({ metadata: { status: "candidate", traceId: "trace-1", sessionId: "session-1", feedbackId: "feedback-1", proposedChange: "Suggest review mode for diff-only tasks", provenance: { prompt: "trace-1:prompt", context: { id: "context-1", provenance: "trace-1:context" }, artifacts: [{ id: "report", provenance: "trace-1:artifact:report" }] } } });
+      expect(first.proposal.changes.find(({ destination }) => destination === paths(root).observations)?.after).not.toContain(input.prompt);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("writes exactly the approved batch and preserves populated state during later previews", async () => {
+    const root = await realpath(await mkdtemp(join(tmpdir(), "optimization-adapter-")));
+    try {
+      const input = promptSession(root, { prompt: "Always update .env.example whenever variables are added" });
+      const preview = await adaptPromptSession(input);
+      const applied = await adaptPromptSession(input, { confirmed: true, approvedProposalId: preview.proposal.approvalId });
+      expect(applied.mode).toBe("applied");
+      for (const change of preview.proposal.changes) expect(await readFile(change.destination, "utf8")).toBe(change.after);
+      const before = await snapshot(root);
+      const repeated = await adaptPromptSession(input);
+      expect(repeated.ruleSuggestions).toEqual([]);
+      expect(repeated.proposal.changes.every(({ before, after }) => before === after)).toBe(true);
+      expect(await snapshot(root)).toEqual(before);
+      const next = await adaptPromptSession(promptSession(root, { traceId: "trace-2", resolvedContext: { id: "context-2", provenance: "trace-2:context", summary: "context" }, artifacts: [], observedState: [] }));
+      expect(next.proposal.changes.find(({ destination }) => destination === paths(root).observations)?.before).toBe(await readFile(paths(root).observations, "utf8"));
+      expect(await snapshot(root)).toEqual(before);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("keeps an approved empty proposal write-free when the destination is absent", async () => {
+    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    try {
+      const input = promptSession(root, { feedback: [] });
+      const preview = await adaptPromptSession(input);
+      expect(preview.proposal.changes.every(({ before, after }) => before === null && after === null)).toBe(true);
+      const applied = await adaptPromptSession(input, { confirmed: true, approvedProposalId: preview.proposal.approvalId });
+      expect(applied.mode).toBe("applied");
+      expect(await snapshot(root)).toEqual([]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("rejects missing confirmation, stale approval, destination drift and changed requested content without writing", async () => {
+    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    const other = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    try {
+      const input = promptSession(root);
+      const preview = await adaptPromptSession(input);
+      const approved = { confirmed: true, approvedProposalId: preview.proposal.approvalId };
+      await expect(adaptPromptSession(input, { approvedProposalId: preview.proposal.approvalId })).rejects.toThrow("explicit user confirmation");
+      await expect(adaptPromptSession(input, { confirmed: true })).rejects.toThrow("stale");
+      await expect(adaptPromptSession({ ...input, harnessRoot: other }, approved)).rejects.toThrow("stale");
+      await expect(adaptPromptSession({ ...input, feedback: [{ ...input.feedback[0], summary: "Changed summary" }] }, approved)).rejects.toThrow("stale");
+      expect(await snapshot(root)).toEqual([]);
+      expect(await snapshot(other)).toEqual([]);
+      await mkdir(join(root, "docs/.scratch/setup/session-1"), { recursive: true });
+      await writeFile(paths(root).observations, "\n");
+      const before = await snapshot(root);
+      await expect(adaptPromptSession(input, approved)).rejects.toThrow("stale");
+      expect(await snapshot(root)).toEqual(before);
+    } finally { await Promise.all([root, other].map((path) => rm(path, { recursive: true, force: true }))); }
+  });
+
+  it.skipIf(process.platform === "win32")("requires fresh approval after a session-directory symlink changes physical destinations", async () => {
+    const root = await realpath(await mkdtemp(join(tmpdir(), "optimization-adapter-")));
+    try {
+      const first = join(root, "first");
+      const second = join(root, "second");
+      const session = join(root, "docs/.scratch/setup/session-1");
+      await Promise.all([mkdir(first), mkdir(second), mkdir(join(root, "docs/.scratch/setup"), { recursive: true })]);
+      await symlink(first, session);
+      const input = promptSession(root, { prompt: "Always update .env.example whenever variables are added" });
+      const preview = await adaptPromptSession(input);
+      expect(preview.proposal.changes.map(({ destination }) => destination)).toEqual([
+        join(first, "observations.jsonl"), join(first, "rule-suggestions.jsonl"),
+      ]);
+      expect(await readdir(first)).toEqual([]);
+
+      await unlink(session);
+      await symlink(second, session);
+      const before = await snapshot(root);
+      await expect(adaptPromptSession(input, { confirmed: true, approvedProposalId: preview.proposal.approvalId })).rejects.toThrow("missing or stale");
+      expect(await snapshot(root)).toEqual(before);
+      const fresh = await adaptPromptSession(input);
+      expect(fresh.proposal.approvalId).not.toBe(preview.proposal.approvalId);
+      expect(fresh.proposal.changes.map(({ destination }) => destination)).toEqual([
+        join(second, "observations.jsonl"), join(second, "rule-suggestions.jsonl"),
+      ]);
+      expect(await snapshot(root)).toEqual(before);
+
+      await adaptPromptSession(input, { confirmed: true, approvedProposalId: fresh.proposal.approvalId });
+      for (const change of fresh.proposal.changes) expect(await readFile(change.destination, "utf8")).toBe(change.after);
+      expect(await readdir(first)).toEqual([]);
+      expect((await readdir(second)).sort()).toEqual(["observations.jsonl", "rule-suggestions.jsonl"]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it.skipIf(process.platform === "win32")("rejects a dangling session-directory symlink without initializing its target", async () => {
+    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    try {
+      await mkdir(join(root, "docs/.scratch/setup"), { recursive: true });
+      await symlink(join(root, "missing"), join(root, "docs/.scratch/setup/session-1"));
+      await expect(adaptPromptSession(promptSession(root))).rejects.toThrow("unresolved symbolic link");
+      expect((await readdir(root)).sort()).toEqual(["docs"]);
+      expect(await readdir(join(root, "docs/.scratch/setup"))).toEqual(["session-1"]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("serializes concurrent applies and rejects approval made stale by the first writer", async () => {
     const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
     try {
       const input = promptSession(root);
-      const first = await adaptPromptSession(input);
-      const second = await adaptPromptSession(input);
+      const preview = await adaptPromptSession(input);
+      const approval = { confirmed: true, approvedProposalId: preview.proposal.approvalId };
+      const results = await Promise.allSettled([adaptPromptSession(input, approval), adaptPromptSession(input, approval)]);
+      expect(results.filter(({ status }) => status === "fulfilled")).toHaveLength(1);
+      const rejected = results.find((result) => result.status === "rejected");
+      expect(rejected?.status === "rejected" && String(rejected.reason)).toContain("stale");
+      expect((await readFile(paths(root).observations, "utf8")).trim().split("\n")).toHaveLength(1);
+      expect(await readdir(join(root, "docs/.scratch/setup/session-1"))).toEqual(["observations.jsonl"]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
 
-      expect(second).toEqual(first);
-      expect(first.observations[0]).toMatchObject({ traceId: "trace-1", status: "open" });
-      expect(first.handoff).toMatchObject({ metadata: { status: "candidate", traceId: "trace-1", sessionId: "session-1", feedbackId: "feedback-1", proposedChange: "Suggest review mode for diff-only tasks", provenance: { prompt: "trace-1:prompt", context: { id: "context-1", provenance: "trace-1:context" }, artifacts: [{ id: "report", provenance: "trace-1:artifact:report" }] } } });
-      const persisted = await readFile(join(root, "docs/.scratch/setup/session-1/observations.jsonl"), "utf8");
-      expect(persisted).not.toContain("Review the completed session");
-      expect(persisted.trim().split("\n")).toHaveLength(1);
-      expect(first.observations[0].evidence).toContain("trace-1:artifact:report");
-
-      const concurrentRoot = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
-      try {
-        await Promise.all([adaptPromptSession(promptSession(concurrentRoot)), adaptPromptSession(promptSession(concurrentRoot))]);
-        const concurrentPersisted = await readFile(join(concurrentRoot, "docs/.scratch/setup/session-1/observations.jsonl"), "utf8");
-        expect(concurrentPersisted.trim().split("\n")).toHaveLength(1);
-      } finally {
-        await rm(concurrentRoot, { recursive: true, force: true });
-      }
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+  it("validates persisted observations and suggestions even when previewing", async () => {
+    const root = await mkdtemp(join(tmpdir(), "optimization-adapter-"));
+    try {
+      const input = promptSession(root, { prompt: "Always update .env.example whenever variables are added" });
+      await apply(input);
+      const original = await readFile(paths(root).observations, "utf8");
+      await writeFile(paths(root).observations, original + original);
+      await expect(adaptPromptSession(input)).rejects.toThrow("duplicate persisted observation id");
+      await writeFile(paths(root).observations, original);
+      await expect(adaptPromptSession({ ...input, feedback: [{ ...input.feedback[0], summary: "conflicting summary" }] })).rejects.toThrow("observation persistence conflict");
+      const suggestions = await readFile(paths(root).suggestions, "utf8");
+      await writeFile(paths(root).suggestions, suggestions + suggestions);
+      await expect(adaptPromptSession(input)).rejects.toThrow("duplicate persisted rule suggestion id");
+      await writeFile(paths(root).suggestions, suggestions);
+      await expect(adaptPromptSession({ ...input, ruleSignals: [{ source: "user", statement: input.prompt, rationale: "Changed rationale" }], prompt: "Review this completed session" })).rejects.toThrow("rule suggestion persistence conflict");
+      await writeFile(paths(root).suggestions, '{"id":"invalid"}\n');
+      await expect(adaptPromptSession(input)).rejects.toThrow();
+    } finally { await rm(root, { recursive: true, force: true }); }
   });
 
   it("blocks handoff for failed gates and rejects escaped provenance or sensitive input", async () => {
@@ -130,18 +265,22 @@ describe("session finalization optimization hook", () => {
       await expect(createSessionOptimizationHook({ harnessRoot: root, enabled: false, onDiagnostic: (diagnostic) => { diagnostics.push(diagnostic); } })(finalization)).resolves.toBeUndefined();
       expect(diagnostics).toEqual([]);
       await expect(createSessionOptimizationHook({ harnessRoot: root })(finalization)).resolves.toBeUndefined();
+      await expect(createSessionOptimizationHook({ harnessRoot: root, onDiagnostic: (diagnostic) => { diagnostics.push(diagnostic); } })({ ...finalization, resolvedContext: { ...finalization.resolvedContext, provenance: "bad-trace" } })).resolves.toBeUndefined();
+      expect(diagnostics).toEqual([]);
+      expect(await readdir(root)).toEqual([]);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
   });
 
-  it("surfaces rule suggestions through the finalization hook", async () => {
+  it("displays a dry-run proposal through the finalization hook without writing", async () => {
     const root = await mkdtemp(join(tmpdir(), "optimization-rule-hook-"));
     const suggestions: string[] = [];
     try {
-      const hook = createSessionOptimizationHook({ harnessRoot: root, onRuleSuggestion: (suggestion) => { suggestions.push(suggestion.id); } });
+      const hook = createSessionOptimizationHook({ harnessRoot: root, onProposal: (proposal) => { suggestions.push(proposal.approvalId); } });
       await hook({ ...finalization, prompt: { id: "Update .env.example whenever variables are added", provenance: "trace-1:prompt" } });
       expect(suggestions).toHaveLength(1);
+      expect(await readdir(root)).toEqual([]);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -171,7 +310,7 @@ describe("session finalization optimization hook", () => {
 
   it("isolates collector failures as diagnostics", async () => {
     const diagnostics: unknown[] = [];
-    await expect(createSessionOptimizationHook({ harnessRoot: "", onDiagnostic: (diagnostic) => { diagnostics.push(diagnostic); } })(finalization)).resolves.toBeUndefined();
+    await expect(createSessionOptimizationHook({ harnessRoot: "", onProposal: () => undefined, onDiagnostic: (diagnostic) => { diagnostics.push(diagnostic); } })(finalization)).resolves.toBeUndefined();
     expect(diagnostics).toEqual([{ sessionId: "session-1", traceId: "trace-1", error: "Error: prompt session harnessRoot must be non-empty" }]);
   });
 });

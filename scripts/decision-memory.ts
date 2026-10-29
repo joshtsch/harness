@@ -28,7 +28,7 @@ function noUnknownOptions(allowed: string[], flags: string[] = []): void {
   }
 }
 
-const usage = "pnpm decision-memory list [--category <id>] | get --category <id> [--user <id>] [--business-line <id>] [--project <id>] [--environment <id>] [--project-actual <value>] [--project-root <path> --decision-record <path>] | record --input <json-file> --confirm [--replace-id <id>] | forget --id <id> --confirm";
+const usage = "pnpm decision-memory list [--category <id>] | get --category <id> [--user <id>] [--business-line <id>] [--project <id>] [--environment <id>] [--project-actual <value>] [--project-root <path> --decision-record <path>] | record --input <-|json-file> [--replace-id <id>] [--dry-run | --confirm --approve <approval-id>] | forget --id <id> [--dry-run | --confirm --approve <approval-id>]";
 
 async function run(): Promise<void> {
   if (command === "list") {
@@ -67,22 +67,36 @@ async function run(): Promise<void> {
     return;
   }
 
-  if (command === "record") {
-    noUnknownOptions(["--input", "--replace-id"], ["--confirm"]);
-    if (!args.includes("--confirm")) throw new Error("decision memory writes require --confirm after reviewing the record");
-    const input = resolve(requiredOption("--input"));
+  if (command === "record" || command === "forget") {
+    noUnknownOptions(command === "record" ? ["--input", "--replace-id", "--approve"] : ["--id", "--approve"], ["--confirm", "--dry-run"]);
+    if (args.includes("--dry-run") && (args.includes("--confirm") || option("--approve"))) {
+      throw new Error("--dry-run cannot be combined with approval options");
+    }
+    const approval = {
+      ...(args.includes("--confirm") ? { confirmed: true } : {}),
+      ...(option("--approve") ? { approvedProposalId: option("--approve") } : {}),
+    };
+    if (command === "forget") {
+      const result = await store.forget(requiredOption("--id"), approval);
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+    const input = requiredOption("--input");
     let record: DecisionMemoryRecord;
-    try { record = JSON.parse(await readFile(input, "utf8")) as DecisionMemoryRecord; }
-    catch { throw new Error("decision memory input must be valid JSON"); }
-    await store.record(record, { confirmed: true, ...(option("--replace-id") ? { replaceId: option("--replace-id") } : {}) });
-    console.log(`Recorded decision memory ${record.id}.`);
-    return;
-  }
-
-  if (command === "forget") {
-    noUnknownOptions(["--id"], ["--confirm"]);
-    await store.forget(requiredOption("--id"), { confirmed: args.includes("--confirm") });
-    console.log("Removed the confirmed decision memory record.");
+    try {
+      let source = "";
+      if (input === "-") {
+        process.stdin.setEncoding("utf8");
+        for await (const chunk of process.stdin) {
+          source += chunk.toString();
+          if (Buffer.byteLength(source) > 1024 * 1024) throw new Error("input exceeds the size limit");
+        }
+      } else source = await readFile(resolve(input), "utf8");
+      if (Buffer.byteLength(source) > 1024 * 1024) throw new Error("input exceeds the size limit");
+      record = JSON.parse(source) as DecisionMemoryRecord;
+    } catch { throw new Error("decision memory input must be bounded valid JSON"); }
+    const result = await store.record(record, { ...approval, ...(option("--replace-id") ? { replaceId: option("--replace-id") } : {}) });
+    console.log(JSON.stringify(result, null, 2));
     return;
   }
 

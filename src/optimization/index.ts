@@ -4,7 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { randomUUID } from "node:crypto";
 import { evaluateSession, type OperationalEvent, type SessionEvaluation } from "../session/session-evaluation.js";
 import { createObservation, type Observation, type ObservationInput } from "../routines/observations.js";
-import { appendObservation, loadObservations, observationStatePath } from "../routines/observations.js";
+import { observationStatePath } from "../routines/observations.js";
 import {
   createImplementationHandoff,
   rankCandidates,
@@ -15,7 +15,8 @@ import { validatePromotionCandidate } from "../routines/optimization-safety.js";
 import { findSensitiveContent } from "../sensitive-content.js";
 import type { SessionFinalizationHook } from "../session/session-finalization.js";
 import { collectSessionEvidence } from "./session-evidence.js";
-import { collectRuleSuggestions, type RuleSignal, type RuleSuggestion } from "../rule-suggestions.js";
+import { collectRuleSuggestions, createRuleSuggestion, type RuleSignal, type RuleSuggestion } from "../rule-suggestions.js";
+import { assertMemoryApproval, createMemoryProposal, requestsMemoryApply, resolveMemoryDestination, type MemoryApproval, type MemoryProposal } from "../memory-proposal.js";
 export { collectSessionEvidence } from "./session-evidence.js";
 
 type SessionEvaluationInput = Parameters<typeof evaluateSession>[0];
@@ -33,6 +34,11 @@ export interface OptimizationResult {
   rankedCandidates: readonly RankedCandidate[];
   handoff: ImplementationHandoff | null;
   ruleSuggestions: readonly RuleSuggestion[];
+}
+
+export interface PromptSessionOptimizationResult extends OptimizationResult {
+  mode: "dry-run" | "applied";
+  proposal: MemoryProposal;
 }
 
 export interface PromptSessionFeedback {
@@ -211,8 +217,8 @@ async function withPersistenceLock<T>(statePath: string, action: () => Promise<T
   throw new Error("observation persistence lock timed out");
 }
 
-/** Convert one prompt/session trace into redacted, persisted optimization evidence. */
-export async function adaptPromptSession(input: PromptSessionInput): Promise<OptimizationResult> {
+/** Preview redacted optimization evidence; persist only an explicitly approved, unchanged batch. */
+export async function adaptPromptSession(input: PromptSessionInput, approval: MemoryApproval = {}): Promise<PromptSessionOptimizationResult> {
   if (!input || typeof input !== "object") throw new Error("prompt session input must be an object");
   required(input.harnessRoot, "prompt session harnessRoot");
   required(input.sessionId, "prompt session sessionId");
@@ -321,45 +327,83 @@ export async function adaptPromptSession(input: PromptSessionInput): Promise<Opt
     candidates,
     evaluation: { events: input.events, artifactChecks: input.artifacts, rawSignals: signals },
   });
-  let ruleSuggestions: RuleSuggestion[] = [];
-  const result: OptimizationResult = { ...baseResult, ruleSuggestions };
   const statePath = observationStatePath(input.harnessRoot, input.sessionId);
-  const previous = persistenceLocks.get(statePath) ?? Promise.resolve();
-  const persist = previous.catch(() => undefined).then(() => withPersistenceLock(statePath, async () => {
+  const suggestionPath = ruleSuggestionStatePath(input.harnessRoot, input.sessionId);
+  const readOptional = async (path: string): Promise<string | null> => {
+    try { return await readFile(path, "utf8"); } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw error;
+    }
+  };
+  const prepare = async (): Promise<{ proposal: MemoryProposal; ruleSuggestions: RuleSuggestion[] }> => {
+    const [observationDestination, suggestionDestination] = await Promise.all([resolveMemoryDestination(statePath), resolveMemoryDestination(suggestionPath)]);
+    const [beforeObservations, beforeSuggestions] = await Promise.all([readOptional(observationDestination), readOptional(suggestionDestination)]);
+    for (const source of [beforeObservations, beforeSuggestions]) {
+      if (source !== null && findSensitiveContent(source.split("\n").map((line) => `+${line}`).join("\n")).length > 0) throw new Error("persisted optimization evidence contains sensitive content");
+    }
     const persisted = new Map<string, string>();
-    for (const observation of await loadObservations(input.harnessRoot, input.sessionId)) {
+    for (const line of (beforeObservations ?? "").split("\n").filter(Boolean)) {
+      const observation = createObservation(JSON.parse(line) as Observation);
       if (persisted.has(observation.id)) throw new Error(`duplicate persisted observation id: ${observation.id}`);
       persisted.set(observation.id, JSON.stringify(observation));
     }
-    for (const observation of result.observations) {
+    const addedObservations: Observation[] = [];
+    for (const observation of baseResult.observations) {
       const serialized = JSON.stringify(observation);
       if (persisted.has(observation.id)) {
         if (persisted.get(observation.id) !== serialized) throw new Error(`observation persistence conflict: ${observation.id}`);
-      } else {
-        await appendObservation(input.harnessRoot, input.sessionId, observation);
+      } else addedObservations.push(observation);
+    }
+    const persistedSuggestions = new Map<string, RuleSuggestion>();
+    for (const line of (beforeSuggestions ?? "").split("\n").filter(Boolean)) {
+      const suggestion = JSON.parse(line) as RuleSuggestion;
+      const validated = createRuleSuggestion({ source: suggestion.source, statement: suggestion.rule, rationale: suggestion.rationale, evidence: suggestion.evidence });
+      if (Object.entries(validated).some(([key, value]) => JSON.stringify(value) !== JSON.stringify(suggestion[key as keyof RuleSuggestion]))) throw new Error("invalid persisted rule suggestion");
+      if (persistedSuggestions.has(suggestion.id)) throw new Error(`duplicate persisted rule suggestion id: ${suggestion.id}`);
+      persistedSuggestions.set(suggestion.id, suggestion);
+    }
+    const ruleSuggestions = detectedRuleSuggestions.filter((suggestion) => {
+      const previous = persistedSuggestions.get(suggestion.id);
+      if (previous && Object.entries(suggestion).some(([key, value]) => JSON.stringify(value) !== JSON.stringify(previous[key as keyof RuleSuggestion]))) throw new Error(`rule suggestion persistence conflict: ${suggestion.id}`);
+      return !previous;
+    });
+    const appendLines = (before: string | null, entries: readonly unknown[]): string | null => entries.length === 0 ? before
+      : `${before ?? ""}${before && !before.endsWith("\n") ? "\n" : ""}${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
+    return {
+      ruleSuggestions,
+      proposal: createMemoryProposal([
+        { destination: observationDestination, before: beforeObservations, after: appendLines(beforeObservations, addedObservations) },
+        { destination: suggestionDestination, before: beforeSuggestions, after: appendLines(beforeSuggestions, ruleSuggestions) },
+      ], evidence, ["Trace provenance and sensitive content validated", "Observation and rule suggestion identities validated", `Session evaluation: ${baseResult.evaluation.status}`]),
+    };
+  };
+  let prepared = await prepare();
+  let mode: PromptSessionOptimizationResult["mode"] = "dry-run";
+  if (requestsMemoryApply(approval)) {
+    // Reject missing or stale approval before lock acquisition creates any directories.
+    assertMemoryApproval(prepared.proposal, approval);
+    if (prepared.proposal.changes.some((change) => change.before !== change.after)) {
+      const previous = persistenceLocks.get(statePath) ?? Promise.resolve();
+      const persist = previous.catch(() => undefined).then(async () => {
+        const fresh = await prepare();
+        assertMemoryApproval(fresh.proposal, approval);
+        await withPersistenceLock(await resolveMemoryDestination(statePath), async () => {
+          const locked = await prepare();
+          assertMemoryApproval(locked.proposal, approval);
+          for (const change of locked.proposal.changes) {
+            if (change.after !== null && change.after !== change.before) await writeFile(change.destination, change.after, "utf8");
+          }
+          prepared = locked;
+        });
+      });
+      persistenceLocks.set(statePath, persist);
+      try { await persist; } finally {
+        if (persistenceLocks.get(statePath) === persist) persistenceLocks.delete(statePath);
       }
     }
-    const suggestionPath = ruleSuggestionStatePath(input.harnessRoot, input.sessionId);
-    let persistedSuggestions: RuleSuggestion[] = [];
-    try {
-      const source = await readFile(suggestionPath, "utf8");
-      persistedSuggestions = source.trim().split("\n").filter(Boolean).map((line) => JSON.parse(line) as RuleSuggestion);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    }
-    const persistedIds = new Set(persistedSuggestions.map(({ id }) => id));
-    ruleSuggestions = detectedRuleSuggestions.filter(({ id }) => !persistedIds.has(id));
-    result.ruleSuggestions = ruleSuggestions;
-    if (ruleSuggestions.length > 0) {
-      await writeFile(suggestionPath, `${[...persistedSuggestions, ...ruleSuggestions].map((suggestion) => JSON.stringify(suggestion)).join("\n")}\n`, "utf8");
-    }
-  }));
-  persistenceLocks.set(statePath, persist);
-  try {
-    await persist;
-  } finally {
-    if (persistenceLocks.get(statePath) === persist) persistenceLocks.delete(statePath);
+    mode = "applied";
   }
+  const result: PromptSessionOptimizationResult = { ...baseResult, ruleSuggestions: prepared.ruleSuggestions, proposal: prepared.proposal, mode };
   const winningFeedback = result.handoff && input.feedback.find((item) => `candidate-${input.traceId}-${item.id}` === result.handoff?.metadata.candidateId);
   return result.handoff
     ? {
@@ -387,16 +431,17 @@ export interface SessionOptimizationHookOptions {
   harnessRoot: string;
   enabled?: boolean;
   onDiagnostic?: (diagnostic: { sessionId: string; traceId: string; error: string }) => void | Promise<void>;
-  onRuleSuggestion?: (suggestion: RuleSuggestion) => void | Promise<void>;
+  /** Display the dry run for review; this callback must not persist memory. */
+  onProposal?: (proposal: MemoryProposal) => void | Promise<void>;
 }
 
 /** Create the best-effort, review-only optimization hook for a finalized session. */
 export function createSessionOptimizationHook(options: SessionOptimizationHookOptions): SessionFinalizationHook {
   return async (finalization) => {
-    if (options.enabled === false) return;
+    if (options.enabled === false || !options.onProposal) return;
     try {
       const result = await adaptPromptSession(collectSessionEvidence(options, finalization));
-      for (const suggestion of result.ruleSuggestions) await options.onRuleSuggestion?.(suggestion);
+      await options.onProposal(result.proposal);
     } catch (error) {
       await options.onDiagnostic?.({ sessionId: finalization.sessionId, traceId: finalization.traceId, error: String(error) });
     }

@@ -19,11 +19,10 @@ on routing when placement is unclear. Routing does not depend on memory; a vault
 selection is handed back to the calling agent. Source selection never requires
 putting ADRs, configuration, policy, or secure originals into a vault.
 
-Within an authorized task, agents may retain cited, non-sensitive factual
-observations and corrections at their authoritative source. Record evidence and
+Retain cited, non-sensitive observations and corrections at their authoritative
+source only after the review and approval below. Record evidence and
 confirmation/capture dates; qualify uncertainty. Confirm inferred preferences and
-the resolution of conflicting decisions before making them current. Existing
-preference-store confirmation rules continue during the transition. Memory cannot
+the resolution of conflicting decisions before making them current. Memory cannot
 change project configuration or higher-level instructions automatically.
 
 Apply [data safety](data-safety.md) to every layer. Raw means accepted source
@@ -31,6 +30,43 @@ material, not permission to retain transcripts or provider payloads. Keep only
 sanitized sources in vaults; sensitive originals belong in the existing encrypted
 [secure-record workflow](secure-documents.md). Session continuation and encrypted
 record storage remain independent systems.
+
+## Dry-run-first memory changes
+
+Every proposed durable memory change starts with an unsaved dry run. This covers
+vault content, saved preferences, self-optimization observations and suggestions,
+and explicit "remember this" requests, including replacements and deletions. The
+initial request authorizes preparation; saving requires separate user approval
+after the user reviews the proposal. Standing instructions or earlier approvals
+cannot bypass that review.
+
+Show the exact proposed content and destination, supporting evidence, and
+validation results. For replacements and deletions, identify the existing content
+affected. Keep the proposal in the active review channel. The first pass performs
+no filesystem or external writes: it must not save proposal files, create indexes
+or logs, acquire persistent locks, initialize destinations, or persist observations
+or candidate improvements. Retrieval and validation must remain read-only.
+
+Approval applies only to the content and destination shown. Changes to either, or
+to relevant existing memory state, invalidate approval; produce a fresh dry run
+and obtain approval again. One confirmation may approve an explicitly listed
+batch whose items and destinations were all shown. Each item still requires its
+normal validation and write checks, and unlisted changes remain unapproved.
+
+Executable apply paths bind approval to the reviewed proposal and relevant
+existing state with proposal fingerprints. Destinations resolve through existing
+filesystem ancestors without creating missing paths; repointed symbolic links
+require fresh review, and unresolved links fail closed. A fingerprint establishes which
+proposal the approval covers; it does not authenticate the user's identity or
+replace the agent's responsibility to obtain actual user confirmation.
+
+Unattended runs, including session-finalization hooks, return unsaved proposals
+for display through an available review channel. Without a review channel, skip
+capture. Leave no pending proposal files or logs of proposal contents for later.
+
+Approval supplements existing privacy, scope, repository, contribution, and
+preference-store safeguards. A reviewed proposal must pass those checks before
+any approved write; review grants no authority to bypass them.
 
 ## Vault structure and promotion
 
@@ -119,6 +155,12 @@ response file. Use the same cases, order, and model settings for baseline and
 candidate skills; keep the variants' agent contexts separate and their results
 hidden from each other. No live accounts or vaults are
 needed. Fixtures and transcripts stay outside the repository.
+
+All six cases exercise the initial request without post-preview approval; the
+vault must remain unchanged even for ingest, initialization, and remember
+requests. Inspect the unsaved proposals in the evaluation transcripts for exact
+content, destinations, evidence, validation, and a request for separate approval.
+Executable approved-write behavior has separate regression tests.
 
 Then run `pnpm evaluate:harness-memory check <evaluation-root>`. A nonzero exit
 means a filesystem or generated-metadata check failed. A zero exit establishes

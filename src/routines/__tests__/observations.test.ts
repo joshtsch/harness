@@ -1,8 +1,8 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { addRuntimeEvent, appendObservation, createObservation, loadObservations } from "../index.js";
+import { addRuntimeEvent, createObservation, loadObservations } from "../index.js";
 
 const input = {
   id: "observation-1", traceId: "trace-1", scope: "session" as const, kind: "observation" as const,
@@ -22,11 +22,11 @@ describe("scoped observations", () => {
     expect(() => createObservation({ ...input, statement: "token: abcdefghijklmnop" })).toThrow("sensitive");
   });
 
-  it("persists observations only in session scratch state", async () => {
+  it("retrieves previously approved observations from session scratch state", async () => {
     const root = await mkdtemp(join(tmpdir(), "harness-observations-"));
     try {
       await mkdir(join(root, "docs", ".scratch", "setup", "session-1"), { recursive: true });
-      await appendObservation(root, "session-1", createObservation(input));
+      await writeFile(join(root, "docs", ".scratch", "setup", "session-1", "observations.jsonl"), JSON.stringify(createObservation(input)) + "\n");
       await expect(loadObservations(root, "session-1")).resolves.toHaveLength(1);
     } finally {
       await rm(root, { recursive: true, force: true });

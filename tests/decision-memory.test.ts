@@ -1,4 +1,4 @@
-import { chmod, mkdtemp, readFile, stat } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, readdir, realpath, stat, symlink, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -31,6 +31,16 @@ function record(id: string, preference: string, scope: Omit<DecisionMemoryRecord
     provenance: { authority: "user-confirmed", confirmedAt: "2026-01-01T00:00:00.000Z", source: "explicit-user-confirmation" },
     reviewAfter: "2027-01-01T00:00:00.000Z",
   };
+}
+
+async function recordConfirmed(store: LocalJsonDecisionMemoryStore, value: DecisionMemoryRecord, options: { replaceId?: string } = {}) {
+  const preview = await store.record(value, options);
+  return store.record(value, { ...options, confirmed: true, approvedProposalId: preview.proposal.approvalId });
+}
+
+async function forgetConfirmed(store: LocalJsonDecisionMemoryStore, id: string) {
+  const preview = await store.forget(id);
+  return store.forget(id, { confirmed: true, approvedProposalId: preview.proposal.approvalId });
 }
 
 describe("decision memory resolution", () => {
@@ -92,7 +102,7 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
     const store = new LocalJsonDecisionMemoryStore(file);
     await expect(store.list()).resolves.toEqual([]);
     await expect(store.record(record("worktree-root", "~/worktrees"), { confirmed: false })).rejects.toThrow("explicit user confirmation");
-    await store.record(record("worktree-root", "~/worktrees"), { confirmed: true });
+    await recordConfirmed(store, record("worktree-root", "~/worktrees"));
 
     const fileStats = await stat(file);
     const directoryStats = await stat(resolve(file, ".."));
@@ -104,9 +114,9 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
   it("requires explicit replacement when a record id already exists", async () => {
     const file = join(await fixture(), "state", "decision-memory.json");
     const store = new LocalJsonDecisionMemoryStore(file);
-    await store.record(record("worktree-root", "~/worktrees"), { confirmed: true });
+    await recordConfirmed(store, record("worktree-root", "~/worktrees"));
     await expect(store.record(record("worktree-root", "~/other"), { confirmed: true })).rejects.toThrow("explicit replacement");
-    await store.record(record("worktree-root", "~/other"), { confirmed: true, replaceId: "worktree-root" });
+    await recordConfirmed(store, record("worktree-root", "~/other"), { replaceId: "worktree-root" });
     await expect(store.list()).resolves.toMatchObject([{ preference: "~/other" }]);
   });
 
@@ -114,8 +124,8 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
     const file = join(await fixture(), "state", "decision-memory.json");
     const store = new LocalJsonDecisionMemoryStore(file);
     const results = await Promise.allSettled([
-      store.record(record("first", "~/first", { project: "first" }), { confirmed: true }),
-      store.record(record("second", "~/second", { project: "second" }), { confirmed: true }),
+      recordConfirmed(store, record("first", "~/first", { project: "first" })),
+      recordConfirmed(store, record("second", "~/second", { project: "second" })),
     ]);
 
     const successfulWrites = results.filter((result) => result.status === "fulfilled").length;
@@ -132,7 +142,7 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
     await mkdir(resolve(file, ".."), { recursive: true, mode: 0o700 });
     await writeFile(lockPath, JSON.stringify({ pid: deadPid, createdAt: "2020-01-01T00:00:00.000Z" }), { mode: 0o600 });
 
-    await expect(store.record(record("worktree-root", "~/worktrees"), { confirmed: true })).rejects.toThrow("lock is stale");
+    await expect(recordConfirmed(store, record("worktree-root", "~/worktrees"))).rejects.toThrow("lock is stale");
     await expect(readFile(lockPath, "utf8")).resolves.toContain(String(deadPid));
   });
 
@@ -147,9 +157,9 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
   it("requires confirmation before removing a record", async () => {
     const file = join(await fixture(), "state", "decision-memory.json");
     const store = new LocalJsonDecisionMemoryStore(file);
-    await store.record(record("worktree-root", "~/worktrees"), { confirmed: true });
+    await recordConfirmed(store, record("worktree-root", "~/worktrees"));
     await expect(store.forget("worktree-root", { confirmed: false })).rejects.toThrow("explicit user confirmation");
-    await store.forget("worktree-root", { confirmed: true });
+    await forgetConfirmed(store, "worktree-root");
     await expect(store.list()).resolves.toEqual([]);
   });
 
@@ -157,7 +167,7 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
     const root = await fixture();
     const file = join(root, "state", "decision-memory.json");
     const store = new LocalJsonDecisionMemoryStore(file);
-    await store.record(record("worktree-root", "~/worktrees"), { confirmed: true });
+    await recordConfirmed(store, record("worktree-root", "~/worktrees"));
     await chmod(resolve(file, ".."), 0o755);
     await expect(store.list()).rejects.toThrow("directory permissions are unsafe");
 
@@ -166,5 +176,87 @@ describe.skipIf(process.platform === "win32")("local user-scoped decision memory
     await expect(store.list()).rejects.toThrow("invalid decision memory data");
     await expect(store.list()).rejects.not.toThrow("must-not-leak");
     expect(await readFile(file, "utf8")).toContain("must-not-leak");
+  });
+});
+
+describe.skipIf(process.platform === "win32")("mandatory write-free preference previews", () => {
+  it("requires fresh approval when an ancestor symlink changes the physical destination", async () => {
+    const root = await realpath(await fixture());
+    const first = join(root, "first");
+    const second = join(root, "second");
+    const alias = join(root, "current");
+    await Promise.all([mkdir(first, { mode: 0o700 }), mkdir(second, { mode: 0o700 })]);
+    await symlink(first, alias);
+    const store = new LocalJsonDecisionMemoryStore(join(alias, "state", "memory.json"));
+    const value = record("one", "~/one");
+    const preview = await store.record(value);
+    expect(preview.proposal.changes[0].destination).toBe(join(first, "state", "memory.json"));
+    expect(await readdir(first)).toEqual([]);
+
+    await unlink(alias);
+    await symlink(second, alias);
+    await expect(store.record(value, { confirmed: true, approvedProposalId: preview.proposal.approvalId })).rejects.toThrow("missing or stale");
+    expect(await readdir(first)).toEqual([]);
+    expect(await readdir(second)).toEqual([]);
+    const fresh = await store.record(value);
+    expect(fresh.proposal.approvalId).not.toBe(preview.proposal.approvalId);
+    expect(fresh.proposal.changes[0].destination).toBe(join(second, "state", "memory.json"));
+    expect(await readdir(second)).toEqual([]);
+
+    await store.record(value, { confirmed: true, approvedProposalId: fresh.proposal.approvalId });
+    expect(await readFile(join(second, "state", "memory.json"), "utf8")).toBe(fresh.proposal.changes[0].after);
+    expect(await readdir(join(second, "state"))).toEqual(["memory.json"]);
+    expect(await readdir(first)).toEqual([]);
+  });
+
+  it("rejects dangling ancestor symlinks without initializing their targets", async () => {
+    const root = await fixture();
+    await symlink(join(root, "missing"), join(root, "current"));
+    const store = new LocalJsonDecisionMemoryStore(join(root, "current", "state", "memory.json"));
+    await expect(store.record(record("one", "~/one"))).rejects.toThrow("unresolved symbolic link");
+    expect(await readdir(root)).toEqual(["current"]);
+  });
+
+  it("creates no directory, lock or file even when confirmation omits the reviewed fingerprint", async () => {
+    const root = await fixture();
+    const store = new LocalJsonDecisionMemoryStore(join(root, "absent", "memory.json"));
+    const preview = await store.record(record("one", "~/one"));
+    expect(preview.mode).toBe("dry-run");
+    expect(preview.proposal.changes[0].before).toBeNull();
+    expect(preview.proposal.changes[0].after).toContain("~/one");
+    await expect(store.record(record("one", "~/one"), { confirmed: true })).rejects.toThrow("missing or stale");
+    expect(await readdir(root)).toEqual([]);
+  });
+
+  it("preserves existing bytes and rejects changed input, state and destination before acquiring locks", async () => {
+    const root = await fixture();
+    const file = join(root, "state", "memory.json");
+    const store = new LocalJsonDecisionMemoryStore(file);
+    await recordConfirmed(store, record("one", "~/one", { project: "one" }));
+    const before = await readFile(file, "utf8");
+    const review = await store.record(record("two", "~/two", { project: "two" }));
+    const approval = { confirmed: true, approvedProposalId: review.proposal.approvalId };
+    await expect(store.record(record("two", "~/changed", { project: "two" }), approval)).rejects.toThrow("missing or stale");
+    const elsewhere = new LocalJsonDecisionMemoryStore(join(root, "other", "memory.json"));
+    await expect(elsewhere.record(record("two", "~/two", { project: "two" }), approval)).rejects.toThrow("missing or stale");
+    expect(await readdir(root)).toEqual(["state"]);
+    expect(await readFile(file, "utf8")).toBe(before);
+    expect(await readdir(join(root, "state"))).toEqual(["memory.json"]);
+    await recordConfirmed(store, record("three", "~/three", { project: "three" }));
+    await expect(store.record(record("two", "~/two", { project: "two" }), approval)).rejects.toThrow("missing or stale");
+  });
+
+  it("previews replacements and removals, preserving all data until each reviewed change is confirmed", async () => {
+    const file = join(await fixture(), "state", "memory.json");
+    const store = new LocalJsonDecisionMemoryStore(file);
+    await recordConfirmed(store, record("one", "~/one"));
+    const before = await readFile(file, "utf8");
+    const replacement = await store.record(record("one", "~/new"), { replaceId: "one" });
+    const removal = await store.forget("one");
+    expect(await readFile(file, "utf8")).toBe(before);
+    await store.record(record("one", "~/new"), { replaceId: "one", confirmed: true, approvedProposalId: replacement.proposal.approvalId });
+    await expect(store.forget("one", { confirmed: true, approvedProposalId: removal.proposal.approvalId })).rejects.toThrow("missing or stale");
+    await forgetConfirmed(store, "one");
+    expect(await store.list()).toEqual([]);
   });
 });
