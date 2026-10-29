@@ -19,7 +19,7 @@ describe("wiki integrity", () => {
     const name = `${root}/context/scoped-inputs.md`;
     const contents = { [name]: concept(), "docs/llm-wiki-harness/raw/source.md": "# Source" };
     expect(check(contents, [name])).toContain(`new wiki concept needs its topic index entry: ${name}`);
-    expect(check({ ...contents, [`${root}/context/index.md`]: "# Context\n\n[Inputs](scoped-inputs.md)" }, [name])).toEqual([]);
+    expect(check({ ...contents, [`${root}/index.md`]: "# Topics\n\n[Context](./context/index.md)", [`${root}/context/index.md`]: "# Context\n\n[Inputs](scoped-inputs.md)" }, [name])).toEqual([]);
   });
 
   it("checks YAML provenance, keyed footnotes, and malformed metadata without echoing it", () => {

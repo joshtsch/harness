@@ -73,7 +73,7 @@ export function wikiIntegrityViolations(input: {
         if (!paths.has(topicIndex) || !indexed) violations.push(`new wiki concept needs its topic index entry: ${name}`);
         const topic = name.slice(wikiRoot.length + 1).split("/")[0];
         const rootIndex = `${wikiRoot}/index.md`;
-        if (contents[rootIndex] !== undefined && !links(contents[rootIndex]).includes(`${topic}/index.md`)) violations.push(`new wiki topic needs a root index entry: ${topic}`);
+        if (contents[rootIndex] !== undefined && !links(contents[rootIndex]).some((link) => posix.normalize(posix.join(wikiRoot, link.split("#")[0])) === `${wikiRoot}/${topic}/index.md`)) violations.push(`new wiki topic needs a root index entry: ${topic}`);
       }
       if (typeof metadata?.type !== "string") violations.push(`new wiki concept needs typed frontmatter: ${name}`);
     }

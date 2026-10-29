@@ -68,6 +68,17 @@ describe("repository guardrails", () => {
     await expect(git("commit", "-m", "safe")).resolves.toBeDefined();
   });
 
+
+  it("keeps other default hooks active when pre-commit is absent", async () => {
+    const { root, git } = await fixture();
+    const hook = join(root, ".git/hooks/commit-msg");
+    await writeFile(hook, "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    await expect(installPrivacyHook(root)).rejects.toThrow("default hooks preserved");
+    expect((await rejection(git("config", "--get", "core.hooksPath"))).stdout).toBe("");
+    await expect(git("commit", "--allow-empty", "-m", "still blocked")).rejects.toBeDefined();
+    expect(await readFile(hook, "utf8")).toContain("exit 1");
+  });
+
   it("preserves a custom hook path and an existing default hook", async () => {
     const { root, git } = await fixture();
     await git("config", "core.hooksPath", "custom-hooks");
@@ -76,7 +87,7 @@ describe("repository guardrails", () => {
     await git("config", "--unset", "core.hooksPath");
     const hook = join(root, ".git/hooks/pre-commit");
     await writeFile(hook, "# existing owner hook\n");
-    await expect(installPrivacyHook(root)).rejects.toThrow("pre-commit hook preserved");
+    await expect(installPrivacyHook(root)).rejects.toThrow("default hooks preserved");
     expect(await readFile(hook, "utf8")).toBe("# existing owner hook\n");
   });
 });

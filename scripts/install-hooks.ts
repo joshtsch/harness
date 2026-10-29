@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { access } from "node:fs/promises";
+import { access, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
@@ -14,14 +14,17 @@ export async function installPrivacyHook(root: string): Promise<string> {
   catch (error) { if (!(error instanceof Error && "code" in error && error.code === 1)) throw error; }
   if (configured === ".githooks") return "Privacy hook already configured.";
   if (configured) throw new Error("Existing core.hooksPath preserved; add the staged privacy check to that hook manually.");
-  const { stdout } = await exec("git", ["rev-parse", "--git-path", "hooks/pre-commit"], { cwd: root });
-  try { await access(resolve(root, stdout.trim())); }
-  catch (error) {
+  const { stdout } = await exec("git", ["rev-parse", "--git-path", "hooks"], { cwd: root });
+  try {
+    const hooks = await readdir(resolve(root, stdout.trim()), { withFileTypes: true });
+    if (hooks.some((entry) => !entry.name.endsWith(".sample") && (entry.isFile() || entry.isSymbolicLink()))) {
+      throw new Error("Existing default hooks preserved; integrate the staged privacy check manually.");
+    }
+  } catch (error) {
     if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
-    await exec("git", ["config", "--local", "core.hooksPath", ".githooks"], { cwd: root });
-    return "Staged privacy hook enabled for this clone.";
   }
-  throw new Error("Existing pre-commit hook preserved; add the staged privacy check to that hook manually.");
+  await exec("git", ["config", "--local", "core.hooksPath", ".githooks"], { cwd: root });
+  return "Staged privacy hook enabled for this clone.";
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

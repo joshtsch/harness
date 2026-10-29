@@ -242,8 +242,8 @@ live tracker readiness remain separate checks in the contribution workflow.
 
 Enable the local staged-content privacy hook with `pnpm hooks:install` after
 checking out a revision containing `.githooks/pre-commit`. Installation is opt-in
-per clone and idempotent. It preserves an existing `core.hooksPath` or default
-pre-commit hook and reports the need for manual integration rather than replacing
+per clone and idempotent. It preserves an existing `core.hooksPath` or any default
+hook and reports the need for manual integration rather than replacing
 it. The hook runs only the staged privacy scan; CI handles the broader checks.
 
 ## Host prerequisites
