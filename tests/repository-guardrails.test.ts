@@ -84,6 +84,8 @@ describe("repository guardrails", () => {
     await git("config", "core.hooksPath", "custom-hooks");
     await expect(installPrivacyHook(root)).rejects.toThrow("core.hooksPath preserved");
     expect((await git("config", "core.hooksPath")).stdout.trim()).toBe("custom-hooks");
+    await git("config", "core.hooksPath", "");
+    await expect(installPrivacyHook(root)).rejects.toThrow("core.hooksPath preserved");
     await git("config", "--unset", "core.hooksPath");
     const hook = join(root, ".git/hooks/pre-commit");
     await writeFile(hook, "# existing owner hook\n");
