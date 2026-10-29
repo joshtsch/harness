@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { checkMemoryEvaluation, prepareMemoryEvaluation } from "../scripts/evaluate-harness-memory.js";
@@ -13,6 +13,29 @@ async function fixture() {
 }
 
 describe("harness-memory behavioral evaluation", () => {
+  it("catches flat ingestion and accepts a linked topic while preserving legacy content", async () => {
+    const root = await fixture();
+    const run = join(root, "runs/legacy-ingest");
+    const vault = join(run, "vault");
+    const flat = join(vault, "wiki/scoped-inputs.md");
+    const page = "---\ntype: Concept\nstatus: draft\ngenerated: {by: 'process:fixture', at: '2026-10-28T12:00:00Z'}\nsources:\n  - id: stages\n    resource: ../raw/stages.md\n---\n# Scoped inputs\n\nExplicit inputs separate references from run evidence.[^stages]\n\n[^stages]: Fixture source.\n";
+    await writeFile(flat, page);
+    await writeFile(join(run, "response.md"), "Captured fixture research.\n");
+    const initial = await checkMemoryEvaluation(root);
+    expect(initial.cases.find((item) => item.case === "legacy-ingest")?.failures).toContain("new wiki concept needs a topic directory: wiki/scoped-inputs.md");
+    await mkdir(join(vault, "wiki/citation-research"));
+    const target = join(vault, "wiki/citation-research/scoped-inputs.md");
+    await rename(flat, target);
+    await writeFile(target, page.replace("../raw/", "../../raw/"));
+    await writeFile(join(vault, "wiki/citation-research/index.md"), "# Citation research\n\n[Scoped inputs](scoped-inputs.md)\n");
+    const index = join(vault, "wiki/index.md");
+    await writeFile(index, `${await readFile(index, "utf8")}\n[Citation research](citation-research/index.md)\n`);
+    await writeFile(join(vault, "wiki/log.md"), "# Log\n\n## 2026-10-28\n\nCaptured scoped inputs.\n");
+    const final = await checkMemoryEvaluation(root);
+    expect(final.cases.find((item) => item.case === "legacy-ingest")?.failures).toEqual([]);
+    expect(await readFile(join(vault, "wiki/legacy.md"), "utf8")).toContain("Preserve this flat page unchanged.");
+  });
+
   it("isolates runs and detects read-only writes and protected-source changes", async () => {
     const root = await fixture();
     const query = join(root, "runs/legacy-retrieval/vault");

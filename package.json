@@ -44,7 +44,8 @@
     "config:restore": "node --import tsx scripts/sync-project-config.ts restore",
     "worktree": "node --import tsx scripts/create-worktree.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "hooks:install": "node --import tsx scripts/install-hooks.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.7",

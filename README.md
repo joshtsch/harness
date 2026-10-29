@@ -31,6 +31,10 @@ manifest; initialization reports installation guidance when one is missing.
 Plugin inventories can use up to 8 MiB per stdout/stderr stream. Larger output
 fails verification with a bounded-capture diagnostic; command failures do not
 reproduce inventory contents. See [tooling guidance](docs/agents/tooling.md#skills-and-plugins).
+Discover canonical skill paths and task/mode kinds with `pnpm capabilities list --json`.
+Enable the staged privacy hook with `pnpm hooks:install`; existing hooks are preserved.
+See [repository checks and hooks](docs/agents/tooling.md#repository-checks-and-hooks)
+for CI coverage and local verification.
 The policy lives in `capabilities.yml` and
 `agent-policy.yml`; it records one canonical project skill per capability and
 explicit Codex and Gemini support. Inspect a route with

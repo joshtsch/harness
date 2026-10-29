@@ -10,6 +10,11 @@ Never commit secrets or personally identifiable information (PII) to the harness
 - Do not copy MCP results from Attio or Granola into tracked files. Record only stable identifiers or redacted summaries when durable context is genuinely required.
 - Redact secrets and PII from GitHub issues, PRs, comments, test fixtures, command output, and `docs/.scratch/` state.
 - Run `pnpm check:sensitive` against staged changes before committing. Treat findings as a blocking signal and review the complete diff manually; the scanner cannot prove that content is safe.
+- For committed branch changes, run `pnpm check:sensitive -- --base main`.
+  Diagnostics identify file, line, and finding kind without printing matched values.
+  Valid ISO dates and recognized arXiv identifiers are excluded from phone detection;
+  adjacent phones and credentials remain subject to scanning. An empty diff reports
+  that no changes were scanned.
 
 Use environment-variable references for external identifiers that could reveal personal or sensitive account context. Keep the resolved values in local environment configuration or an external secret store, never in tracked YAML, MCP configuration, logs, or issue content.
 

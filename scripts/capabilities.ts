@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { decideCapability, loadCapabilityPolicy, recordCapabilityUsage, routeCapability, routeMode, routeSkill, verifyCapabilityInventory } from "../src/capability-policy.js";
+import { capabilityInventory, decideCapability, loadCapabilityPolicy, recordCapabilityUsage, routeCapability, routeMode, routeSkill, verifyCapabilityInventory } from "../src/capability-policy.js";
 import { loadHarnessSkillNames } from "../src/local-skill.js";
 
 const root = resolve(import.meta.dirname, "..");
@@ -13,7 +13,9 @@ async function run(): Promise<void> {
     return;
   }
   if (command === "list") {
-    for (const [id, capability] of Object.entries(policy.capabilities)) console.log(`${id}\t${capability.intent}`);
+    if ((provider && provider !== "--json") || primary) throw new Error("Usage: pnpm capabilities list [--json]");
+    const inventory = await capabilityInventory(policy, root);
+    console.log(provider === "--json" ? JSON.stringify(inventory) : inventory.map((item) => `${item.id}\t${item.kind}\t${item.skill}\t${item.skillPath ?? "not-installed"}\t${item.intent}`).join("\n"));
     return;
   }
   if (command === "decide" && provider && primary) {

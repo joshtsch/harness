@@ -5,6 +5,25 @@ project work complete.
 
 Harness changes are developed on feature branches, never directly on `main`.
 
+## Authorization and outcomes
+
+Choose the requested outcome before the first external write:
+
+- **Local capture** prepares research, documentation, or a reviewable local patch.
+  Keep it local; an issue, push, or change request is not required for this outcome.
+  Report its paths, verification, and any pending publication decision.
+- **Public contribution** follows the issue, review, change-request, and integration
+  workflow below. Identify authorization for each external action before doing it,
+  including issue creation. Selecting this workflow does not itself authorize publication.
+
+Use authorization already supplied in the session. If publication scope remains
+unclear, prepare the local material for review, then ask for the missing approval
+before any tracker write, push, or change-request creation. Keep that boundary
+pending while continuing authorized local work. An approval rejection is not a
+tracker outage and grants no permission to try another publication transport.
+
+## Public contribution workflow
+
 1. Run the [repository-scope gate](repository-intake.md) before provisioning any repository or creating any issue, branch, or worktree. Inventory every repository the session may modify, classify each ownership boundary, and register every durable project in `projects.yml` or `projects.local.yml` before continuing.
 2. Create or identify the originating issue in the classified repository. Record its repository and number in the work notes.
 3. Fetch `origin/main`, then fast-forward the local `main` to it. Stop if the local branch has diverged or contains uncommitted changes.

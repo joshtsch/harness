@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
+import { wikiIntegrityViolations } from "../src/wiki-integrity.js";
 
 interface Scenario {
   id: string;
@@ -12,6 +13,7 @@ interface Scenario {
   readOnly?: boolean;
   required?: string[];
   concepts?: boolean;
+  editable?: string[];
   forbiddenGeneratedText?: string;
   rubric: string[];
 }
@@ -79,12 +81,13 @@ export async function checkMemoryEvaluation(root: string) {
     const after = await snapshot(vault);
     const failures: string[] = [];
     for (const [name, entry] of Object.entries(before)) {
-      const protect = scenario.readOnly || (entry.kind === "file" && !name.startsWith(`incoming${sep}`));
+      const protect = scenario.readOnly || (entry.kind === "file" && !name.startsWith(`incoming${sep}`) && !scenario.editable?.includes(name));
       if (protect && JSON.stringify(after[name]) !== JSON.stringify(entry)) failures.push(`Changed protected path: ${name}`);
     }
     if (scenario.readOnly && Object.keys(after).some((name) => !before[name])) failures.push("Read-only operation created paths");
     for (const name of scenario.required ?? []) if (!after[name]) failures.push(`Missing required path: ${name}`);
     let concepts = 0;
+    const markdown: Record<string, string> = {};
     const localTarget = (name: string, target: string) => {
       const wikiPrefix = name.match(/^(.*(?:^|\/)wiki)\//)?.[1];
       const path = target.startsWith("/")
@@ -97,6 +100,7 @@ export async function checkMemoryEvaluation(root: string) {
       if (/^(?:\.git|\.obsidian|node_modules)(?:\/|$)/.test(name)) failures.push(`Unexpected runtime/repository path: ${name}`);
       if (entry.kind !== "file") continue;
       const contents = await readFile(join(vault, name), "utf8");
+      if (name.endsWith(".md")) markdown[name] = contents;
       if (scenario.forbiddenGeneratedText && entry.hash !== before[name]?.hash && contents.includes(scenario.forbiddenGeneratedText)) failures.push(`Sensitive input leaked into generated file: ${name}`);
       if (name.endsWith(".md") && !name.startsWith(`templates${sep}`) && entry.hash !== before[name]?.hash) {
         for (const link of contents.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
@@ -126,6 +130,8 @@ export async function checkMemoryEvaluation(root: string) {
         }
       } catch (error) { failures.push(`${name}: ${error instanceof Error ? error.message : "Invalid concept"}`); }
     }
+    const wikiRoots = new Set(Object.keys(markdown).flatMap((name) => name.match(/^(.*(?:^|\/)wiki)\//)?.[1] ?? []));
+    for (const wikiRoot of wikiRoots) failures.push(...wikiIntegrityViolations({ paths: new Set(Object.keys(after)), contents: markdown, wikiRoot, newPaths: Object.keys(after).filter((name) => !before[name]) }));
     if (scenario.concepts && !concepts) failures.push("No new topic concepts produced");
     try { await access(join(root, "runs", scenario.id, "response.md")); }
     catch { failures.push("No evaluator response recorded"); }

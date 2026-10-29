@@ -1,5 +1,5 @@
-import { appendFile, mkdir, readFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { appendFile, mkdir, readFile, realpath, stat } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { parse } from "yaml";
 import { loadProjectSkillNames } from "./project-skills.js";
 
@@ -30,6 +30,20 @@ export interface CapabilityPolicy {
   capabilities: Record<string, Capability>;
   skills: Record<string, SkillRoute>;
   companions: Record<string, string[]>;
+}
+
+export async function capabilityInventory(policy: CapabilityPolicy, root: string) {
+  return Promise.all(Object.entries(policy.capabilities).map(async ([id, capability]) => {
+    const skill = Object.entries(policy.skills).find(([, route]) => route.capability === id && route.state === "canonical")![0];
+    let skillPath: string | null = null;
+    try {
+      const candidate = await realpath(resolve(root, ".agents/skills", skill, "SKILL.md"));
+      if ((await stat(candidate)).isFile()) skillPath = candidate;
+    } catch (error) {
+      if (!(error instanceof Error && "code" in error && ["ENOENT", "ENOTDIR"].includes(String(error.code)))) throw error;
+    }
+    return { id, kind: capability.kind, intent: capability.intent, skill, installed: skillPath !== null, skillPath };
+  }));
 }
 
 function object(value: unknown, label: string): RecordValue {

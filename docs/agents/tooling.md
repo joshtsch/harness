@@ -95,6 +95,17 @@ Calendar and CRM provider adapters receive resolved, stable target identifiers a
 
 ## Skills and plugins
 
+Use `pnpm capabilities list --json` for capability IDs, task/mode kinds, canonical
+skill names, and real installed paths. A missing installation has `installed: false`
+and `skillPath: null`; use the documented installer rather than guessing a path.
+Text listing includes the same discovery fields. Route modes with `mode` and tasks
+with `route`; host-global and plugin skills remain outside this project inventory.
+
+For file discovery, start with scoped `rg --files` or `rg` before opening files.
+Read the relevant section of each discovered file. Keep independent read batches
+within the tool's output budget; split or narrow a truncated result before relying
+on it. Reuse already-read guidance unless its revision changed.
+
 `capabilities.yml` defines provider-neutral skill purposes and contracts.
 `agent-policy.yml` assigns each locked project skill to one capability, names its
 canonical route, declares companions and wrapper dependencies, and records Codex
@@ -217,6 +228,23 @@ Live iteration additionally needs a target dev server and browser support.
 It is optional and is not exercised by skill installation. Keep its temporary
 output inside the target worktree and out of tracked files. See
 [UI design routing](agent-roles.md#ui-design-routing) for ownership and precedence.
+
+## Repository checks and hooks
+
+The [Harness checks workflow](../../.github/workflows/checks.yml) runs on pull
+requests and pushes to `main`, using read-only repository permissions and pinned
+actions. It runs the existing capability, documentation, Markdown, typecheck,
+build, and test commands. Privacy scanning and topic-placement checks compare
+against the event's base commit, so an empty staging area cannot skip branch changes.
+The CI runner installs `age` for the existing encryption tests. CI does not load
+local project inventory, credentials, or agent plugins. Host prerequisites and
+live tracker readiness remain separate checks in the contribution workflow.
+
+Enable the local staged-content privacy hook with `pnpm hooks:install` after
+checking out a revision containing `.githooks/pre-commit`. Installation is opt-in
+per clone and idempotent. It preserves an existing `core.hooksPath` or any default
+hook and reports the need for manual integration rather than replacing
+it. The hook runs only the staged privacy scan; CI handles the broader checks.
 
 ## Host prerequisites
 
