@@ -150,6 +150,44 @@ _Avoid_: Setup state, manifest
 
 ## Business and tool context
 
+**Information classification**:
+The handling tier assigned to information according to its disclosure risk,
+independent of its access scope and whether it identifies a person.
+_Avoid_: Permission, record scope
+
+**Public information**:
+Information suitable for publication, subject to authorization to publish it.
+_Avoid_: All non-sensitive information
+
+**Private information**:
+Ordinary personal or business information requiring controlled access.
+_Avoid_: Unencrypted information, public information
+
+**Restricted information**:
+Secrets or information whose exposure could cause substantial harm and requires
+the strongest handling protections.
+_Avoid_: All PII, all personal information
+
+**Access scope**:
+The set of actors eligible to request information, separate from its handling
+tier and from authorization for a particular use.
+_Avoid_: Security level, permission
+
+**Personal scope**:
+An access scope for an individual's records, with cross-scope use requiring an
+explicit grant.
+_Avoid_: Harness scope, shared scope
+
+**Processing approval**:
+Authorization for a named agent, model, or tool service to process information
+for a defined purpose and scope.
+_Avoid_: Storage approval, connection availability
+
+**Source-backed retrieval**:
+Obtaining relevant facts from their authoritative source when needed rather
+than retaining a second copy in memory.
+_Avoid_: Memory capture, source migration
+
 **Business line**:
 An internal organizational or product grouping that may span one or more independent projects.
 _Avoid_: Company, account, repository owner
@@ -167,7 +205,7 @@ A portable structured document containing facts and references that may be consu
 _Avoid_: Note (too informal), memory (not necessarily encrypted or durable)
 
 **Record scope**:
-The set of harness actors eligible to request access to a secure record: project, business line, harness, or shared.
+The access scope attached to a secure record.
 _Avoid_: Permission (authorization is separate from eligibility)
 
 **Project scope**:

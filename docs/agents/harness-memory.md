@@ -28,9 +28,31 @@ change project configuration or higher-level instructions automatically.
 
 Apply [data safety](data-safety.md) to every layer. Raw means accepted source
 material, not permission to retain transcripts or provider payloads. Keep only
-sanitized sources in vaults; sensitive originals belong in the existing encrypted
+sanitized sources in vaults; Restricted originals belong in the existing encrypted
 [secure-record workflow](secure-documents.md). Session continuation and encrypted
 record storage remain independent systems.
+
+## Private-source routing
+
+The accepted [information-classification design](data-safety.md#information-classification)
+keeps Private contact facts in their authoritative source. Memory routes scoped
+queries to that source rather than retaining a second copy in a general vault.
+This extends retrieval, not the kinds of payload a vault or local preference
+store may retain. Keep identifying source mappings and references in appropriately
+private configuration or storage; opaque identifiers are not automatically safe
+for public files.
+
+Source-backed Private retrieval is not implemented. Before activation, apply the
+[source, scope, and processor gates](data-safety.md#access-and-processing-boundaries)
+and verify enforcement before content reaches the agent. A broad connector does
+not become a scoped memory backend because an agent uses a filtered query.
+
+An explicit request to remember a Private contact fact prepares an exact update
+proposal for its authoritative Private source, including destination, evidence,
+and validation. Saving requires the separate review below, plus the source's
+write authorization. Do not save the proposal, its PII, or a duplicate contact
+record into general vaults, local decision memory, logs, or scratch state.
+Sanitized conclusions still require classification and the normal memory review.
 
 ## Dry-run-first memory changes
 

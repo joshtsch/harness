@@ -1,5 +1,11 @@
 # Ubiquitous Language
 
+For information classification, access scope, personal scope, processing approval,
+and source-backed retrieval, use the canonical terms in [CONTEXT.md](../../CONTEXT.md#business-and-tool-context).
+The tables below describe the existing encrypted secure-record domain; they do
+not add personal-scope support to its CLI. Current support and the accepted
+Private-source design are distinguished in [data safety](data-safety.md#approved-design-and-activation-status).
+
 ## Secure document domain
 
 | Term | Definition | Aliases to avoid |
