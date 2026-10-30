@@ -140,7 +140,21 @@ scope must remain explicit:
   `agent-policy.yml`; do not add it to `skills-lock.json`.
 - `harness-memory` is the canonical vault workflow and depends one way on
   `knowledge-routing`. The old `initialize-llm-wiki` entry is retired in capability
-  policy but retained in the external installation inventory. Use
+  policy but retained in the external installation inventory. Its project-local
+  Codex exclusion is declared by a name-based `[[skills.config]]` entry in
+  `.codex/config.toml`. Verify host discovery after installation: the Codex
+  `skills/list` API must report every `initialize-llm-wiki` copy as disabled and
+  `harness-memory` as enabled. CLI 0.163.0-alpha.11 reads the project setting but
+  still discovers enabled copies unless the exclusion is also set at user scope.
+  On that host, use its native `skills/config/write` API with
+  `{ "name": "initialize-llm-wiki", "enabled": false }`, then verify `skills/list`
+  again. This disables that retired name across the user's projects, including
+  its user-level copy, while retaining installed files and lock metadata. It
+  changes no other skill's enablement. On an older host without name selectors,
+  use the [documented user-config path exclusions](https://learn.chatgpt.com/docs/build-skills#enable-or-disable-local-codex-skills)
+  for each installed copy and verify the result before treating setup as complete.
+  Gemini retains its exclusion in `.gemini/settings.json`. Restart Codex after
+  changing enablement; an already-loaded session catalog is not rewritten. Use
   `pnpm capabilities route codex harness-memory` (or provider `gemini`). Data
   migration requires its own reviewed scope. Discover active vaults with
   `pnpm wikis --json`; see [the rollout preview](harness-memory.md#migration-preview).

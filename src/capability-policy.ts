@@ -16,6 +16,7 @@ export interface Capability {
   group?: string;
   kind: "task" | "mode";
   triggers: string[];
+  actions?: string[];
 }
 
 export interface SkillRoute {
@@ -73,6 +74,7 @@ export function parseCapabilityPolicy(catalogText: string, policyText: string): 
       ...(entry.group === undefined ? {} : { group: string(entry.group, `${id}.group`) }),
       kind: entry.kind === undefined ? "task" : oneOf(entry.kind, ["task", "mode"], `${id}.kind`),
       triggers: entry.triggers === undefined ? [] : strings(entry.triggers, `${id}.triggers`),
+      ...(entry.actions === undefined ? {} : { actions: strings(entry.actions, `${id}.actions`) }),
     };
   }
 
@@ -134,8 +136,12 @@ export async function verifyCapabilityInventory(policy: CapabilityPolicy, lockPa
 export function decideCapability(policy: CapabilityPolicy, task: string): string {
   const group = "work-shape";
   const normalized = ` ${task.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `;
+  const request = normalized.trimStart().replace(/^(?:(?:please|can you|could you|would you|help me|i want you to) )+/, "");
   const candidates = Object.entries(policy.capabilities).filter(([, capability]) =>
-    capability.group === group && capability.triggers.some((trigger) =>
+    capability.group === group &&
+    (capability.actions === undefined || capability.actions.some((action) =>
+      request.startsWith(`${action.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `),
+    )) && capability.triggers.some((trigger) =>
       normalized.includes(` ${trigger.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `),
     ),
   ).map(([id]) => id);
