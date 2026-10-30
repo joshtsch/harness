@@ -7,8 +7,8 @@ For placement decisions, use the harness [`knowledge-routing` skill](../../harne
 
 For selected-vault operations use [`harness-memory`](../../harness-skills/harness-memory/SKILL.md).
 Its [contract and migration preview](harness-memory.md) preserve independent wiki
-repositories and general source routing. The paths below remain active until an
-approved data migration changes their retrieval pointers.
+repositories and general source routing. Registered vault metadata resolves active
+knowledge sources; retained in-harness wiki pages are historical rollback copies.
 
 | Knowledge | Authoritative surface |
 | --- | --- |
@@ -16,7 +16,7 @@ approved data migration changes their retrieval pointers.
 | Domain vocabulary | `CONTEXT.md` |
 | Harness workflow and policy | `docs/agents/` |
 | Architectural trade-offs | `docs/adr/` |
-| General harness and cross-project knowledge | `docs/llm-wiki-harness/wiki/` |
+| General harness and cross-project knowledge | Registered harness vault, discovered with `pnpm wikis --json` |
 | Project or tool configuration | `projects.yml`, `.codex/config.toml` |
 | Work intent and acceptance context | Configured issue tracker |
 | Branch implementation, review, and verification | Change request |
@@ -55,13 +55,19 @@ external custody or environment configuration. Apply
 The public harness records general rules and procedures; project-specific facts
 belong with their owning project.
 
-The active harness-wiki entry point is `docs/llm-wiki-harness/wiki/index.md`.
-For additional repositories follow [knowledge repository access](harness-memory.md#knowledge-repository-access);
+Discover active harness knowledge with `pnpm wikis --json`. Select the registered
+harness vault by its scope and topics, verify its checkout, then inspect its guide
+and configured wiki index before retrieval. If the vault is missing, inaccessible,
+or ambiguous, report the setup/access gap; do not treat historical copies as current.
+Follow [knowledge repository access](harness-memory.md#knowledge-repository-access);
 for reading and maintenance use `harness-memory`. Prose ownership remains in
 [agent role routing](agent-roles.md).
 
 ## Enforcement
 
 `pnpm check:docs` verifies the required documentation surfaces and rejects the removed
-legacy root wiki paths. `/code-review` checks new decision-bearing files against this
+legacy root wiki paths. Retained in-harness wiki pages must declare their historical
+status and point to registered-vault discovery. Their local links and reachability
+remain checked; public CI does not require a private vault checkout.
+`/code-review` checks new decision-bearing files against this
 strategy and reports misplaced, duplicated, or missing documentation.

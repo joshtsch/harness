@@ -1,3 +1,9 @@
+<!-- harness-wiki: historical -->
+
+> **Historical log.** New harness-vault changes are recorded in its `wiki/log.md`.
+> Discover the registered harness vault with `pnpm wikis --json` and follow
+> [vault access](../../agents/harness-memory.md#knowledge-repository-access). All entries below are retained unchanged for rollback.
+
 # Wiki Log
 
 **Summary**: Append-only record of wiki updates.

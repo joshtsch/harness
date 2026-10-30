@@ -142,7 +142,8 @@ scope must remain explicit:
   `knowledge-routing`. The old `initialize-llm-wiki` entry is retired in capability
   policy but retained in the external installation inventory. Use
   `pnpm capabilities route codex harness-memory` (or provider `gemini`). Data
-  migration remains separate; see [the rollout preview](harness-memory.md#migration-preview).
+  migration requires its own reviewed scope. Discover active vaults with
+  `pnpm wikis --json`; see [the rollout preview](harness-memory.md#migration-preview).
 - Author skills that work unchanged outside this harness in the shared
   `joshtsch/skills` repository, then install them here with `pnpm dlx skills`.
   Keep existing installations intact until each skill is reviewed for ownership

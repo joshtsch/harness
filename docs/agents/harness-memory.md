@@ -10,8 +10,9 @@ memory workflow's boundaries and rollout; detailed operations live in the
 Maintain a harness vault alongside independently owned project vaults and
 standalone knowledge repositories. New harness vaults default to a separate
 registered repository with working content in an external managed worktree.
-Project histories and remotes stay independent. The existing in-harness wiki
-remains active until its migration is approved and verified.
+Project histories and remotes stay independent. After an approved and verified
+cutover, the registered harness vault owns current knowledge. Retained in-harness
+wiki pages are historical rollback copies and must not receive new knowledge.
 
 `knowledge-routing` selects the authoritative source and retrieval path across
 all knowledge surfaces. `harness-memory` maintains a selected vault and depends
@@ -115,13 +116,16 @@ is their sibling. Existing layouts and local guides remain active until migratio
 
 ## Migration preview
 
-This rollout installs the new skill and capability route. It retires the old
-initializer route while retaining general routing. It does not provision a new
-vault or move, delete, synchronize, or duplicate existing memory data.
+The initial rollout installed the new skill and capability route and retired the
+old initializer route while retaining general routing. Each data migration needs
+its own reviewed scope. After an approved wiki cutover, current harness knowledge
+is retrieved through registered vault metadata; historical copies remain for
+rollback. Private repository identities stay in local configuration and its
+encrypted portable record, not public guidance.
 
 | Current source | Target after separately authorized migration | Cutover condition |
 | --- | --- | --- |
-| `docs/llm-wiki-harness/raw/`, `wiki/`, `templates/` | Equivalent directories in a registered external harness vault; concepts grouped by topic | Destination verified, old-to-new links mapped, and harness retrieval pointers updated together |
+| Retained `docs/llm-wiki-harness/` content | Registered external harness vault with topic-organized concepts and preserved raw snapshots | Verified copy precedes approved cutover; discovery and consumer pointers switch together; old pages become historical |
 | Existing registered child wikis | Their existing repositories; optionally adopt the new layout and OKF templates | Each owner approves its bounded migration and verifies consumer retrieval |
 | Local decision-memory JSON | Scoped `Preference` concepts in a selected non-sensitive vault | Confirm values/scope, preserve rationale/provenance/review dates, verify precedence, then switch callers and authority once |
 | Legacy initializer implementations | Retained installation/history, unavailable as harness routes | `harness-memory` is the canonical route; do not uninstall unrelated global skills |
@@ -134,7 +138,8 @@ path map, duplicate/conflict decisions, source-rights/privacy review, consumer
 list, checks, and rollback steps. Preserve accepted sources and old logs. Capture
 baseline revisions and content hashes where useful for preservation proof.
 
-During preview, the legacy wiki and local preference store remain authoritative.
+Before cutover approval, existing retrieval remains authoritative. A wiki cutover
+changes only wiki retrieval; the local preference store remains authoritative.
 Do not dual-write preferences or claim vault preference lookup exists yet. The
 existing CLI retains scope matching, stale/conflict behavior, confirmation, and
 atomic-write safeguards. After a future cutover, retire its callers in the same
