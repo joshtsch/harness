@@ -1,6 +1,11 @@
 # Secure Document Storage
 
-Secure documents contain personal, medical, financial, account, or plan-specific information that must not enter Git history, issue trackers, logs, or generated artifacts.
+Secure documents contain Restricted personal, medical, financial, account, or
+plan-specific information. Apply [information classification](data-safety.md#information-classification)
+before selecting storage: ordinary Private contact facts may use an approved
+controlled source once its activation gates pass. Restricted records continue
+to use this encrypted workflow and stay outside Git history, issue trackers,
+logs, and general generated artifacts.
 
 ## Current default
 
@@ -19,6 +24,10 @@ The harness-level location is the default because it is available to every confi
 The storage model should support an optional project-level cloud directory later. That integration must be explicit and scoped to one project, with credentials supplied by an external secret store or environment configuration. It must never place provider tokens, account identifiers, or downloaded personal records in `projects.yml`, `projects.local.yml`, or other tracked files.
 
 Until that capability exists, agents must use `.secure-documents/` as the default and must not invent cloud paths or upload personal documents.
+
+This section concerns encrypted secure-document storage. The separately accepted
+[Private contact pilot](data-safety.md#approved-design-and-activation-status) does
+not activate a cloud directory or permit uploading Restricted documents to Notion.
 
 ## Harness commands
 

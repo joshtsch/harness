@@ -11,6 +11,10 @@
 
 Accepted
 
+[ADR-0016](0016-information-classification-and-private-retrieval.md) refines the
+handling of ordinary Private information and defines a gated source-backed
+retrieval design. This ADR continues to govern Restricted secure records.
+
 ## Context
 
 The harness needs to work with personal, medical, financial, account-specific, and project-sensitive records without placing plaintext data in Git, wiki pages, logs, worktrees, or generated artifacts. Records should remain portable across systems, support encrypted sync, and be available to authorized workflows without weakening project isolation.

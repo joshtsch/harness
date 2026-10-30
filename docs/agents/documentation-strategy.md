@@ -15,6 +15,7 @@ knowledge sources; retained in-harness wiki pages are historical rollback copies
 | Agent rules | `AGENTS.md` and applicable skill files |
 | Domain vocabulary | `CONTEXT.md` |
 | Harness workflow and policy | `docs/agents/` |
+| Information classification, access, and processing boundaries | [data-safety.md](data-safety.md) |
 | Architectural trade-offs | `docs/adr/` |
 | General harness and cross-project knowledge | Registered harness vault, discovered with `pnpm wikis --json` |
 | Project or tool configuration | `projects.yml`, `.codex/config.toml` |
@@ -54,6 +55,11 @@ external custody or environment configuration. Apply
 [Secrets and PII safety](data-safety.md) before writing provenance or facts.
 The public harness records general rules and procedures; project-specific facts
 belong with their owning project.
+
+Private contact facts remain in their authoritative controlled source under the
+[Private-source routing design](harness-memory.md#private-source-routing).
+General vaults retain sanitized knowledge only. Approval of this design does not
+activate a Private source or supply an implemented retrieval path.
 
 Discover active harness knowledge with `pnpm wikis --json`. Select the registered
 harness vault by its scope and topics, verify its checkout, then inspect its guide

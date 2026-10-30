@@ -26,6 +26,6 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | Secure document storage | [secure-documents.md](secure-documents.md) |
 | Ubiquitous language | [UBIQUITOUS_LANGUAGE.md](UBIQUITOUS_LANGUAGE.md) |
 | Harness branch and merge-request workflow | [contributing.md](contributing.md) |
-| Secrets and PII safety | [data-safety.md](data-safety.md) |
+| Information classification, access, processing, secrets, and PII safety | [data-safety.md](data-safety.md) |
 
 This directory evolves as workflow capabilities are added. Keep stable policy here; keep transient state in `docs/.scratch/`.

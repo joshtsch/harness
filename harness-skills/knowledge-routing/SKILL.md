@@ -23,6 +23,8 @@ For a memory destination, a write request authorizes only preparation until the
 
 ## Placement rules
 
+- Classify personal or business facts through [data safety](../../docs/agents/data-safety.md#information-classification) before selecting a carrier. Private facts stay in their authoritative controlled source; use [Private-source routing](../../docs/agents/harness-memory.md#private-source-routing), not general-vault capture. Its adapter and activation gates are pending; return the missing enforcement/access path rather than treating the design as available retrieval. Keep identifying mappings out of public guidance.
+
 - Use the authoritative-surface table in `docs/agents/documentation-strategy.md`; do not create a competing category-to-document map here.
 - Match activation to the trigger: concise always-loaded boundary, focused document pointer, invoked skill, session loader, query, hook, or script. Prefer a pointer or on-demand query for branch-specific knowledge.
 - Use tracked `harness-skills/` for harness-coupled skills. Use the shared skills repository for skills that work unchanged outside the harness.
