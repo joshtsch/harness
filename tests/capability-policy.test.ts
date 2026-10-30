@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { decideCapability, parseCapabilityPolicy, recordCapabilityUsage, routeCapability, routeMode, routeSkill, verifyCapabilityInventory } from "../src/capability-policy.js";
+import { decideCapability, loadCapabilityPolicy, parseCapabilityPolicy, recordCapabilityUsage, routeCapability, routeMode, routeSkill, verifyCapabilityInventory } from "../src/capability-policy.js";
 
 const catalog = `
 version: 1
@@ -93,6 +93,58 @@ describe("capability policy", () => {
     expect(decideCapability(parsed, "build a feature")).toBe("build");
     expect(() => decideCapability(parsed, "fix a feature bug")).toThrow("build, inspect");
     expect(() => decideCapability(parsed, "improve the code")).toThrow("no match");
+  });
+
+  it("uses requested repair actions instead of topic mentions in real work-shape routes", async () => {
+    const repository = resolve(import.meta.dirname, "..");
+    const configured = await loadCapabilityPolicy(resolve(repository, "capabilities.yml"), resolve(repository, "agent-policy.yml"));
+    for (const task of [
+      "fix a narrow bug", "fix the login bug", "patch a regression",
+      "repair broken login", "resolve the startup error", "fix a crash",
+      "Please fix the failing test", "Could you please fix a bug?",
+    ]) expect(decideCapability(configured, task), task).toBe("surgical-patch");
+    for (const task of [
+      "write a report about bug triage", "write a report about how to fix a bug",
+      "summarize the regression", "fix a typo in the weekly review docs",
+      "please fix a documentation typo", "explain a broken login error",
+      "fix a typo in the bug triage documentation", "fix wording in the error handling README",
+      "Please correct the spelling in the regression documentation",
+      "fix a documentation typo in the bug triage guide",
+      "fix the documentation typo in the bug triage guide",
+      "Please fix a small README typo about the login error",
+      "do not fix the bug", "there is a bug in login",
+    ]) expect(() => decideCapability(configured, task), task).toThrow("no match");
+    for (const [task, expected] of [
+      ["diagnose an intermittent bug", "investigate-first"],
+      ["build a new feature", "lean-build"], ["migrate the schema", "migration"],
+      ["refactor the parser", "safe-refactor"], ["verify the bug fix", "verify-and-stop"],
+    ]) expect(decideCapability(configured, task!), task).toBe(expected);
+    expect(() => decideCapability(configured, "fix a bug in the new feature")).toThrow("lean-build, surgical-patch");
+  });
+
+  it("validates action constraints and preserves existing callers without them", () => {
+    expect(() => parseCapabilityPolicy(catalog.replace("triggers: [bug]", "actions: fix, triggers: [bug]"), policy)).toThrow("inspect.actions");
+    const constrained = parseCapabilityPolicy(catalog.replace("triggers: [bug]", "actions: [fix], triggers: [bug]"), policy);
+    expect(decideCapability(constrained, "fix the bug")).toBe("inspect");
+    expect(() => decideCapability(constrained, "report the bug")).toThrow("no match");
+    expect(decideCapability(parseCapabilityPolicy(catalog, policy), "report the bug")).toBe("inspect");
+  });
+
+  it("keeps retired skills installed but excluded from Codex project discovery", async () => {
+    const repository = resolve(import.meta.dirname, "..");
+    const configured = await loadCapabilityPolicy(resolve(repository, "capabilities.yml"), resolve(repository, "agent-policy.yml"));
+    const config = await readFile(resolve(repository, ".codex/config.toml"), "utf8");
+    const exclusions = [...config.matchAll(/^\[\[skills\.config\]\]\s*\nname = "([^"]+)"\s*\nenabled = false\s*$/gm)]
+      .map((match) => match[1]);
+    const locked = JSON.parse(await readFile(resolve(repository, "skills-lock.json"), "utf8"));
+    for (const [name, skill] of Object.entries(configured.skills)) {
+      if (skill.state !== "retired") continue;
+      expect(locked.skills[name], name).toBeDefined();
+      expect(exclusions, name).toContain(name);
+      expect(() => routeSkill(configured, "codex", name), name).toThrow("is retired");
+    }
+    expect(routeCapability(configured, "codex", "harness-memory")).toEqual(["harness-memory"]);
+    expect(exclusions).not.toContain("harness-memory");
   });
 
   it("records only redacted usage metadata after a valid route", async () => {

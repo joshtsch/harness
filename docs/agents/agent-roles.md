@@ -96,6 +96,17 @@ Use one primary route for each task. For work-shape requests, run
 with `pnpm capabilities mode <provider> <mode>`. Ask the user when routing reports
 overlapping or unmatched intent; unsupported routes fail closed.
 
+Bug-fix selection requires a requested repair action (`fix`, `patch`, `repair`,
+or `resolve`) at the start of the request, after optional polite wording, plus a
+failure signal. Mentioning a bug in a report or fixing a documentation typo does
+not select `surgical-patch`. Explicit typo, spelling, grammar, or wording
+corrections targeting docs, documentation, README, or Markdown stay unmatched
+even when their topic mentions bugs or errors. This selector recognizes bounded
+phrases; unmatched wording needs clarification or an explicitly selected route.
+In `capabilities.yml`, optional `actions` constrain a capability's leading request
+action while `triggers` identify its subject. Other capabilities retain their
+existing matching rules.
+
 The provider value is `codex` or `gemini`. Run
 `pnpm capabilities record <provider> <capability>` after using a capability to
 record a redacted event in ignored session scratch.
