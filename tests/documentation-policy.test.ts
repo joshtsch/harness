@@ -2,6 +2,36 @@ import { describe, expect, it } from "vitest";
 import { documentationGaps, documentationViolations, legacyDocumentationPaths } from "../src/documentation-policy.js";
 
 describe("documentation policy", () => {
+  const historicalIndex = "docs/llm-wiki-harness/wiki/index.md";
+  const historicalLog = "docs/llm-wiki-harness/wiki/log.md";
+  const historicalPaths = ["AGENTS.md", "README.md", "CONTEXT.md", "docs/agents", "docs/agents/README.md", "docs/agents/harness-memory.md", "docs/adr", historicalIndex, historicalLog];
+  const historicalContents = {
+    [historicalIndex]: "<!-- harness-wiki: historical -->\n\n# Historical index\n\nIndex recovery: `pnpm wikis --json`; [vault access](../../agents/harness-memory.md#knowledge-repository-access).\n\n[Log](log.md)\n",
+    [historicalLog]: "<!-- harness-wiki: historical -->\n\n# Historical log\n\nLog recovery: `pnpm wikis --json`; [vault access](../../agents/harness-memory.md#knowledge-repository-access).\n",
+  };
+
+  it.each([
+    ["historical marker", "<!-- harness-wiki: historical -->"],
+    ["discovery command", "`pnpm wikis --json`"],
+    ["access pointer", "[vault access](../../agents/harness-memory.md#knowledge-repository-access)"],
+  ])("rejects a retained wiki page without its %s", (_name, removed) => {
+    const contents = { ...historicalContents, [historicalIndex]: historicalContents[historicalIndex].replace(removed, "") };
+    expect(documentationViolations({ paths: historicalPaths, contents })).toContain(
+      `historical wiki page must point to registered vault discovery: ${historicalIndex}`,
+    );
+  });
+
+  it("accepts discovery notices without requiring a private vault checkout", () => {
+    expect(documentationViolations({ paths: historicalPaths, contents: historicalContents })).toEqual([]);
+  });
+
+  it("still checks local links in retained historical pages", () => {
+    const contents = { ...historicalContents, [historicalIndex]: historicalContents[historicalIndex] + "\n[Missing](missing.md)\n" };
+    expect(documentationViolations({ paths: historicalPaths, contents })).toContain(
+      `broken documentation link: ${historicalIndex} -> docs/llm-wiki-harness/wiki/missing.md`,
+    );
+  });
+
   it("reports missing required surfaces", () => {
     expect(documentationGaps(["AGENTS.md"])).toContain("CONTEXT.md");
   });

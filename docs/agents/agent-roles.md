@@ -4,12 +4,11 @@ Use one role for each kind of work:
 
 - **Caveman** handles conversational prose: concise status, explanations, and
   discussion in the active harness session. Caveman also handles concise prose in
-  maintained wiki pages and agent guidance under `docs/llm-wiki-harness/wiki/`.
-  Preserve source wording in `docs/llm-wiki-harness/raw/` and template wording in
-  `docs/llm-wiki-harness/templates/`.
+  maintained vault pages and agent guidance. Preserve accepted raw-source wording
+  and template wording in the selected vault.
 - **`/humanizer`** handles human-facing prose outside the maintained wiki:
   emails, blog posts, issue descriptions, change requests, and durable documentation
-  outside `docs/llm-wiki-harness/`. It performs a prose pass after technical content
+  outside the selected vault. It performs a prose pass after technical content
   is complete.
 - **Ponytail** handles code generation. Keep generated code subject to the normal
   tests, typecheck, build, and review gates.

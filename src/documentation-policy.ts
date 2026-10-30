@@ -42,6 +42,7 @@ export const requiredDocumentationLinks: Record<string, readonly string[]> = {
 const decisionFile = /(?:^|\/)(?:adr|decision|policy|architecture|strategy|rfc)[^/]*\.md$/i;
 const decisionHeading = /^#{1,6}\s*.*\b(?:adr|decision|policy|architecture|strategy|rfc)\b/im;
 const allowedRootMarkdown = new Set(["AGENTS.md", "CONTEXT.md", "README.md", "CONTRIBUTING.md", "SECURITY.md"]);
+const historicalWikiMarker = "<!-- harness-wiki: historical -->";
 
 export interface DocumentationPolicyInput {
   paths: Iterable<string>;
@@ -100,6 +101,15 @@ export function documentationViolations(input: DocumentationPolicyInput): string
     ...documentationGaps(paths).map((path) => `missing required surface: ${path}`),
     ...legacyDocumentationPaths(paths).map((path) => `legacy surface still exists: ${path}`),
   ];
+
+  for (const page of wikiPages) {
+    const content = input.contents?.[page];
+    if (content !== undefined && (!content.includes(historicalWikiMarker)
+      || !content.includes("`pnpm wikis --json`")
+      || !markdownLinks(content).includes("../../agents/harness-memory.md#knowledge-repository-access"))) {
+      violations.push(`historical wiki page must point to registered vault discovery: ${page}`);
+    }
+  }
 
   const reachableWikiPages = new Set<string>();
   const reportedBrokenLinks = new Set<string>();

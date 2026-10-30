@@ -1,3 +1,9 @@
+<!-- harness-wiki: historical -->
+
+> **Historical index.** Active harness knowledge is maintained in the registered harness vault.
+> Run `pnpm wikis --json`, select the harness-scoped vault, and open its configured index.
+> Follow [vault access](../../agents/harness-memory.md#knowledge-repository-access). The content below is retained for rollback, not current retrieval.
+
 # Wiki Index
 
 **Summary**: Table of contents for harness knowledge and cross-project information.

@@ -336,9 +336,11 @@ pnpm config:restore -- --replace
 Backup validates the merged configuration before encrypting the complete local
 file into the harness-scoped Bitwarden secure record `projects-config`.
 
-The current wiki stays in [`docs/llm-wiki-harness/`](docs/llm-wiki-harness/) until
-its separate migration. New vaults support topic directories, OKF templates,
-in-vault outputs, and reviewed promotion into standalone knowledge repositories.
+Harness knowledge lives in the registered harness vault. Discover it with
+`pnpm wikis --json` and follow [vault access](docs/agents/harness-memory.md#knowledge-repository-access).
+The retained [`docs/llm-wiki-harness/`](docs/llm-wiki-harness/) pages are historical
+rollback copies. Vaults support topic directories, OKF templates, in-vault outputs,
+and reviewed promotion into standalone knowledge repositories.
 Harness-owned skills live in `harness-skills/`; portable shared skills belong in
 [joshtsch/skills](https://github.com/joshtsch/skills).
 Approved external skills sources, including [mattpocock/skills](https://github.com/mattpocock/skills)

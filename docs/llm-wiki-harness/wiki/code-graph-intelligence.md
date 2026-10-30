@@ -1,3 +1,9 @@
+<!-- harness-wiki: historical -->
+
+> **Historical article.** The maintained page is `wiki/agent-tooling/code-graph-intelligence.md`
+> in the registered harness vault. Discover it with `pnpm wikis --json` and follow
+> [vault access](../../agents/harness-memory.md#knowledge-repository-access). This retained copy is for rollback, not current retrieval.
+
 # Code-graph intelligence
 
 Issue #74 spike result: keep code-graph intelligence optional and project-scoped.
