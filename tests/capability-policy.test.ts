@@ -107,6 +107,8 @@ describe("capability policy", () => {
       "write a report about bug triage", "write a report about how to fix a bug",
       "summarize the regression", "fix a typo in the weekly review docs",
       "please fix a documentation typo", "explain a broken login error",
+      "fix a typo in the bug triage documentation", "fix wording in the error handling README",
+      "Please correct the spelling in the regression documentation",
       "do not fix the bug", "there is a bug in login",
     ]) expect(() => decideCapability(configured, task), task).toThrow("no match");
     for (const [task, expected] of [

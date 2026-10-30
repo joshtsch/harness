@@ -137,6 +137,9 @@ export function decideCapability(policy: CapabilityPolicy, task: string): string
   const group = "work-shape";
   const normalized = ` ${task.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `;
   const request = normalized.trimStart().replace(/^(?:(?:please|can you|could you|would you|help me|i want you to) )+/, "");
+  const documentationCorrection = /^(?:fix|correct|patch|repair|resolve) (?:a |the )?(?:typo|spelling|grammar|wording)\b/.test(request)
+    && /\b(?:docs|documentation|readme|markdown)\b/.test(request);
+  if (documentationCorrection) throw new Error(`unresolved ${group} intent: no match`);
   const candidates = Object.entries(policy.capabilities).filter(([, capability]) =>
     capability.group === group &&
     (capability.actions === undefined || capability.actions.some((action) =>

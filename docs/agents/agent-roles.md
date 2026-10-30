@@ -99,7 +99,9 @@ overlapping or unmatched intent; unsupported routes fail closed.
 Bug-fix selection requires a requested repair action (`fix`, `patch`, `repair`,
 or `resolve`) at the start of the request, after optional polite wording, plus a
 failure signal. Mentioning a bug in a report or fixing a documentation typo does
-not select `surgical-patch`. This deterministic selector recognizes bounded
+not select `surgical-patch`. Explicit typo, spelling, grammar, or wording
+corrections targeting docs, documentation, README, or Markdown stay unmatched
+even when their topic mentions bugs or errors. This selector recognizes bounded
 phrases; unmatched wording needs clarification or an explicitly selected route.
 In `capabilities.yml`, optional `actions` constrain a capability's leading request
 action while `triggers` identify its subject. Other capabilities retain their
