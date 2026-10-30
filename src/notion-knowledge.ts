@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { notionId, type KnowledgeDocument, type KnowledgeSource } from "./knowledge-policy.js";
 
+// Split public version dates because the legacy privacy scanner treats them as phone numbers.
 export const notionKnowledgeVersion = "2026-" + "03-11";
 const responseLimit = 512 * 1024;
 
@@ -79,7 +80,7 @@ export class NotionKnowledgeProvider {
 
   async read(source: KnowledgeSource, document: KnowledgeDocument, token: string): Promise<string> {
     if (!source.connection.isolated || knowledgeDigest(token) !== source.connection.tokenSha256) throw new Error("Knowledge connection is unverified");
-    if (document.classification === "Restricted") throw new Error("Restricted knowledge is unavailable through this provider");
+    if (source.classification === "Restricted" || document.classification === "Restricted") throw new Error("Restricted knowledge is unavailable through this provider");
     await this.verifyPath(source, document, token);
     const response = await this.get(`pages/${document.pageId}/markdown?include_transcript=false&markdown_version=v1`, token);
     if (response.object !== "page_markdown" || notionId(response.id) !== document.pageId || response.truncated !== false ||

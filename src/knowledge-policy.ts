@@ -13,6 +13,7 @@ export interface KnowledgeDocument {
 
 export interface KnowledgeSource {
   provider: "notion";
+  classification: KnowledgeClassification | "Restricted";
   subject: string;
   enabled: boolean;
   expiresAt: string;
@@ -99,8 +100,9 @@ export function parseKnowledgePolicy(value: unknown): KnowledgePolicy {
   const raw = object(value, ["version", "sources", "sessions"]);
   if (raw.version !== 1) throw new Error("Unsupported knowledge policy version");
   const sources = entries(raw.sources, (item): KnowledgeSource => {
-    const source = object(item, ["provider", "subject", "enabled", "expiresAt", "purposes", "processors", "rootPageId", "tokenEnvironment", "connection", "documents"]);
+    const source = object(item, ["provider", "classification", "subject", "enabled", "expiresAt", "purposes", "processors", "rootPageId", "tokenEnvironment", "connection", "documents"]);
     if (source.provider !== "notion") throw new Error("Unsupported knowledge provider");
+    if (!["Public", "Private", "Restricted"].includes(source.classification as string)) throw new Error("Invalid knowledge source classification");
     const tokenEnvironment = text(source.tokenEnvironment);
     if (!/^NOTION_[A-Z0-9_]+_TOKEN$/.test(tokenEnvironment)) throw new Error("Invalid knowledge credential reference");
     const connection = object(source.connection, ["isolated", "tokenSha256", "expiresAt"]);
@@ -112,7 +114,7 @@ export function parseKnowledgePolicy(value: unknown): KnowledgePolicy {
     });
     if (new Set(Object.values(documents).map((document) => document.pageId)).size !== Object.keys(documents).length) throw new Error("Duplicate knowledge page");
     return {
-      provider: "notion", subject: text(source.subject), enabled: boolean(source.enabled), expiresAt: date(source.expiresAt),
+      provider: "notion", classification: source.classification as KnowledgeSource["classification"], subject: text(source.subject), enabled: boolean(source.enabled), expiresAt: date(source.expiresAt),
       purposes: strings(source.purposes), processors: strings(source.processors), rootPageId: notionId(source.rootPageId), tokenEnvironment,
       connection: { isolated: boolean(connection.isolated), tokenSha256: hash(connection.tokenSha256), expiresAt: date(connection.expiresAt) }, documents,
     };

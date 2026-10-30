@@ -39,11 +39,15 @@ export function createKnowledgeGateway(options: KnowledgeGatewayOptions) {
     const at = now();
     if (!session || !source || !session.sources.includes(sourceId) || !session.userRequested || session.execution !== "interactive" ||
       session.processor !== "codex/openai" || !fresh(session.expiresAt, at) ||
-      !source.enabled || !source.connection.isolated || !fresh(source.expiresAt, at) || !fresh(source.connection.expiresAt, at) ||
+      !source.enabled || source.classification === "Restricted" || !source.connection.isolated || !fresh(source.expiresAt, at) || !fresh(source.connection.expiresAt, at) ||
       source.subject !== session.subject || !source.processors.includes(session.processor) || !source.purposes.includes(session.purpose)) {
       throw new Error("Knowledge access denied");
     }
     return source;
+  }
+
+  function classification(source: KnowledgeSource, document: KnowledgeDocument): KnowledgeClassification {
+    return source.classification === "Private" || document.classification === "Private" ? "Private" : "Public";
   }
 
   return {
@@ -54,9 +58,9 @@ export function createKnowledgeGateway(options: KnowledgeGatewayOptions) {
       return session.sources.map((id) => {
         const source = authorize(policy, id);
         return {
-          source: id, provider: source.provider,
+          source: id, provider: source.provider, classification: source.classification,
           documents: Object.entries(source.documents).filter(([, document]) => document.classification !== "Restricted")
-            .map(([id, document]) => ({ document: id, classification: document.classification, status: document.status })),
+            .map(([id, document]) => ({ document: id, classification: classification(source, document), status: document.status })),
         };
       });
     },
@@ -79,7 +83,7 @@ export function createKnowledgeGateway(options: KnowledgeGatewayOptions) {
       for (const { selection, source, document, token } of approved) {
         const content = await provider.read(source, document, token);
         documents.push({
-          ...selection, content, classification: document.classification as KnowledgeClassification, status: document.status,
+          ...selection, content, classification: classification(source, document), status: document.status,
           citation: { url: `https://www.notion.so/${document.pageId}`, revision: document.revision, sha256: document.sha256, retrievedAt: new Date(now()).toISOString() },
         });
       }

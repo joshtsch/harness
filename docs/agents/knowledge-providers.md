@@ -55,6 +55,7 @@ the disabled source and empty source set deliberately do not activate retrieval.
   "sources": {
     "experience": {
       "provider": "notion",
+      "classification": "Private",
       "subject": "local",
       "enabled": false,
       "expiresAt": "2026-10-30T23:59:00Z",
@@ -101,6 +102,9 @@ authorized Private channel. The initial migration preview remains unsaved.
 After approval, populate the operator registry without copying source content
 into it. A page edit requires a fresh classification/content review and updated
 revision and hash; there is no automatic approval of new content.
+Source classification is a minimum protection level: a Public page in a Private
+source is returned as Private. Restricted sources and documents are denied before
+any provider request. Discovery and combined reads preserve that minimum.
 
 ## Notion connection setup
 

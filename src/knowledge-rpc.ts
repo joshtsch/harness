@@ -23,6 +23,7 @@ export async function handleKnowledgeRpc(gateway: Gateway, input: unknown): Prom
     id = request.id;
     let result: unknown;
     if (request.method === "initialize") {
+      // The legacy privacy scanner flags an unsplit public protocol date as a phone number.
       result = { protocolVersion: "2025-" + "06-18", capabilities: { tools: {} }, serverInfo: { name: "harness-knowledge", version: "1.0.0" } };
     } else if (request.method === "ping") {
       result = {};

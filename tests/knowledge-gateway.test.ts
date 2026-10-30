@@ -27,7 +27,7 @@ function policy(): KnowledgePolicy {
   return parseKnowledgePolicy({
     version: 1,
     sources: Object.fromEntries(["experience", "role"].map((name, index) => [name, {
-      provider: "notion", subject: "local", enabled: true, expiresAt,
+      provider: "notion", classification: index === 0 ? "Private" : "Public", subject: "local", enabled: true, expiresAt,
       purposes: ["career"], processors: ["codex/openai"], rootPageId: id(1), tokenEnvironment: "NOTION_FIXTURE_TOKEN",
       connection: { isolated: true, tokenSha256: knowledgeDigest(token), expiresAt },
       documents: { summary: { pageId: id(index + 2), classification: index === 0 ? "Private" : "Public", revision, sha256: knowledgeDigest(content), status: index === 0 ? "historical" : "current" } },
@@ -67,6 +67,17 @@ function gateway(current: () => KnowledgePolicy, provider: NotionKnowledgeProvid
 }
 
 describe("authorized source set through the knowledge gateway", () => {
+  it("preserves a Private source classification even when its document is Public", async () => {
+    const current = policy();
+    Object.assign(current.sources.role, { classification: "Private" });
+    const api = await fixture();
+    const client = gateway(() => current, api.provider);
+    const result = await client.read([{ source: "role", document: "summary" }]);
+    expect(result.classification).toBe("Private");
+    expect(result.documents[0].classification).toBe("Private");
+    expect(await client.discover()).toContainEqual(expect.objectContaining({ source: "role", classification: "Private" }));
+  });
+
   it("combines selected sources with citations, historical status and the highest classification", async () => {
     const api = await fixture();
     const current = policy();
@@ -78,7 +89,7 @@ describe("authorized source set through the knowledge gateway", () => {
     expect(api.requests.filter((request) => request.path.includes("markdown"))).toHaveLength(2);
   });
 
-  it.each(["removed", "expired-session", "background", "unrequested", "processor", "subject", "purpose", "revoked", "expired-source", "unverified", "expired-connection", "restricted"])("denies %s before any network request", async (reason) => {
+  it.each(["removed", "expired-session", "background", "unrequested", "processor", "subject", "purpose", "revoked", "expired-source", "unverified", "expired-connection", "restricted", "restricted-source"])("denies %s before any network request", async (reason) => {
     const api = await fixture();
     const current = policy();
     const session = current.sessions.chat;
@@ -96,6 +107,7 @@ describe("authorized source set through the knowledge gateway", () => {
       case "unverified": source.connection.isolated = false; break;
       case "expired-connection": source.connection.expiresAt = "2026-10-30T11:59:59Z"; break;
       case "restricted": source.documents.summary.classification = "Restricted"; break;
+      case "restricted-source": source.classification = "Restricted"; break;
     }
     await expect(gateway(() => current, api.provider).read([{ source: "experience", document: "summary" }])).rejects.toThrow();
     expect(api.requests).toEqual([]);
