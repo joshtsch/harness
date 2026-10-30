@@ -20,6 +20,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | User-scoped decision memory | [decision-memory.md](decision-memory.md) |
 | Vault operations, repository access, promotion, and migration | [harness-memory.md](harness-memory.md) and [`harness-memory` skill](../../harness-skills/harness-memory/SKILL.md) |
 | Agent role routing | [agent-roles.md](agent-roles.md) |
+| Weekly review of context load, instruction discovery, skill triggers, and harness setup | [weekly-harness-review.md](weekly-harness-review.md) |
 | Documentation strategy | [documentation-strategy.md](documentation-strategy.md) |
 | Durable knowledge placement | [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md) and [documentation-strategy.md](documentation-strategy.md) |
 | Harness and cross-project wiki lookup | [documentation strategy](documentation-strategy.md#recording-and-retrieval) |
