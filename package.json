@@ -31,6 +31,7 @@
     "verify": "node --import tsx scripts/verify-project.ts",
     "init:harness": "node --import tsx scripts/init.ts",
     "wikis": "node --import tsx scripts/list-wikis.ts",
+    "knowledge": "node --import tsx scripts/knowledge.ts",
     "link:skill": "node --import tsx scripts/link-skill.ts",
     "secure:list": "node --import tsx scripts/secure-record.ts list",
     "secure:read": "node --import tsx scripts/secure-record.ts read",

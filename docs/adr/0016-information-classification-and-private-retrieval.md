@@ -40,6 +40,10 @@ not promise deletion from service history.
 
 ## Implementation boundary
 
+Follow-up: [ADR-0017](0017-source-backed-knowledge-and-chat-grants.md) adds a
+Notion gateway and grant checks. The boundary below describes the original
+documentation-only contribution; live activation still requires verified setup.
+
 This contribution changes documentation only. Personal scope, service allowlists,
 and Private-source memory retrieval have no runtime implementation. Preserve the
 existing encrypted-record workflow and keep live pilot retrieval disabled until

@@ -54,9 +54,10 @@ place. Its initial processing allowlist is Codex using OpenAI models, for
 user-requested tasks only. These are design approvals, not active source grants
 or a configured service allowlist; private identifiers belong outside public policy.
 
-Personal scope, the processing-service allowlist, and source-backed Private memory
-retrieval are not implemented. Keep the pilot disabled until its source and
-service grants are configured and its boundary is verified. A filtered view,
+The [knowledge gateway](knowledge-providers.md) validates personal scope,
+processor restrictions, source sets, expiry, and reviewed Notion content.
+Trusted native host binding and live source/connection grants remain unconfigured.
+Keep the pilot disabled until those grants and the host boundary are verified. A filtered view,
 selected output fields, or an agent instruction is not access isolation. Use a
 suitably scoped connection or trusted retrieval gateway and keep Restricted notes
 outside the pilot. Implementation must resolve revocation, stale sources, and
@@ -65,8 +66,9 @@ application checks after decryption, not separate cryptographic compartments.
 
 The [architectural decision](../adr/0016-information-classification-and-private-retrieval.md)
 records the trade-off; [memory integration](harness-memory.md#private-source-routing)
-defines the routing boundary. No adapter, provisioning, activation, or migration
-is authorized by this documentation change.
+defines the routing boundary. Live source activation and content migration
+retain their separate setup and review gates; implementing the gateway does not
+authorize either operation.
 
 ## Rules
 

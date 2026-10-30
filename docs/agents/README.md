@@ -23,6 +23,8 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | Documentation strategy | [documentation-strategy.md](documentation-strategy.md) |
 | Durable knowledge placement | [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md) and [documentation-strategy.md](documentation-strategy.md) |
 | Harness and cross-project wiki lookup | [documentation strategy](documentation-strategy.md#recording-and-retrieval) |
+| Notion knowledge, authorized source sets, and Private retrieval activation | [knowledge-providers.md](knowledge-providers.md) |
+| Consistent Notion roots, topics, sources, outputs, and historical records | [notion-knowledge-layout.md](notion-knowledge-layout.md) |
 | Secure document storage | [secure-documents.md](secure-documents.md) |
 | Ubiquitous language | [UBIQUITOUS_LANGUAGE.md](UBIQUITOUS_LANGUAGE.md) |
 | Harness branch and merge-request workflow | [contributing.md](contributing.md) |

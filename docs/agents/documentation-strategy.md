@@ -69,6 +69,13 @@ Follow [knowledge repository access](harness-memory.md#knowledge-repository-acce
 for reading and maintenance use `harness-memory`. Prose ownership remains in
 [agent role routing](agent-roles.md).
 
+Source-backed knowledge does not require a Git repository. Discover authorized
+Notion sources through the [knowledge gateway](knowledge-providers.md), alongside
+the existing repository-wiki inventory. Private provider content remains in its
+controlled source and requires verified host, source, and processor grants;
+registration alone does not activate retrieval. Chats may select several sources
+without widening any source's grants or authorizing writes between them.
+
 ## Enforcement
 
 `pnpm check:docs` verifies the required documentation surfaces and rejects the removed
