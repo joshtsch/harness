@@ -115,7 +115,10 @@ This includes durable external skill-source repositories; one-off dependencies
 and temporary checkouts remain outside the project inventory.
 
 Use `knowledge-routing` to select an authoritative source and `harness-memory`
-to work with a selected vault. See [vault discovery and access](docs/agents/harness-memory.md#knowledge-repository-access).
+to work with a selected vault. For a new vault, consider Notion and a repository
+through [destination selection](docs/agents/harness-memory.md#vault-destination-selection)
+before provider-specific setup. Repository discovery and Notion access retain
+their separate workflows.
 
 ## MCP servers
 

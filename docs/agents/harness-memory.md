@@ -8,10 +8,11 @@ memory workflow's boundaries and rollout; detailed operations live in the
 ## Ownership and authority
 
 Maintain a harness vault alongside independently owned project vaults and
-standalone knowledge repositories. New harness vaults default to a separate
-registered repository with working content in an external managed worktree.
-Project histories and remotes stay independent. After an approved and verified
-cutover, the registered harness vault owns current knowledge. Retained in-harness
+standalone knowledge repositories. Choose a vault's provider before entering
+repository or Notion setup, using [destination selection](#vault-destination-selection).
+Repository vaults use registered repositories with working content in external
+managed worktrees. Project histories and remotes stay independent. After an
+approved and verified cutover, the registered harness vault owns current knowledge. Retained in-harness
 wiki pages are historical rollback copies and must not receive new knowledge.
 
 `knowledge-routing` selects the authoritative source and retrieval path across
@@ -31,6 +32,61 @@ material, not permission to retain transcripts or provider payloads. Keep only
 sanitized sources in vaults; Restricted originals belong in the existing encrypted
 [secure-record workflow](secure-documents.md). Session continuation and encrypted
 record storage remain independent systems.
+
+## Vault destination selection
+
+Agreed in the October 31, 2026 design interview; stage one is tracked in
+[issue #121](https://github.com/joshtsch/harness/issues/121).
+
+For a new vault, knowledge space, or knowledge source, identify its owner,
+purpose, editing workflow, and access needs before provider-specific setup.
+Honor an explicit destination. Otherwise present both Notion and a repository,
+recommend a home using the criteria below, and ask only for unresolved details
+that affect the choice. Reuse an existing home when it fits and the user selects it.
+
+| Prefer Notion | Prefer a repository |
+| --- | --- |
+| Frequent human editing and collaboration | Knowledge changes alongside code |
+| Structured records, filters, and views | Git review and versioned file changes |
+| Native page navigation | Local files, portability, or reproducible tooling |
+
+Weigh the actual workflow rather than treating any one criterion as mandatory.
+Classification and access requirements can rule out either provider. Separate
+destination suitability from available create, read, and maintain capabilities.
+Show a suitable Notion home even when activation is missing; state the exact
+setup gap and offer setup or an alternative without silently choosing Git.
+An explicit choice needs no further provider comparison.
+
+Each vault has one authoritative home. Exports are snapshots. When an idea
+becomes a Project, keep implementation and delivery work in that Project and
+link its originating idea. Transfer knowledge ownership explicitly when needed;
+avoid maintaining duplicate current copies.
+
+Repository handoffs identify the registered owner, checkout, guide, index, and
+revision, or their missing setup. Notion handoffs identify the selected root,
+owner, classification, layout, and available capabilities or setup blockers.
+Use [repository access](#knowledge-repository-access) for the repository branch.
+Use [Notion layout](notion-knowledge-layout.md) and
+[provider access and activation](knowledge-providers.md) for the Notion branch;
+approved writes need a separately authorized write workflow. Neither selection
+nor a connected plugin activates access or authorizes initialization.
+
+### Database support: separate follow-up
+
+The target Notion design supports databases where structured records help,
+alongside ordinary pages. Database properties and page content may both inform
+answers; scoped queries must filter and paginate, preserve provenance and
+revision/retrieval times, and enforce eligible records and properties before
+returning content. Views organize human navigation and do not define access.
+Relations and linked content require their own authorized scope.
+
+The agreed target is scoped live reads of new and edited records without
+approval of every revision. Designing and verifying that authorization mechanism
+is a separate implementation effort. Current retrieval remains limited to
+explicitly reviewed ordinary pages and exact revisions; database ancestry,
+properties, and querying are unsupported. Keep current activation, review, and
+memory-write approval gates until their replacements are implemented and
+verified. Stage-one routing does not create a vault or activate a connection.
 
 ## Private-source routing
 
@@ -103,10 +159,11 @@ answers stay in chat unless saving is requested. See
 
 ## Vault structure and promotion
 
-New vaults contain `raw/`, `wiki/<topic>/`, `output/`, and `templates/` beneath a
-shared `AGENTS.md`; `CLAUDE.md` imports that guide. `wiki/` is the OKF bundle and
+New repository vaults contain `raw/`, `wiki/<topic>/`, `output/`, and `templates/`
+beneath a shared `AGENTS.md`; `CLAUDE.md` imports that guide. `wiki/` is the OKF bundle and
 each topic has an index. Outputs and source notes stay inside the selected vault.
-Templates are supplied by the skill. Obsidian can browse these files without
+Templates are supplied by the skill. Notion vaults use the provider-specific
+layout linked above. Obsidian can browse repository files without
 plugins, embeddings, or a mandatory search service.
 
 The [promotion lifecycle](../../harness-skills/harness-memory/references/promotion.md)
@@ -163,8 +220,9 @@ encrypted portable record, not public guidance.
 | Legacy initializer implementations | Retained installation/history, unavailable as harness routes | `harness-memory` is the canonical route; do not uninstall unrelated global skills |
 | Session checkpoints and secure records | Existing systems | No migration in this change |
 
-Before applying a migration, name the destination repository, visibility, owner,
-and registered project. Inventory actual source paths and records within the
+Before applying a migration, name the destination provider and authoritative
+home, visibility, owner, and registered project or source as applicable.
+Inventory actual source paths and records within the
 authorized scope; inaccessible sources remain explicitly uninspected. Produce a
 path map, duplicate/conflict decisions, source-rights/privacy review, consumer
 list, checks, and rollback steps. Preserve accepted sources and old logs. Capture
@@ -186,14 +244,14 @@ authority. Deleting superseded files requires a separate bounded cleanup.
 ## Behavioral evaluation
 
 Run `pnpm evaluate:harness-memory prepare [skill-directory]` to create a disposable
-snapshot and six isolated cases. Have agents independent of the skill author run
-the generated `runs/<case>/prompt.md` files, limiting writes to each fixture and
+snapshot and isolated cases, including provider selection. Have agents independent
+of the skill author run the generated `runs/<case>/prompt.md` files, limiting writes to each fixture and
 response file. Use the same cases, order, and model settings for baseline and
 candidate skills; keep the variants' agent contexts separate and their results
 hidden from each other. No live accounts or vaults are
 needed. Fixtures and transcripts stay outside the repository.
 
-All six cases exercise the initial request without post-preview approval; the
+All cases exercise the initial request without post-preview approval; the
 vault must remain unchanged even for ingest, initialization, and remember
 requests. Inspect the unsaved proposals in the evaluation transcripts for exact
 content, destinations, evidence, validation, and a request for separate approval.

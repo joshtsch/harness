@@ -7,6 +7,11 @@ govern organization and authoring; they do not grant content access or writes.
 
 ## One root, fixed sections
 
+Choose Notion through [vault destination selection](harness-memory.md#vault-destination-selection).
+The agreed database design is a separate follow-up; current provider support
+requires ordinary nested pages. Database properties, queries, and scoped live
+reads must be implemented and verified before offering them as usable features.
+
 Use ordinary nested pages, not databases, for the initial Notion provider.
 Create only the sections needed by an approved batch; preserve this order:
 
