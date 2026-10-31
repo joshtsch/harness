@@ -23,7 +23,7 @@ For a memory destination, a write request authorizes only preparation until the
 
 ## Placement rules
 
-- Classify personal or business facts through [data safety](../../docs/agents/data-safety.md#information-classification) before selecting a carrier. Private facts stay in their authoritative controlled source; use [Private-source routing](../../docs/agents/harness-memory.md#private-source-routing), not general-vault capture. Its adapter and activation gates are pending; return the missing enforcement/access path rather than treating the design as available retrieval. Keep identifying mappings out of public guidance.
+- Classify personal or business facts through [data safety](../../docs/agents/data-safety.md#information-classification) before selecting a carrier. Private facts stay in their authoritative controlled source; use [Private-source routing](../../docs/agents/harness-memory.md#private-source-routing), not general-vault capture. For Notion, verify the [knowledge gateway's activation gates](../../docs/agents/knowledge-providers.md#trust-boundary-and-activation); return missing host/source grants rather than assuming a connected plugin is authorized retrieval. Keep identifying mappings out of public guidance.
 
 - Use the authoritative-surface table in `docs/agents/documentation-strategy.md`; do not create a competing category-to-document map here.
 - Match activation to the trigger: concise always-loaded boundary, focused document pointer, invoked skill, session loader, query, hook, or script. Prefer a pointer or on-demand query for branch-specific knowledge.

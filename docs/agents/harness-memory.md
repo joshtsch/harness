@@ -42,7 +42,9 @@ store may retain. Keep identifying source mappings and references in appropriate
 private configuration or storage; opaque identifiers are not automatically safe
 for public files.
 
-Source-backed Private retrieval is not implemented. Before activation, apply the
+The [knowledge gateway](knowledge-providers.md) implements reviewed Notion page
+reads and personal/session/processor grant checks. Trusted native host binding
+and live source activation remain setup prerequisites. Before activation, apply the
 [source, scope, and processor gates](data-safety.md#access-and-processing-boundaries)
 and verify enforcement before content reaches the agent. A broad connector does
 not become a scoped memory backend because an agent uses a filtered query.
@@ -90,6 +92,14 @@ capture. Leave no pending proposal files or logs of proposal contents for later.
 Approval supplements existing privacy, scope, repository, contribution, and
 preference-store safeguards. A reviewed proposal must pass those checks before
 any approved write; review grants no authority to bypass them.
+
+A migration preview is a memory proposal even when it resembles a report.
+The `output/` convention does not authorize saving an initial proposal. After
+review, an approved report or export may be saved with its provenance in the
+selected source's permitted output destination. Private outputs require a
+controlled destination; a general vault directory is not sufficient. Ordinary
+answers stay in chat unless saving is requested. See
+[provider outputs](knowledge-providers.md#saved-outputs-and-migration).
 
 ## Vault structure and promotion
 

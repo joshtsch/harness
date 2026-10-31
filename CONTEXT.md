@@ -379,6 +379,23 @@ _Avoid_: Central store (vaults can remain independent)
 An independent Git repository that owns a portable body of knowledge and its contribution/access lifecycle. The harness discovers it through registered project wiki metadata.
 _Avoid_: Package, copied wiki
 
+**Knowledge source**:
+An authoritative body of knowledge reached through a registered repository or
+provider. Its ownership, classification, and access grants remain independent
+of other sources.
+_Avoid_: Repository (a provider source need not use Git)
+
+**Authorized source set**:
+The editable set of knowledge sources approved for a chat. Each source retains
+its own access and processing grants. Selection permits relevant retrieval and
+requested synthesis, not unrestricted transfer or saving.
+_Avoid_: Exclusive chat mode, global memory access
+
+**Knowledge provider**:
+The mechanism that retrieves knowledge from its authoritative source while
+preserving provenance and enforcing the source's access boundary.
+_Avoid_: Vault (the source may be a controlled external service)
+
 **Topic promotion**:
 The reviewed extraction of a coherent vault topic into its own knowledge repository, including recommendation, authorization, registration, migration, verification, and authority cutover. It does not promote memory into policy.
 _Avoid_: Automatic split, policy promotion
