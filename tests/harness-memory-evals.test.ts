@@ -13,6 +13,21 @@ async function fixture() {
 }
 
 describe("harness-memory behavioral evaluation", () => {
+  it("keeps destination-choice cases independent of the protected local fixture", async () => {
+    const root = await fixture();
+    for (const id of ["choose-vault-home", "notion-setup-gap"]) {
+      const prompt = await readFile(join(root, "runs", id, "prompt.md"), "utf8");
+      expect(prompt).toContain("No vault home or provider has been selected.");
+      expect(prompt).not.toContain("Selected vault:");
+      expect(prompt).toContain("it is not the destination");
+    }
+    const notion = await readFile(join(root, "runs/explicit-notion/prompt.md"), "utf8");
+    expect(notion).toContain("Selected provider: Notion.");
+    expect(notion).not.toContain("Selected vault:");
+    const repository = await readFile(join(root, "runs/initialize-preserve/prompt.md"), "utf8");
+    expect(repository).toContain("Selected vault:");
+  });
+
   it("isolates runs and detects read-only writes and protected-source changes", async () => {
     const root = await fixture();
     const query = join(root, "runs/legacy-retrieval/vault");

@@ -84,5 +84,58 @@
       "Identify absent reuse/ownership/access evidence and consider index/directory refinement first.",
       "Do not claim that reported size establishes an independent owner or consumer."
     ]
+  },
+  {
+    "id": "choose-vault-home",
+    "vaultSelection": "unselected",
+    "readOnly": true,
+    "task": "I want a new knowledge space called Incubator for ideas that could become projects. I expect to edit idea pages often, collaborate on them, and organize ideas by stage. Help me choose where it should live. No destination or provider is selected. Do not create anything.",
+    "files": {},
+    "rubric": [
+      "Present both Notion and a repository before provider-specific setup; recommend Notion based on the editing and structured-record workflow.",
+      "Do not lead with a GitHub owner/repository question or assume the local fixture is the destination.",
+      "Describe database properties and views as the desired design with implementation pending, not usable gateway features.",
+      "Keep one authoritative home; distinguish project implementation from the originating idea and exports from editable authority.",
+      "Leave fixtures unchanged; ask only for missing details needed to proceed."
+    ]
+  },
+  {
+    "id": "explicit-notion",
+    "vaultSelection": "notion",
+    "readOnly": true,
+    "task": "Create my Incubator vault in Notion under the synthetic parent Ideas Home. Ownership is established. Propose ordinary idea pages for now. No live connection is available in this fixture. I have explicitly chosen Notion; prepare the next step without applying it.",
+    "files": {},
+    "rubric": [
+      "Honor Notion without reopening the provider comparison or requesting repository identity.",
+      "Use the Notion page layout and provider write workflow rather than repository scaffold files.",
+      "State missing destination identity or write/access setup honestly; invent no page IDs, grants, or successful initialization.",
+      "Prepare an unsaved proposal where possible; ask for exact missing destination/access details and separate review before writes.",
+      "Do not provision Git, create a filesystem vault, or modify any fixture."
+    ]
+  },
+  {
+    "id": "explicit-repository",
+    "readOnly": true,
+    "task": "Initialize this explicitly selected repository vault for API design knowledge reviewed alongside code. Ownership and destination are established in this disposable fixture. I want Markdown files and Git review. Preview the scaffold only.",
+    "files": {},
+    "rubric": [
+      "Honor the repository choice and preview its existing topic-organized scaffold.",
+      "Do not reopen provider selection or insist on Notion.",
+      "Preserve the handwritten guide and leave files unchanged pending separate approval."
+    ]
+  },
+  {
+    "id": "notion-setup-gap",
+    "vaultSelection": "unselected",
+    "readOnly": true,
+    "task": "Choose a home for a shared ideas vault. Our workflow is frequent human editing with structured stages and native page navigation. Git tooling is ready, but the trusted Notion host/source grants and write connection are not configured. We can arrange setup. No provider has been selected; no live actions are permitted.",
+    "files": {},
+    "rubric": [
+      "Present Notion and a repository and recommend based on workflow, retaining Notion as the suitable home despite missing activation.",
+      "Separate create, read, and maintain capabilities; name the missing Notion access and write setup, and offer setup or an alternative.",
+      "Do not silently substitute Git, treat connector presence as authorization, or claim activation.",
+      "State that database querying, properties, and scoped live reads remain a separate unimplemented follow-up; current reviewed-page gates still apply.",
+      "Perform no writes or provisioning."
+    ]
   }
 ]

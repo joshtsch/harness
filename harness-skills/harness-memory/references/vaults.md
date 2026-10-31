@@ -1,5 +1,18 @@
 # Access and initialize a vault
 
+## Select the home first
+
+Apply [vault destination selection](../../../docs/agents/harness-memory.md#vault-destination-selection)
+before repository access or scaffolding. Honor the user's selected provider;
+when unspecified, present Notion and a repository with a workflow-based
+recommendation. Return unresolved ownership or access gaps before initialization.
+
+For Notion, use the [Notion layout](../../../docs/agents/notion-knowledge-layout.md)
+and [provider workflow](../../../docs/agents/knowledge-providers.md), showing
+the exact proposed pages and destination for review. Database support remains
+pending the separate follow-up in the destination-selection contract.
+Repository paths and templates below apply only after choosing a repository.
+
 ## Repository access
 
 Follow [knowledge repository access](../../../docs/agents/harness-memory.md#knowledge-repository-access)
@@ -7,10 +20,11 @@ to obtain a verified owner, checkout/revision, guide, and wiki entry point. Use
 that checkout for retrieval or the prepared external worktree for writes.
 Missing access leaves the source uninspected; return the documented setup path.
 
-## New vaults
+## New repository vaults
 
-Default new harness vaults to an independent registered repository, worked on
-outside the harness tree in its managed external worktree. Project-owned vaults
+For a selected repository provider, default new harness vaults to an independent
+registered repository, worked on outside the harness tree in its managed external
+worktree. Project-owned vaults
 and dedicated topic repositories are supported. A user-supplied existing location
 takes precedence. Never invent a remote, change visibility, or create an
 in-harness vault as a fallback for missing registration.

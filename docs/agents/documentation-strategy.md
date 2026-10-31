@@ -6,8 +6,11 @@ not copy the same decision into several documents.
 For placement decisions, use the harness [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md). This table remains the authority for which surface owns each knowledge type; the skill applies it to scope, context layer, and activation path.
 
 For selected-vault operations use [`harness-memory`](../../harness-skills/harness-memory/SKILL.md).
-Its [contract and migration preview](harness-memory.md) preserve independent wiki
-repositories and general source routing. Registered vault metadata resolves active
+Select a new vault's provider through
+[destination selection](harness-memory.md#vault-destination-selection) before
+repository or Notion setup. Its [contract and migration preview](harness-memory.md)
+preserve independent wiki repositories and general source routing. Registered
+vault metadata resolves active
 knowledge sources; retained in-harness wiki pages are historical rollback copies.
 
 | Knowledge | Authoritative surface |

@@ -372,8 +372,16 @@ An unsaved review package describing a proposed memory change, its destination, 
 _Avoid_: Saved memory, pending record
 
 **Vault**:
-An independently owned, Obsidian-compatible knowledge workspace containing source material, topic-organized wiki pages, outputs, templates, and agent guidance. A vault may belong to the harness, a project, or a standalone knowledge repository.
+An independently owned, organized body of knowledge with one authoritative home, independent of its storage provider. A vault may belong to the harness, a project, or an individual. Exports are snapshots; changing its authoritative home requires an explicit transfer.
 _Avoid_: Central store (vaults can remain independent)
+
+**Repository vault**:
+A vault whose authoritative home is a Git repository, with knowledge maintained as files.
+_Avoid_: Vault (when the storage provider matters)
+
+**Notion vault**:
+A vault whose authoritative home is a Notion knowledge root, organized through pages and, where supported, databases.
+_Avoid_: Knowledge source (when referring specifically to an owned vault)
 
 **Knowledge repository**:
 An independent Git repository that owns a portable body of knowledge and its contribution/access lifecycle. The harness discovers it through registered project wiki metadata.
@@ -381,8 +389,9 @@ _Avoid_: Package, copied wiki
 
 **Knowledge source**:
 An authoritative body of knowledge reached through a registered repository or
-provider. Its ownership, classification, and access grants remain independent
-of other sources.
+provider, including a maintained vault or external material consulted without
+maintaining it. Its ownership, classification, and access grants remain
+independent of other sources.
 _Avoid_: Repository (a provider source need not use Git)
 
 **Authorized source set**:
