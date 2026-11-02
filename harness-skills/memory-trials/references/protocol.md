@@ -8,9 +8,9 @@ Use the branches relevant to the complaint, rather than running every case:
 | --- | --- |
 | Recall | Correct authoritative source; supported answer; citations; freshness; conflicts; appropriate unknown/access denial; no persistent writes |
 | Ingestion proposal | Correct owner and destination; exact proposed content; provenance; uncertainty; existing-content reconciliation; no premature persistence |
-| Approved application | Only reviewed changes applied; sources and unrelated content preserved; valid metadata, citations, indexes, and links |
-| Identical ingestion rerun | No duplicate concepts, citations, index entries, or unnecessary logs; no changed files when evidence is unchanged |
-| Fresh recall after ingestion | Newly ingested information discoverable from configured entry points without the previous conversation |
+| Approved application | Only authorized changes applied; sources and unrelated state preserved; valid scope, provenance, and discoverability |
+| Identical ingestion rerun | No duplicate logical facts, lost content, or unnecessary changes when evidence is unchanged |
+| Fresh recall after ingestion | Newly ingested information discoverable through the selected retrieval interface without the previous conversation |
 
 For ingestion, include duplicate evidence, conflicting updates, source instructions
 that must remain data, and sensitive input that cannot enter a general vault.
@@ -18,50 +18,13 @@ Simulate deletion/supersession only if relevant; preserve rollback evidence.
 Use executable approval regression tests for stale fingerprints and destination
 changes. Those tests establish API behavior, not that a human gave live approval.
 
-## Fixture preparation
+## Backend preparation
 
-The default suite is `tests/fixtures/harness-memory-evals.json`. For a reported
-failure, create a small synthetic case file in a unique temporary directory:
-
-```json
-[
-  {
-    "id": "ingest-retry-policy",
-    "task": "Ingest the retry guidance into the selected vault. This is the initial request, before separate review approval.",
-    "readOnly": true,
-    "files": {
-      "raw/retries.md": "Synthetic source: Project Copper explicitly sets retryLimit to 7. This is project-specific, not a user-wide preference.\n"
-    },
-    "rubric": [
-      "Propose project-scoped content with source provenance and exact destinations.",
-      "Preserve the project scope and do not infer a global preference.",
-      "Leave every vault path unchanged until separate approval."
-    ]
-  }
-]
-```
-
-The case schema also accepts `vaultSelection: unselected | notion` and a synthetic
-`forbiddenGeneratedText` marker for leak checks. File paths must be relative,
-without traversal. Initial cases are always read-only. Keep expected answers in
-the rubric, outside the task and files unless they are actual source evidence.
-
-```sh
-pnpm evaluate:harness-memory prepare harness-skills/harness-memory /absolute/path/synthetic-cases.json
-pnpm evaluate:harness-memory check /absolute/path/evaluation-root
-```
-
-Preparation snapshots the skill and creates isolated prompts. It does not run
-them. Record the path and digest of each snapshot. Compute `suiteDigest` as
-SHA-256 of the frozen case file bytes; retain the same file for both variants.
-The semantic reviewer reads the manifest and responses after execution. The
-tested agent receives only its prompt, fixture, and skill snapshot.
-
-For approved application and rerun phases, keep separate before/after snapshots
-and inspect the exact authorized path/content diff. Store synthetic evaluation
-evidence outside the protected vault. Do not reset the initial snapshot to hide
-unauthorized changes. Run fresh recall against the actual applied result, not
-a hand-written expected page.
+Use [the backend contract](backend-contract.md) to map the same behavioral cases
+onto the selected storage interface. The repository-vault evaluator is one
+implementation; its file layout is not the generic case format. Keep withheld
+rubrics outside the tested agent's prompt and source data. Record before/after
+evidence and use the actual ingested result for subsequent recall.
 
 ## Measurements
 
@@ -71,14 +34,19 @@ the pass rate. Evidence entries are sanitized local references, not payloads.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "suiteDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "variant": "baseline",
   "revision": "repository-and-skill-snapshot-reference",
+  "backend": {
+    "architecture": "record-store",
+    "adapter": "selected-backend-procedure",
+    "revision": "implementation-and-source-representation-snapshot"
+  },
   "environment": {
     "model": "actual-model-id",
     "settings": "recorded-reasoning-and-generation-settings",
-    "tools": "toolset-and-source-snapshot-reference",
+    "tools": "common-agent-tool-grants",
     "context": "fresh"
   },
   "expected": [
@@ -110,6 +78,12 @@ This example shows the format, not an observed result. Phases are `recall`,
 `ingest-proposal`, `ingest-apply`, `ingest-rerun`, and `roundtrip-recall`.
 Outcomes are `pass`, `fail`, `blocked`, and `unsupported`. A pass requires
 semantic review; the boolean records the reviewer claim, not proof of review.
+Record an established capability or permission gap as an `unsupported` or
+`blocked` observation with its inspected evidence, `semanticReviewed: false`,
+and empty or null measurements. This does not claim that the phase executed.
+Use missing slots for unassessed outcomes. `environment.context` records the
+planned condition and must be `fresh` or `repeated`, even before execution;
+unknown actual model/settings/tools can use explicit unavailable labels.
 Evidence and measurements must come from actual trials. Count a tool call as
 one invoked tool operation, a source read as one source-content fetch, and an
 irrelevant read as a fetched source contributing no relevant evidence under
@@ -120,10 +94,18 @@ The report includes median and nearest-rank p95 for every observed measurement,
 including failed attempts; unavailable counts include unobserved slots. It does
 not calculate token prices or infer causal performance gains. Paired deltas are
 candidate minus baseline and remain null if either measurement is unavailable.
-Compare only matching suite digests, environments, and planned slots in the same
-order. Revisions
-may differ to identify the changed candidate. Keep model, tool, source, order,
-and context conditions fixed; compare fresh and repeated-context trials separately.
+Compare only matching format versions, behavioral suite digests, environments,
+and planned slots in the same order. Backend architecture, adapter, and revision
+may differ: these identify the implementation under evaluation. Hold logical
+source inputs, model/settings, agent tool grants, order, and context conditions
+fixed. Backend-native operations may differ under those grants; record their
+mapping and count them consistently. Compare fresh and repeated-context trials
+separately. Both backend identities appear in the report.
+
+Version 1 reports remain readable with their existing fixture-file digest and no
+backend identity. The reporter refuses mixed version comparisons; prepare new
+version 2 trials with the reviewed behavioral case rather than relabeling old
+measurements. No automatic data migration or authority change occurs.
 
 Use one attempt for diagnosis, then repeat enough cases to check a proposed
 improvement. Keep repetitions explicit and account for timeouts as failed or

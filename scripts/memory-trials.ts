@@ -8,10 +8,11 @@ const metrics = ["elapsedMs", "firstEvidenceMs", "toolCalls", "sourceReads", "ir
 type Slot = { case: string; phase: typeof phases[number]; attempt: number };
 type Observation = Slot & { outcome: typeof outcomes[number]; semanticReviewed: boolean; evidence: string[]; measurements: Partial<Record<typeof metrics[number], number | null>> };
 export interface TrialRun {
-  version: 1;
+  version: 1 | 2;
   suiteDigest: string;
   variant: string;
   revision: string;
+  backend: { architecture: string; adapter: string; revision: string } | null;
   environment: { model: string; settings: string; tools: string; context: "fresh" | "repeated" };
   expected: Slot[];
   observations: Observation[];
@@ -30,8 +31,14 @@ function key(slot: Slot): string { return `${slot.case}:${slot.phase}:${slot.att
 
 export function parseTrialRun(value: unknown): TrialRun {
   const run = object(value);
-  if (run.version !== 1 || typeof run.suiteDigest !== "string" || !/^[a-f0-9]{64}$/.test(run.suiteDigest) ||
+  if (![1, 2].includes(run.version as number) || typeof run.suiteDigest !== "string" || !/^[a-f0-9]{64}$/.test(run.suiteDigest) ||
     !nonempty(run.variant) || !nonempty(run.revision)) throw new Error("Invalid trial identity");
+  let backend: TrialRun["backend"] = null;
+  if (run.version === 2) {
+    const value = object(run.backend);
+    if (![value.architecture, value.adapter, value.revision].every(nonempty)) throw new Error("Invalid trial backend");
+    backend = { architecture: value.architecture as string, adapter: value.adapter as string, revision: value.revision as string };
+  } else if (run.backend !== undefined && run.backend !== null) throw new Error("Backend identity requires trial version 2");
   const env = object(run.environment);
   if (![env.model, env.settings, env.tools].every(nonempty) || !["fresh", "repeated"].includes(env.context as string)) throw new Error("Invalid trial environment");
   if (!Array.isArray(run.expected) || !run.expected.length || !Array.isArray(run.observations)) throw new Error("Expected trial slots and observations");
@@ -62,7 +69,7 @@ export function parseTrialRun(value: unknown): TrialRun {
     return { ...identity, outcome: item.outcome as Observation["outcome"], semanticReviewed: item.semanticReviewed,
       evidence: item.evidence as string[], measurements: measurements as Observation["measurements"] };
   });
-  return { version: 1, suiteDigest: run.suiteDigest, variant: run.variant, revision: run.revision,
+  return { version: run.version as 1 | 2, backend, suiteDigest: run.suiteDigest, variant: run.variant, revision: run.revision,
     environment: { model: env.model as string, settings: env.settings as string, tools: env.tools as string, context: env.context as "fresh" | "repeated" }, expected, observations };
 }
 
@@ -74,7 +81,7 @@ function distribution(values: number[]) {
 }
 
 export function summarizeTrialRun(run: TrialRun) {
-  return { variant: run.variant, revision: run.revision, suiteDigest: run.suiteDigest, environment: run.environment,
+  return { version: run.version, backend: run.backend, variant: run.variant, revision: run.revision, suiteDigest: run.suiteDigest, environment: run.environment,
     phases: phases.filter((phase) => run.expected.some((slot) => slot.phase === phase)).map((phase) => {
       const expected = run.expected.filter((slot) => slot.phase === phase).length;
       const observed = run.observations.filter((item) => item.phase === phase);
@@ -91,7 +98,7 @@ export function summarizeTrialRun(run: TrialRun) {
 
 export function compareTrialRuns(baseline: TrialRun, candidate: TrialRun) {
   const slots = (run: TrialRun) => run.expected.map(key).join("\n");
-  if (baseline.suiteDigest !== candidate.suiteDigest || JSON.stringify(baseline.environment) !== JSON.stringify(candidate.environment) ||
+  if (baseline.version !== candidate.version || baseline.suiteDigest !== candidate.suiteDigest || JSON.stringify(baseline.environment) !== JSON.stringify(candidate.environment) ||
     slots(baseline) !== slots(candidate)) throw new Error("Comparison requires identical suite, environment, and planned slots");
   return { baseline: summarizeTrialRun(baseline), candidate: summarizeTrialRun(candidate),
     paired: baseline.expected.map((slot) => {

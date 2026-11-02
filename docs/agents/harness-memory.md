@@ -245,10 +245,21 @@ authority. Deleting superseded files requires a separate bounded cleanup.
 
 For a repeatable recall or ingestion investigation, use the
 [`memory-trials` skill](../../harness-skills/memory-trials/SKILL.md). It reuses
-the evaluator below, accepts custom synthetic cases, and separates proposal,
-approved application, identical rerun, and fresh recall outcomes. Its measurement
-reporter preserves missing observations and unavailable telemetry. Trials do not
+the evaluator below for repository vaults; other architectures use its backend
+operation contract. It separates proposal, approved application, identical rerun,
+and fresh recall outcomes. Its measurement reporter preserves missing observations
+and unavailable telemetry. Trials do not
 activate live sources or approve memory writes.
+
+Run `pnpm evaluate:memory-trials prepare` for independent behavioral checks of the
+trial skill itself. Execute each generated prompt in a fresh agent context, then
+run `pnpm evaluate:memory-trials check <evaluation-root>`. The cases exercise a
+repository vault, structured records, and an event interface without retrieval.
+They evaluate procedure portability and capability accounting, including no
+fabricated execution or telemetry. They do not measure recall quality or test a
+live database integration. A mechanical pass still requires independent semantic
+review against every withheld rubric item; unit tests of the checker are not
+agent evaluation results. All fixture content remains unchanged.
 
 Run `pnpm evaluate:harness-memory prepare [skill-directory]` to create a disposable
 snapshot and isolated cases, including provider selection. Have agents independent

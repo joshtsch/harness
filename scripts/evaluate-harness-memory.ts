@@ -23,7 +23,7 @@ interface Manifest { version: 1; cases: CaseRun[]; skillWords: number; skillByte
 
 const repository = resolve(import.meta.dirname, "..");
 
-async function snapshot(root: string, directory = root): Promise<Snapshot> {
+export async function snapshot(root: string, directory = root): Promise<Snapshot> {
   const entries: Snapshot = {};
   for (const item of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, item.name);

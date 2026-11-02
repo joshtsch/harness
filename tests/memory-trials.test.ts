@@ -16,6 +16,20 @@ function fixture() {
 }
 
 describe("memory trial measurements", () => {
+  it("compares different backends against the same behavioral contract without losing their identities", () => {
+    const baseline = parseTrialRun({ ...fixture(), version: 2,
+      backend: { architecture: "repository-vault", adapter: "vault-procedure", revision: "vault-snapshot" } });
+    const candidate = parseTrialRun({ ...fixture(), version: 2, variant: "candidate",
+      backend: { architecture: "record-store", adapter: "record-procedure", revision: "record-snapshot" } });
+    const comparison = compareTrialRuns(baseline, candidate);
+    expect(comparison.baseline.backend?.architecture).toBe("repository-vault");
+    expect(comparison.candidate.backend?.architecture).toBe("record-store");
+    expect(comparison.paired).toHaveLength(3);
+    expect(() => compareTrialRuns(parseTrialRun(fixture()), candidate)).toThrow("identical");
+    expect(() => parseTrialRun({ ...fixture(), version: 2 })).toThrow();
+    expect(() => parseTrialRun({ ...fixture(), version: 2, backend: { architecture: "record-store" } })).toThrow("backend");
+    expect(() => parseTrialRun({ ...fixture(), backend: candidate.backend })).toThrow("version 2");
+  });
   it("keeps failures and missing trials in the denominator and unavailable telemetry out of percentiles", () => {
     const report = summarizeTrialRun(parseTrialRun(fixture())).phases[0]!;
     expect(report).toMatchObject({ expected: 3, observed: 2, missing: 1, outcomes: { pass: 1, fail: 1 }, passRateOfPlanned: 1 / 3 });
