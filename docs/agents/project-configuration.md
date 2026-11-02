@@ -181,3 +181,20 @@ and fast-forwards only clean, safely comparable default branches; it records
 is skipped. The explicit session goal and agent instructions are saved beside
 the session manifest. Project setup scripts do not need to rewrite `AGENTS.md`
 to receive session intent. See [session lifecycle](session-lifecycle.md#session-goal-and-agent-context).
+
+## Standards onboarding
+
+Existing entries remain loadable without new fields. `quality.lint` and
+`quality.format` remain required to execute local standards checks; applicable
+`verification` commands use their existing `required` behavior. Optional failures
+are reported separately. Do not replace project tools or invent empty test/build
+checks to complete onboarding.
+
+`pnpm standards bootstrap <project> <path>` validates a registered planned
+project without resolving the remote or tracker. `pnpm standards local <project>
+<path>` runs fresh checks for an existing worktree. Both use the merged project
+configuration. No stored fingerprint grants permission to skip validation.
+`pnpm standards remote <project>` reports current GitHub enforcement separately;
+missing setup remains blocked. See [intake](repository-intake.md#local-scaffold-and-remote-standards-gates)
+for scaffold scope, workflow generation, initial publication, and transition to
+normal sessions. No command provisions resources across the project inventory.

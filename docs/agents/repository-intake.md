@@ -86,8 +86,8 @@ Existing clones retain their contents and history. Verify their identity before
 reuse. Keep normal implementation in the project's managed checkout under the
 [external worktree root](project-configuration.md#worktree-root).
 
-For a new GitHub repository, register and validate its planned identity, then
-use `gh repo create` for repository creation. Repository creation is part of
+For a new GitHub repository, register and validate its planned identity, complete
+the local standards gate below, then use `gh repo create` for repository creation. Repository creation is part of
 project intake; Terraform is not the repository-provisioning path. Run the
 [Terraform coverage gate](infrastructure.md#terraform-coverage-gate) for
 separate infrastructure resources needed by the project, such as hosting,
@@ -125,3 +125,77 @@ provisioning or pushing. Register and validate any missing planned identity
 before continuing. Do not reset or overwrite an existing checkout to restart.
 Follow the infrastructure policy for separate resources; missing access is not
 a coverage gap.
+
+## Local scaffold and remote standards gates
+
+The registered `remote` is a planned identity; it need not exist for local work.
+Run these commands from the harness root. They load and validate the merged
+configuration without provider calls during local preparation or validation.
+Dependencies must already be available before offline verification.
+
+```sh
+pnpm standards prepare <project> <empty-repository-path>
+pnpm standards bootstrap <project> <repository-path>
+```
+
+`prepare` initializes Git and a minimal README, ignore file, and setup contract.
+It never replaces existing files or chooses lint/format tools. Configure the
+owner-approved quality commands and applicable `verification` checks, implement
+the project-owned setup script, and install dependencies before validation.
+An empty scaffold needs lint and non-mutating format checks of its setup/config
+files; tests, typechecking, and builds belong in `verification` when applicable.
+Absent verification checks are not reported as passed.
+
+`bootstrap` independently executes the configured checks every time. Missing
+checks, unavailable executables, required failures, or repository mutations fail
+validation. It accepts only setup/quality metadata on the initial default branch
+with at most one commit. Its fixed scaffold file list includes common tool
+configuration, `scripts/setup.sh`, `scripts/quality.<extension>`, and the standards
+workflow. Unsupported scaffold files need the normal issue/worktree workflow;
+never hide features inside allowed metadata. This exception does not authorize
+feature implementation, a PR template, or changes to an existing project.
+
+To prepare verified GitHub CI, run:
+
+```sh
+pnpm standards workflow <project> <repository-path>
+```
+
+This creates `.github/workflows/standards.yml` without overwriting a workflow.
+It runs the project-owned bootstrap setup, lint, format, and verification commands
+in Ubuntu CI. Setup must install the chosen toolchain and dependencies. Review
+all generated content for publication suitability. Commands must use scripts or
+environment references rather than credentials or GitHub expressions. Existing
+custom workflows remain intact; adapt onboarding explicitly when the generated
+contract does not fit. No framework or tool is installed by this command.
+
+After local validation and authorized empty-remote creation, commit the reviewed
+scaffold, attach the exact registered remote as `origin`, and publish through:
+
+```sh
+pnpm standards publish <project> <repository-path>
+pnpm standards remote <project>
+```
+
+`publish` reruns local checks without trusting hooks or saved success, checks
+clean content and planned remote identity, scans the initial commit, requires an
+empty remote, then pushes only the initial integration branch. An existing ref
+closes bootstrap publication. This handles initial setup without a pre-existing
+issue or PR. Once published, establish the managed clone, create the originating
+issue, and use normal issue-bound sessions and external worktrees.
+
+`remote` is read-only. It verifies the current integration commit's exact remote
+workflow against current project commands, a successful push run and required
+steps, and strict branch protection requiring `Project standards`, including
+administrators. YAML alone, old successful runs, missing protection, skipped
+checks, permission failures, or service failures cannot establish enforcement.
+Only `remotely-enforced` confirms these checks; other results exit nonzero with
+sanitized next steps. Other providers are explicitly unsupported. Ruleset-only
+and custom workflow setups remain blocked pending a supported verifier.
+
+Local readiness and remote readiness are separate. Use `standards local` for
+fresh local verification in an existing issue-bound worktree. Neither local
+validation nor session setup proves remote enforcement. Re-run `standards remote`
+after changes to commands, CI, integration content, or protection. Keep missing
+provider access and unsupported protection explicit. Complete the Terraform
+coverage gate before any protection write; this verifier never writes settings.
