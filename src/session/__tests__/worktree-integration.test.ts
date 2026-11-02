@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createRequire } from "node:module";
-import { mkdtemp, mkdir, writeFile, rm, realpath } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, readFile, rm, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -131,8 +131,11 @@ describe("worktree branches and bases with real Git", () => {
   });
 
   it("passes branch and base options through the CLI", async () => {
-    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n  quality:\n    lint:\n      command: node\n      args: [--version]\n    format:\n      command: node\n      args: [--version]\nprojects:\n  example-project:\n    remote: ${join(root, "origin.git")}\n`);
+    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n  quality:\n    lint:\n      command: node\n      args: [--version]\n    format:\n      command: node\n      args: [--version]\n  verification:\n    - command: node\n      args: [--eval, "process.exit(13)"]\n  workflows:\n    - command: node\n      args: [--eval, "process.exit(14)"]\nprojects:\n  example-project:\n    remote: ${join(root, "origin.git")}\n`);
     await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/create-worktree.ts"), "--branch", "feature/existing", "--base", "feature/base", "example-project", "13", "CLI tracking"], { cwd: root, env: { ...env, HARNESS_WORKTREE_ROOT: root + "-worktrees" } });
+    expect(await readFile(join(root, "docs/.scratch/setup/13-cli-tracking/example-project-bootstrap.state.json"), "utf8")).toContain('"status":"complete"');
+    expect(await readFile(join(root, "docs/.scratch/setup/feature/existing/example-project-worktree.state.json"), "utf8")).toContain('"status":"complete"');
+    await expect(readFile(join(root, "docs/.scratch/setup/feature/existing/session.events.jsonl"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     expect(await readWorktreeBase(project.path, "feature/existing", run)).toBe("origin/feature/base");
     expect(await git("-C", join(root + "-worktrees", "example-project", "13-cli-tracking"), "rev-parse", "--abbrev-ref", "@{upstream}")).toBe("origin/feature/existing");
   });

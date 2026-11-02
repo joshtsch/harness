@@ -1,7 +1,7 @@
 import { requireProjectQuality, type ProjectDefinition, type SessionContext, type WorkflowCommand } from "../project-config.js";
 import { ensureProjectClone, type ProjectClone } from "./project-clone.js";
 import { createProjectWorktree, type WorktreeProject, type WorktreeResult } from "./worktree.js";
-import { recordSetupEvent, runProjectCommands, runProjectSetupSession, verifyProjectReady, type ProjectSetupOptions, type SetupCommandRunner, type SetupSessionResult, type SetupStep, type SetupFailure, type VerificationOptions } from "./project-setup.js";
+import { recordSetupEvent, runProjectCommands, runProjectSetupSession, verifyProjectReady, verifyPreparedProject, type ProjectSetupOptions, type SetupCommandRunner, type SetupSessionResult, type SetupStep, type SetupFailure, type VerificationOptions } from "./project-setup.js";
 import { refreshProjectClone, type ProjectRefreshResult } from "./project-refresh.js";
 
 export type { ProjectClone } from "./project-clone.js";
@@ -171,17 +171,15 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
   for (const preparation of projects) {
     const { project, setupOptions, worktree } = preparation;
     try {
-      await adapters.verifyProject(worktree!.path, options.run);
-      const quality = requireProjectQuality(project);
-      const verificationOptions = {
+      const optionalFailures = await verifyPreparedProject({
         project,
         worktreePath: worktree!.path,
         options: setupOptions!,
         run: options.run,
-      };
-      await adapters.runCommands([quality.lint, quality.format], verificationOptions);
-      await adapters.verifyProject(worktree!.path, options.run);
-      const optionalFailures = await adapters.runCommands([...project.verification, ...project.workflows], verificationOptions);
+      }, [...project.verification, ...project.workflows], {
+        verifyProject: (path) => adapters.verifyProject(path, options.run),
+        runCommands: adapters.runCommands,
+      });
       if (optionalFailures.length > 0) {
         preparation.state = { ...preparation.state, optionalFailures: optionalFailures.map(({ error }) => String(error)) };
         await writeManifest("running");

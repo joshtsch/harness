@@ -2,7 +2,7 @@ import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { ProjectDefinition, WorkflowCommand } from "../project-config.js";
+import { requireProjectQuality, type ProjectDefinition, type WorkflowCommand } from "../project-config.js";
 
 const executeFile = promisify(execFile);
 
@@ -139,6 +139,18 @@ export async function verifyProjectReady(worktreePath: string, run: SetupCommand
   const result = await run("git", ["-C", worktreePath, "status", "--porcelain", "--untracked-files=all"], { cwd: worktreePath, env: process.env });
   if (result.code !== 0) throw new Error(`worktree verification failed: ${result.stderr || result.stdout}`);
   if (result.stdout.trim() !== "") throw new Error("worktree verification failed: worktree is not clean");
+}
+
+export async function verifyPreparedProject(
+  options: VerificationOptions,
+  followingCommands?: WorkflowCommand[],
+  adapters = { verifyProject: (path: string) => verifyProjectReady(path, options.run), runCommands: runProjectCommands },
+): Promise<SetupFailure[]> {
+  await adapters.verifyProject(options.worktreePath);
+  const quality = requireProjectQuality(options.project);
+  await adapters.runCommands([quality.lint, quality.format], options);
+  await adapters.verifyProject(options.worktreePath);
+  return followingCommands === undefined ? [] : adapters.runCommands(followingCommands, options);
 }
 
 export async function runProjectCommands(commands: WorkflowCommand[], options: VerificationOptions): Promise<SetupFailure[]> {
