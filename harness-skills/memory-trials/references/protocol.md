@@ -120,7 +120,8 @@ The report includes median and nearest-rank p95 for every observed measurement,
 including failed attempts; unavailable counts include unobserved slots. It does
 not calculate token prices or infer causal performance gains. Paired deltas are
 candidate minus baseline and remain null if either measurement is unavailable.
-Compare only matching suite digests, environments, and planned slots. Revisions
+Compare only matching suite digests, environments, and planned slots in the same
+order. Revisions
 may differ to identify the changed candidate. Keep model, tool, source, order,
 and context conditions fixed; compare fresh and repeated-context trials separately.
 

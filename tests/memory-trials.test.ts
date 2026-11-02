@@ -70,6 +70,7 @@ describe("memory trial measurements", () => {
       { ...after, suiteDigest: "b".repeat(64) },
       { ...after, environment: { ...after.environment, context: "repeated" as const } },
       { ...after, expected: after.expected.slice(1) },
+      { ...after, expected: [...after.expected].reverse() },
     ]) expect(() => compareTrialRuns(before, changed)).toThrow("identical");
   });
 });

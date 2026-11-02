@@ -90,7 +90,7 @@ export function summarizeTrialRun(run: TrialRun) {
 }
 
 export function compareTrialRuns(baseline: TrialRun, candidate: TrialRun) {
-  const slots = (run: TrialRun) => run.expected.map(key).sort().join("\n");
+  const slots = (run: TrialRun) => run.expected.map(key).join("\n");
   if (baseline.suiteDigest !== candidate.suiteDigest || JSON.stringify(baseline.environment) !== JSON.stringify(candidate.environment) ||
     slots(baseline) !== slots(candidate)) throw new Error("Comparison requires identical suite, environment, and planned slots");
   return { baseline: summarizeTrialRun(baseline), candidate: summarizeTrialRun(candidate),
