@@ -182,6 +182,17 @@ is skipped. The explicit session goal and agent instructions are saved beside
 the session manifest. Project setup scripts do not need to rewrite `AGENTS.md`
 to receive session intent. See [session lifecycle](session-lifecycle.md#session-goal-and-agent-context).
 
+### Projects with a user interface
+
+A project with a UI sets up Storybook as part of its preferred setup. Stories
+render real components from fixture data, without a server, and cover each
+meaningful state (empty, loading, error, permission and phase variants), not
+only the happy path. Add `storybook` and `build-storybook` package scripts,
+install Storybook through the project-owned setup, and register
+`build-storybook` as a required `verification` check so CI builds it. Keep
+rendering separable from data fetching so stories use the same code as the app.
+Projects without a UI do not add Storybook. Railbird is the reference adopter.
+
 ## Standards onboarding
 
 Existing entries remain loadable without new fields. `quality.lint` and
