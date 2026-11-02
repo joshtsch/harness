@@ -23,7 +23,7 @@ interface Manifest { version: 1; cases: CaseRun[]; skillWords: number; skillByte
 
 const repository = resolve(import.meta.dirname, "..");
 
-async function snapshot(root: string, directory = root): Promise<Snapshot> {
+export async function snapshot(root: string, directory = root): Promise<Snapshot> {
   const entries: Snapshot = {};
   for (const item of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, item.name);
@@ -38,9 +38,30 @@ async function snapshot(root: string, directory = root): Promise<Snapshot> {
   return entries;
 }
 
-export async function prepareMemoryEvaluation(skillDirectory: string): Promise<string> {
+function validateScenarios(value: unknown): Scenario[] {
+  if (!Array.isArray(value) || !value.length) throw new Error("Evaluation cases must be a non-empty array");
+  const ids = new Set<string>();
+  for (const item of value) {
+    if (!item || typeof item !== "object" || typeof item.id !== "string" || !/^[a-z0-9-]+$/.test(item.id) || ids.has(item.id)) throw new Error("Invalid or duplicate evaluation case ID");
+    ids.add(item.id);
+    if (typeof item.task !== "string" || !item.task.trim() || item.readOnly !== true ||
+      !Array.isArray(item.rubric) || !item.rubric.length || item.rubric.some((entry: unknown) => typeof entry !== "string" || !entry.trim()) ||
+      !item.files || typeof item.files !== "object" || Array.isArray(item.files)) throw new Error("Cases require a task, readOnly: true, files, and a rubric");
+    for (const [name, contents] of Object.entries(item.files)) {
+      if (name.includes("\\") || name.split("/").some((part) => !part || part === "." || part === "..") || typeof contents !== "string") throw new Error("Invalid evaluation fixture path or content");
+    }
+    if (item.vaultSelection !== undefined && !["unselected", "notion"].includes(item.vaultSelection)) throw new Error("Invalid vault selection");
+    if (item.required !== undefined && (!Array.isArray(item.required) || item.required.length)) throw new Error("Initial trials cannot require generated files");
+    if (item.concepts) throw new Error("Initial trials cannot require generated concepts");
+    if (item.forbiddenGeneratedText !== undefined && typeof item.forbiddenGeneratedText !== "string") throw new Error("Invalid forbidden fixture marker");
+  }
+  return value;
+}
+
+export async function prepareMemoryEvaluation(skillDirectory: string, casesFile = join(repository, "tests/fixtures/harness-memory-evals.json")): Promise<string> {
   const skill = resolve(skillDirectory);
   if (basename(skill) !== "harness-memory") throw new Error("Select a harness-memory skill directory");
+  const scenarios = validateScenarios(JSON.parse(await readFile(casesFile, "utf8")));
   const sourceRoot = resolve(skill, "../..");
   const root = await mkdtemp(join(tmpdir(), "harness-memory-evals-"));
   await mkdir(join(root, "harness-skills"));
@@ -48,7 +69,6 @@ export async function prepareMemoryEvaluation(skillDirectory: string): Promise<s
   await cp(join(sourceRoot, "harness-skills/knowledge-routing"), join(root, "harness-skills/knowledge-routing"), { recursive: true });
   await cp(join(sourceRoot, "docs/agents"), join(root, "docs/agents"), { recursive: true });
   await cp(join(sourceRoot, "CONTEXT.md"), join(root, "CONTEXT.md"));
-  const scenarios: Scenario[] = JSON.parse(await readFile(join(repository, "tests/fixtures/harness-memory-evals.json"), "utf8"));
   const cases: CaseRun[] = [];
   for (const scenario of scenarios) {
     const run = join(root, "runs", scenario.id);
@@ -141,14 +161,14 @@ export async function checkMemoryEvaluation(root: string) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [command, argument] = process.argv.slice(2).filter((value) => value !== "--");
+  const [command, argument, casesFile, ...extra] = process.argv.slice(2).filter((value) => value !== "--");
   try {
-    if (command === "prepare") console.log(await prepareMemoryEvaluation(argument ?? join(repository, "harness-skills/harness-memory")));
-    else if (command === "check" && argument) {
+    if (command === "prepare" && !extra.length) console.log(await prepareMemoryEvaluation(argument ?? join(repository, "harness-skills/harness-memory"), casesFile));
+    else if (command === "check" && argument && !casesFile) {
       const result = await checkMemoryEvaluation(resolve(argument));
       console.log(JSON.stringify(result, null, 2));
       if (result.cases.some((item) => !item.automatedPass)) process.exitCode = 1;
     }
-    else throw new Error("Usage: pnpm evaluate:harness-memory prepare [skill-directory] | check <evaluation-root>");
+    else throw new Error("Usage: pnpm evaluate:harness-memory prepare [skill-directory] [synthetic-cases.json] | check <evaluation-root>");
   } catch (error) { console.error(error instanceof Error ? error.message : "Evaluation failed"); process.exitCode = 1; }
 }
