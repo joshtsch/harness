@@ -21,7 +21,6 @@ skills:
   domain-modeling: { capability: domain-modeling, state: canonical, codex: supported, gemini: supported, claude: supported }
   grill-with-docs: { capability: grill-with-docs, state: canonical, requires: [grilling, domain-modeling], codex: supported, gemini: degraded, claude: supported }
   grilling: { capability: grilling, state: canonical, codex: supported, gemini: supported, claude: supported }
-  harness-grill-with-docs: { capability: grill-with-docs, state: retired, codex: unavailable, gemini: unavailable, claude: unavailable }
   impeccable: { capability: ui-design, state: canonical, codex: supported, gemini: supported, claude: supported }
   harness-memory: { capability: harness-memory, state: canonical, requires: [knowledge-routing], codex: supported, gemini: supported, claude: supported }
   initialize-llm-wiki: { capability: harness-memory, state: retired, codex: unavailable, gemini: unavailable, claude: unavailable }

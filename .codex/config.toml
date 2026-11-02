@@ -4,10 +4,6 @@
 name = "initialize-llm-wiki"
 enabled = false
 
-[[skills.config]]
-name = "harness-grill-with-docs"
-enabled = false
-
 [mcp_servers.attio]
 url = "https://mcp.attio.com/mcp"
 

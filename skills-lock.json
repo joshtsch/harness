@@ -109,12 +109,6 @@
       "skillPath": "skills/productivity/grilling/SKILL.md",
       "computedHash": "4dd886b0196bf43729d954ae326016f2bd9f5f79d892500b407c33a753362f14"
     },
-    "harness-grill-with-docs": {
-      "source": "joshtsch/skills",
-      "sourceType": "github",
-      "skillPath": ".agents/skills/harness-grill-with-docs/SKILL.md",
-      "computedHash": "0c763a4bcb1d4c87866890c874214da7ca89506ced4883f75e93acd77f65e6fb"
-    },
     "impeccable": {
       "source": "pbakaus/impeccable",
       "sourceType": "github",
