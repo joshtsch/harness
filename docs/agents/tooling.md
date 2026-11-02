@@ -196,7 +196,7 @@ scope must remain explicit:
   `claude plugin marketplace add` and `claude plugin install --scope project`
   commands for any missing plugin. It never installs plugins itself.
 - `pnpm init:harness` restores external project skills, links tracked harness skills,
-  and verifies every skill in the combined capability inventory is installed at
+  removes links to harness skills deleted from `harness-skills/`, and verifies every skill in the combined capability inventory is installed at
   `.agents/skills/<name>/SKILL.md`.
 - Ponytail and Vercel are approved harness-level plugins and are listed in
   `.codex/plugins.yml`. Vercel provides shared deployment, Next.js, and Vercel

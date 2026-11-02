@@ -1,4 +1,4 @@
-import { access, lstat, mkdir, readFile, readdir, realpath, symlink } from "node:fs/promises";
+import { access, lstat, mkdir, readFile, readdir, readlink, realpath, symlink, unlink } from "node:fs/promises";
 import { resolve } from "node:path";
 
 export async function loadHarnessSkillNames(sourceRoot: string): Promise<string[]> {
@@ -36,7 +36,19 @@ export async function installHarnessSkills(harnessRoot: string, sourceRoot = res
       }
     }
   }
+  await pruneRemovedHarnessSkills(harnessRoot, sourceRoot, new Set(names));
   return names;
+}
+
+// Removes links to harness skills that no longer exist; other entries are left alone.
+async function pruneRemovedHarnessSkills(harnessRoot: string, sourceRoot: string, names: Set<string>): Promise<void> {
+  const destinationRoot = resolve(harnessRoot, ".agents", "skills");
+  await mkdir(destinationRoot, { recursive: true });
+  for (const entry of await readdir(destinationRoot, { withFileTypes: true })) {
+    if (names.has(entry.name) || !entry.isSymbolicLink()) continue;
+    const destination = resolve(destinationRoot, entry.name);
+    if (resolve(destinationRoot, await readlink(destination)) === resolve(sourceRoot, entry.name)) await unlink(destination);
+  }
 }
 
 export async function linkLocalSkill(skillName: string, sourcePath: string, harnessRoot: string): Promise<string> {
