@@ -1,0 +1,38 @@
+import { describe, expect, it } from "vitest";
+import { commitGuardViolations, forbiddenStagedPath, parseCommitInvocation } from "../src/git-guard.js";
+
+const clean = { branch: "claude/1-change", stagedPaths: ["src/a.ts"], stagedDiff: "+const a = 1;\n", stagesChanges: false };
+
+describe("git commit guard", () => {
+  it("finds the repository a command commits in", () => {
+    expect(parseCommitInvocation("git status", "/repo")).toBeUndefined();
+    expect(parseCommitInvocation("git log --grep commit", "/repo")).toBeUndefined();
+    expect(parseCommitInvocation("git commit -m 'msg'", "/repo")).toEqual({ directory: "/repo", stagesChanges: false });
+    expect(parseCommitInvocation("git -C ../child commit -F msg.txt", "/repo/sub")).toEqual({ directory: "/repo/child", stagesChanges: false });
+    expect(parseCommitInvocation("cd /work/tree && git commit -m 'x'", "/repo")?.directory).toBe("/work/tree");
+    expect(parseCommitInvocation("git commit --amend --no-edit", "/repo")?.stagesChanges).toBe(false);
+  });
+
+  it("flags commands that stage and commit in one step", () => {
+    expect(parseCommitInvocation("git add -A && git commit -m 'x'", "/repo")?.stagesChanges).toBe(true);
+    expect(parseCommitInvocation("git commit -am 'x'", "/repo")?.stagesChanges).toBe(true);
+    expect(parseCommitInvocation("git commit --all -m 'x'", "/repo")?.stagesChanges).toBe(true);
+    expect(parseCommitInvocation("git commit -m 'add -a flag'", "/repo")?.stagesChanges).toBe(false);
+  });
+
+  it("blocks local configuration and environment files but not the example", () => {
+    expect(forbiddenStagedPath("projects.local.yml")).toBe(true);
+    expect(forbiddenStagedPath("app/.env")).toBe(true);
+    expect(forbiddenStagedPath(".env.local")).toBe(true);
+    expect(forbiddenStagedPath(".env.example")).toBe(false);
+    expect(forbiddenStagedPath("docs/env.md")).toBe(false);
+  });
+
+  it("reports each violation", () => {
+    expect(commitGuardViolations(clean)).toEqual([]);
+    expect(commitGuardViolations({ ...clean, branch: "main" })).toEqual(["commits on main are not allowed; create a feature branch"]);
+    expect(commitGuardViolations({ ...clean, stagedPaths: [".env"] })).toEqual([".env must never be committed; unstage it"]);
+    expect(commitGuardViolations({ ...clean, stagesChanges: true })[0]).toContain("separate command");
+    expect(commitGuardViolations({ ...clean, stagedDiff: `+${["-----BEGIN OPENSSH", "PRIVATE KEY-----"].join(" ")}\n` })).toEqual(["likely private-key in the staged diff; inspect it locally and remove it"]);
+  });
+});

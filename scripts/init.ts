@@ -6,6 +6,7 @@ import { verifyProjectSkills } from "../src/project-skills.js";
 import { loadCapabilityPolicy, verifyCapabilityInventory } from "../src/capability-policy.js";
 import { verifyGeminiProjectSkills } from "../src/gemini-skills.js";
 import { syncClaudeProjectSkills } from "../src/claude-skills.js";
+import { verifyClaudePlugins } from "../src/claude-plugins.js";
 import { prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisites.js";
 import { initializeProjects, parseInitializationArgs } from "../src/initialization-projects.js";
 import { installHarnessSkills, loadHarnessSkillNames } from "../src/local-skill.js";
@@ -36,6 +37,7 @@ async function run(): Promise<void> {
       if (provider === "claude") await syncClaudeProjectSkills(repoRoot, policy);
     }],
     ...(provider === "codex" ? [["codex plugins", async () => verifyRequiredPlugins(await loadRequiredPlugins(resolve(repoRoot, ".codex/plugins.yml")))]] as Array<[string, () => Promise<void>]> : []),
+    ...(provider === "claude" ? [["claude plugins", async () => verifyClaudePlugins(resolve(repoRoot, ".claude/settings.json"))]] as Array<[string, () => Promise<void>]> : []),
   ];
 
   for (const [name, stage] of stages) {
