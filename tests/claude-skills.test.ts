@@ -43,15 +43,31 @@ describe("Claude skill discovery", () => {
     await symlink("../../.agents/skills/ignored", join(root, ".claude/skills/ignored"));
 
     expect(await syncClaudeProjectSkills(root, policy)).toEqual({ linked: ["active"], removed: ["ignored"] });
-    expect(await readlink(join(root, ".claude/skills/active"))).toBe("../../.agents/skills/active");
+    expect(await readlink(join(root, ".claude/skills/active"))).toBe(join(root, ".agents/skills/active"));
     await expect(lstat(join(root, ".claude/skills/ignored"))).rejects.toThrow();
     expect(await syncClaudeProjectSkills(root, policy)).toEqual({ linked: [], removed: [] });
   });
 
+  it("removes harness links for skills no longer in policy", async () => {
+    const root = await fixture();
+    await mkdir(join(root, ".claude/skills"), { recursive: true });
+    await symlink(join(root, ".agents/skills/dropped"), join(root, ".claude/skills/dropped"));
+    expect(await syncClaudeProjectSkills(root, policy)).toEqual({ linked: ["active"], removed: ["dropped"] });
+  });
+
+  it("reports a dangling destination as a conflict", async () => {
+    const root = await fixture();
+    await mkdir(join(root, ".claude/skills"), { recursive: true });
+    await symlink(join(root, "missing"), join(root, ".claude/skills/active"));
+    await expect(syncClaudeProjectSkills(root, policy)).rejects.toThrow("conflicts with another installation");
+  });
+
   it("preserves skills it did not install", async () => {
     const root = await fixture();
+    await mkdir(join(root, ".claude/skills/user-skill"), { recursive: true });
     await mkdir(join(root, ".claude/skills/ignored"), { recursive: true });
     await expect(syncClaudeProjectSkills(root, policy)).rejects.toThrow("ignored must be disabled for Claude");
+    await expect(lstat(join(root, ".claude/skills/user-skill"))).resolves.toBeDefined();
     const conflicted = await fixture();
     await mkdir(join(conflicted, ".claude/skills/active"), { recursive: true });
     await expect(syncClaudeProjectSkills(conflicted, policy)).rejects.toThrow("conflicts with another installation");

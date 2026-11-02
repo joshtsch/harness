@@ -10,6 +10,7 @@ describe("harness prerequisites", () => {
   it("does not require Bitwarden for routine harness workflows", () => {
     expect(harnessPrerequisites.map(({ command }) => command)).not.toContain("bw");
     expect(prerequisitesForProvider("gemini").map(({ command }) => command)).not.toContain("bw");
+    expect(prerequisitesForProvider("claude").map(({ command }) => command)).not.toContain("bw");
   });
 
   it("checks only the selected agent provider", () => {

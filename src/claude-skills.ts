@@ -1,5 +1,5 @@
-import { access, lstat, mkdir, readFile, readlink, realpath, symlink, unlink } from "node:fs/promises";
-import { relative, resolve } from "node:path";
+import { access, lstat, mkdir, readFile, readdir, readlink, realpath, symlink, unlink } from "node:fs/promises";
+import { resolve } from "node:path";
 import type { CapabilityPolicy } from "./capability-policy.js";
 
 export function verifyClaudeContext(contents: string): void {
@@ -34,27 +34,28 @@ export async function syncClaudeProjectSkills(root: string, policy: CapabilityPo
     await access(resolve(source, "SKILL.md"));
     try {
       await lstat(destination);
-      const [actual, expected] = await Promise.all([realpath(destination), realpath(source)]);
-      if (actual !== expected) throw new Error(`Claude skill destination conflicts with another installation: ${destination}`);
     } catch (error) {
       if (!missing(error)) throw error;
-      await symlink(relative(destinationRoot, source), destination, "junction");
+      await symlink(source, destination, "junction");
       linked.push(name);
+      continue;
     }
+    const [actual, expected] = await Promise.all([realpath(destination).catch(() => undefined), realpath(source)]);
+    if (actual !== expected) throw new Error(`Claude skill destination conflicts with another installation: ${destination}`);
   }
 
-  for (const name of disabled) {
-    const destination = resolve(destinationRoot, name);
-    try {
-      const entry = await lstat(destination);
-      if (!entry.isSymbolicLink() || resolve(destinationRoot, await readlink(destination)) !== resolve(sourceRoot, name)) {
-        throw new Error(`${name} must be disabled for Claude; remove ${destination}`);
-      }
+  const enabledNames = new Set(enabled);
+  const disabledNames = new Set(disabled);
+  for (const entry of await readdir(destinationRoot, { withFileTypes: true })) {
+    if (enabledNames.has(entry.name)) continue;
+    const destination = resolve(destinationRoot, entry.name);
+    const harnessLink = entry.isSymbolicLink() && resolve(destinationRoot, await readlink(destination)) === resolve(sourceRoot, entry.name);
+    if (harnessLink) {
       await unlink(destination);
-      removed.push(name);
-    } catch (error) {
-      if (!missing(error)) throw error;
+      removed.push(entry.name);
+    } else if (disabledNames.has(entry.name)) {
+      throw new Error(`${entry.name} must be disabled for Claude; remove ${destination}`);
     }
   }
-  return { linked, removed };
+  return { linked, removed: removed.sort() };
 }

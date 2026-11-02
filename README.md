@@ -24,8 +24,8 @@ plugins in `.codex/plugins.yml`. For Gemini sessions, it verifies that Gemini
 loads `AGENTS.md` through `.gemini/settings.json`, enables canonical project
 skills, and disables noncanonical or unavailable ones. For Claude Code sessions,
 it verifies that `CLAUDE.md` imports `AGENTS.md`, links canonical project skills
-into ignored `.claude/skills/`, and removes harness-created links for
-noncanonical or unavailable ones.
+into ignored `.claude/skills/`, and removes harness-created links for skills
+that are no longer enabled.
 The save skill lock entry uses a repository clone URL and a separate `ref` for
 `codex/5-save-session`; GitHub tree URLs cannot distinguish that branch's slash
 from a skill subdirectory in the Skills CLI. The approved Codex plugins are

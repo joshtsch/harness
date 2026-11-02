@@ -109,7 +109,8 @@ unavailable ones. `.gemini/settings.json` loads `AGENTS.md` for Gemini and
 applies those skill exclusions. With `--provider claude`, it checks that
 `CLAUDE.md` imports `AGENTS.md`, links each canonical, Claude-supported skill from
 `.agents/skills/` into ignored `.claude/skills/`, and removes only links it
-created for noncanonical or unavailable skills. It refuses to replace any other
+created for skills that are no longer enabled, including skills dropped from
+policy. It refuses to replace any other
 `.claude/skills/` entry. Add `--json` to emit provider, capability, and skill
 names as redacted selection output. After a capability is actually used, run
 `pnpm capabilities record <provider> <capability>` to append a redacted usage
