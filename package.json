@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "standards": "node --import tsx scripts/project-standards.ts",
     "build": "tsc -p tsconfig.json",
     "capabilities": "node --import tsx scripts/capabilities.ts",
     "check:sensitive": "node --import tsx scripts/check-sensitive-content.ts",

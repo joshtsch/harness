@@ -21,3 +21,19 @@ Do not open a merge request before the review is complete. Do not push directly 
 ## Completion rule
 
 Requests to pick up, work on, or implement a backlog issue are end-to-end development requests. Selecting an issue or producing a locally verified patch is an intermediate state, not completion. Continue through the review loop and open the merge request after all review gates pass. Report completion only after the merge request exists, or state the exact blocker and next required action.
+
+## Executable CI and required checks
+
+The `Harness quality` workflow runs tests, typecheck, build, documentation policy,
+changed Markdown validation, and sensitive-content scanning on committed PR
+changes. Required failures fail the job. CI uses the PR base and head commits;
+it never treats an empty staging area as evidence that PR changes were scanned.
+Local `pnpm check:sensitive` continues to scan the staging area. Use
+`pnpm check:sensitive --base <base-ref> [head-ref]` for committed changes.
+
+Portfolio `check:triage` and host `check:prereqs` stay separate from code-quality
+CI: disclose unrelated triage failures during completion. Branch protection is
+managed by `infrastructure/branch-protection.tf` in the existing harness HCP
+workspace. A committed workflow or Terraform resource does not prove protection
+is active; verify provider state and the actual PR check. Apply only a reviewed,
+in-scope Terraform plan. See [infrastructure setup](../../infrastructure/README.md#required-ci-protection).

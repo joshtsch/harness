@@ -104,3 +104,21 @@ key in Bitwarden and provide them to the harness as
 `HARNESS_CONTINUATION_SUPABASE_URL` and
 `HARNESS_CONTINUATION_SUPABASE_SERVICE_ROLE_KEY`. Never expose or commit the
 service-role key.
+
+## Required CI protection
+
+Coverage checked 2 November 2026 against the existing `integrations/github` 6.13
+provider: [`github_branch_protection`](https://registry.terraform.io/providers/integrations/github/6.13.0/docs/resources/branch_protection)
+represents strict required status checks and administrator enforcement.
+`branch-protection.tf` requires `Harness quality` on `main` of the active harness
+repository. It belongs in the existing `harness` HCP workspace, alongside that
+repository's state. No child repository is affected.
+
+Read existing protection before planning. If a rule already exists, import it
+before managing it; do not create a competing rule. Run formatting, validation,
+and a remote plan. Apply only when the plan changes the intended protection rule
+and preserves all existing infrastructure. Missing backend credentials or provider
+permissions are setup blockers, never reasons for an API fallback. Verify the
+result through GitHub and verify an actual workflow run before reporting checks
+enforced. The workflow must be introduced through a PR; no initial PR is needed
+for a newly bootstrapped child's default branch, as described in intake.

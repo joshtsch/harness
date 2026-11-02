@@ -78,3 +78,14 @@ The final report should state:
 Do not report the session as fully complete while a required change request is
 open, an issue link is missing, or a required merge/synchronization step is
 blocked.
+
+## Standards readiness evidence
+
+Report fresh local check results separately from verified remote enforcement.
+For onboarded projects, run `pnpm standards remote <project>` after the integration
+commit and CI are available. For bootstrap publication, use the independent
+`standards publish` gate described in [intake](repository-intake.md#local-scaffold-and-remote-standards-gates).
+Never reuse old validation after changing source or configuration. A blocked or
+unsupported provider result must include its next action; do not mark protection
+active merely because workflow or Terraform files exist. Verify the harness's
+`Harness quality` PR job and required branch check through GitHub after changes.
