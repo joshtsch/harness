@@ -43,7 +43,7 @@ export function projectStandardsWorkflow(project: ProjectDefinition): string {
     jobs: { standards: {
       name: standardsCheckName,
       "runs-on": "ubuntu-latest",
-      env: { HARNESS_ROOT: "${{ github.workspace }}", HARNESS_PROJECT_NAME: "${{ github.event.repository.name }}" },
+      env: { HARNESS_ROOT: "${{ github.workspace }}", HARNESS_PROJECT_NAME: project.name },
       steps: [
         { uses: "actions/checkout@v4", with: { "persist-credentials": false } },
         { name: "Project setup", run: shellCommand({ command: "bash", args: [project.setupScript, "bootstrap"], required: true }) },
@@ -88,7 +88,14 @@ async function snapshot(options: StandardsOptions): Promise<string> {
       throw new Error("bootstrap contains files outside the setup/quality scaffold; use an issue-bound worktree for feature work");
     }
     const file = join(options.path, path);
-    const metadata = await lstat(file);
+    const metadata = await lstat(file).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return undefined;
+      throw error;
+    });
+    if (!metadata) {
+      hash.update(path).update("deleted");
+      continue;
+    }
     if (!metadata.isFile()) throw new Error("standards validation requires regular files; review symlinks and submodules locally");
     hash.update(path).update(String(metadata.mode)).update(await readFile(file));
   }

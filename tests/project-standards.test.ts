@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { parse } from "yaml";
 import { projectStandardsWorkflow, publishBootstrap, standardsCheckName, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
 import type { ProjectDefinition } from "../src/project-config.js";
 import type { SetupCommandRunner } from "../src/session/project-setup.js";
@@ -54,6 +55,19 @@ describe("local standards", () => {
     await expect(validateLocalStandards({ project: { ...project, quality: { lint: check, format: mutate } }, path })).rejects.toThrow("non-mutating");
     await expect(validateLocalStandards({ project: { ...project, verification: [{ ...check, args: ["-e", "process.exit(1)"] }] }, path })).rejects.toThrow("check 3 failed");
   });
+  it("validates source deletions and detects files deleted by checks", async () => {
+    const path = await repository();
+    await writeFile(join(path, "README.md"), "# Fixture\n");
+    await commit(path);
+    const before = await validateLocalStandards({ project, path });
+    await rm(join(path, "README.md"));
+    const after = await validateLocalStandards({ project, path });
+    expect(after.checks).toBe(2);
+    expect(after.fingerprint).not.toBe(before.fingerprint);
+    await writeFile(join(path, "README.md"), "# Fixture\n");
+    const remove = { ...check, args: ["-e", "require('fs').unlinkSync('README.md')"] };
+    await expect(validateLocalStandards({ project: { ...project, quality: { lint: check, format: remove } }, path })).rejects.toThrow("non-mutating");
+  });
   it("reports optional failures without claiming they passed", async () => {
     const path = await repository();
     await expect(validateLocalStandards({ project: { ...project, verification: [{ ...check, required: false, args: ["-e", "process.exit(1)"] }] }, path })).resolves.toMatchObject({ optionalFailures: 1 });
@@ -103,6 +117,10 @@ function provider(overrides: Record<string, unknown> = {}): SetupCommandRunner {
   return vi.fn(async (_command, args) => ({ code: 0, stdout: JSON.stringify(responses[args[1].replace("repos/example/fixture/", "")]), stderr: "" }));
 }
 describe("remote standards", () => {
+  it("preserves logical project identity when the repository name differs", () => {
+    const workflow = parse(projectStandardsWorkflow({ ...project, name: "logical-fixture" }));
+    expect(workflow.jobs.standards.env.HARNESS_PROJECT_NAME).toBe("logical-fixture");
+  });
   it("requires successful current CI, exact project commands, and enforced protection", async () => {
     await expect(verifyRemoteStandards(project, provider())).resolves.toMatchObject({ status: "remotely-enforced" });
     await expect(verifyRemoteStandards(project, provider({ "branches/main/protection": {} }))).resolves.toMatchObject({ status: "blocked" });
