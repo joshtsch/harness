@@ -21,6 +21,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Install encryption test dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes age
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm typecheck
