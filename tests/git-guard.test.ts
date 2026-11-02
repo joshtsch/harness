@@ -11,6 +11,12 @@ describe("git commit guard", () => {
     expect(parseCommitInvocation("git -C ../child commit -F msg.txt", "/repo/sub")).toEqual({ directory: "/repo/child", stagesChanges: false });
     expect(parseCommitInvocation("cd /work/tree && git commit -m 'x'", "/repo")?.directory).toBe("/work/tree");
     expect(parseCommitInvocation("git commit --amend --no-edit", "/repo")?.stagesChanges).toBe(false);
+    expect(parseCommitInvocation('git -C "/path/with space" commit -m x', "/repo")?.directory).toBe("/path/with space");
+    expect(parseCommitInvocation('git -c user.name="A B" commit -m x', "/repo")?.directory).toBe("/repo");
+    expect(parseCommitInvocation("cd ../child; git commit -m x", "/repo/harness")?.directory).toBe("/repo/child");
+    expect(parseCommitInvocation("FOO=1 git commit -m x 2>&1 | tail -1", "/repo")).toEqual({ directory: "/repo", stagesChanges: false });
+    expect(parseCommitInvocation("git commit -F - <<'EOF'\nfix: add -a file.ts\n\ngit add x\nEOF\necho done", "/repo")).toEqual({ directory: "/repo", stagesChanges: false });
+    expect(parseCommitInvocation("echo 'git commit' > note.txt", "/repo")).toBeUndefined();
   });
 
   it("flags commands that stage and commit in one step", () => {
@@ -18,6 +24,9 @@ describe("git commit guard", () => {
     expect(parseCommitInvocation("git commit -am 'x'", "/repo")?.stagesChanges).toBe(true);
     expect(parseCommitInvocation("git commit --all -m 'x'", "/repo")?.stagesChanges).toBe(true);
     expect(parseCommitInvocation("git commit -m 'add -a flag'", "/repo")?.stagesChanges).toBe(false);
+    expect(parseCommitInvocation("git commit -m x .env", "/repo")?.stagesChanges).toBe(true);
+    expect(parseCommitInvocation("git commit -m x -- src/a.ts", "/repo")?.stagesChanges).toBe(true);
+    expect(parseCommitInvocation("git commit -o -m x", "/repo")?.stagesChanges).toBe(true);
   });
 
   it("blocks local configuration and environment files but not the example", () => {

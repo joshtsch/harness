@@ -10,4 +10,7 @@ if (!/\bgit\b[\s\S]*\bcommit\b/.test(command)) process.exit(0);
 
 const root = resolve(import.meta.dirname, "../..");
 const result = spawnSync(process.execPath, ["--import", "tsx", resolve(root, "scripts/git-guard.ts")], { cwd: root, input, stdio: ["pipe", "inherit", "inherit"] });
-process.exit(result.status ?? 1);
+if (result.status === 0 || result.status === 2) process.exit(result.status);
+// Exit 2 so a guard that cannot run blocks the commit instead of failing open.
+console.error("Harness commit guard could not run; run pnpm install in the harness, then retry.");
+process.exit(2);

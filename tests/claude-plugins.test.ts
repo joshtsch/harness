@@ -22,6 +22,7 @@ describe("Claude plugins", () => {
   it("reads installed plugin ids from either JSON list shape", () => {
     expect(installedClaudePluginIds("[]")).toEqual(new Set());
     expect(installedClaudePluginIds('[{"pluginId":"Vercel@claude-plugins-official"}]')).toEqual(new Set(["vercel@claude-plugins-official"]));
+    expect(installedClaudePluginIds('[{"pluginId":"ponytail@ponytail","enabled":false}]')).toEqual(new Set());
     expect(installedClaudePluginIds('{"installed":[{"id":"ponytail@ponytail"}],"available":[{"pluginId":"x@y"}]}')).toEqual(new Set(["ponytail@ponytail"]));
   });
 

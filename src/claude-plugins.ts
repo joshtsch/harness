@@ -27,9 +27,9 @@ export function installedClaudePluginIds(listJson: string): Set<string> {
   const parsed = JSON.parse(listJson) as unknown;
   const items = Array.isArray(parsed) ? parsed : (parsed as { installed?: unknown[] } | null)?.installed ?? [];
   return new Set(items.flatMap((item) => {
-    const { pluginId, id } = (item ?? {}) as { pluginId?: unknown; id?: unknown };
+    const { pluginId, id, enabled } = (item ?? {}) as { pluginId?: unknown; id?: unknown; enabled?: unknown };
     const value = pluginId ?? id;
-    return typeof value === "string" ? [value.toLowerCase()] : [];
+    return typeof value === "string" && enabled !== false ? [value.toLowerCase()] : [];
   }));
 }
 
