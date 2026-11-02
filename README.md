@@ -16,12 +16,16 @@ itself. See [infrastructure management](docs/agents/infrastructure.md) for the
 workspace policy.
 
 Initialize the harness before starting a session with `pnpm init:harness` for
-Codex or `pnpm init:harness --provider gemini` for Gemini. This runs
+Codex, `pnpm init:harness --provider gemini` for Gemini, or
+`pnpm init:harness --provider claude` for Claude Code. This runs
 the configured environment checks, restores project skills from `skills-lock.json`,
 and checks their capability policy. For Codex sessions, it also verifies the
 plugins in `.codex/plugins.yml`. For Gemini sessions, it verifies that Gemini
 loads `AGENTS.md` through `.gemini/settings.json`, enables canonical project
-skills, and disables noncanonical or unavailable ones.
+skills, and disables noncanonical or unavailable ones. For Claude Code sessions,
+it verifies that `CLAUDE.md` imports `AGENTS.md`, links canonical project skills
+into ignored `.claude/skills/`, and removes harness-created links for skills
+that are no longer enabled.
 The save skill lock entry uses a repository clone URL and a separate `ref` for
 `codex/5-save-session`; GitHub tree URLs cannot distinguish that branch's slash
 from a skill subdirectory in the Skills CLI. The approved Codex plugins are
@@ -63,7 +67,8 @@ Initialization also validates the merged project configuration and reports each
 clone as `existing` or `missing`. Plain init leaves project repositories
 unchanged and shows a restore command when clones are missing. Run
 `pnpm init:harness --clone-projects` to clone all missing configured projects
-into ignored `projects/`; add `--provider gemini` when using Gemini.
+into ignored `projects/`; add `--provider gemini` or `--provider claude` when
+using Gemini or Claude Code.
 Existing clones are preserved. Failed clones or invalid destinations are
 reported per project and make initialization exit nonzero. See
 [clone restoration and retries](docs/agents/session-lifecycle.md#initialization-and-project-clones).
@@ -132,9 +137,10 @@ their separate workflows.
 Codex MCP configuration for this harness lives in [.codex/config.toml](.codex/config.toml).
 When adding or migrating a server, keep project-scoped configuration in the
 relevant repository’s `.codex/config.toml`; use `~/.codex/config.toml` only for
-explicitly user-wide setup. Do not use root `.mcp.json` for native Codex project
-configuration; reserve that format for portable/plugin packaging. Authentication
-and credentials remain outside Git.
+explicitly user-wide setup. Codex does not read root `.mcp.json`; that file is
+the Claude Code project MCP configuration and mirrors the harness-level servers in
+`.codex/config.toml`. Update both files together. Authentication and credentials
+remain outside Git.
 
 Before closing a session, follow [Completing a Session](docs/agents/session-completion.md)
 to verify issue links, review, change requests, merges, and synchronized local

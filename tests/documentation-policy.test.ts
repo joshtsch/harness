@@ -80,6 +80,11 @@ describe("documentation policy", () => {
     expect(documentationViolations({ paths })).not.toContain(expect.stringContaining("SECURITY.md"));
   });
 
+  it("accepts the Claude Code import shim at the root", () => {
+    const paths = ["AGENTS.md", "CLAUDE.md", "README.md", "CONTEXT.md", "docs/agents", "docs/agents/README.md", "docs/adr", "docs/llm-wiki-harness/wiki/index.md", "docs/llm-wiki-harness/wiki/log.md"];
+    expect(documentationViolations({ paths, contents: { "CLAUDE.md": "@AGENTS.md\n" } })).not.toContain(expect.stringContaining("CLAUDE.md"));
+  });
+
   it("reports broken local wiki links and ignores external links and anchors", () => {
     const paths = ["AGENTS.md", "CONTEXT.md", "docs/agents", "docs/adr", "docs/llm-wiki-harness/wiki/index.md", "docs/llm-wiki-harness/wiki/log.md"];
     const contents = {

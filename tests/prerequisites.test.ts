@@ -10,13 +10,17 @@ describe("harness prerequisites", () => {
   it("does not require Bitwarden for routine harness workflows", () => {
     expect(harnessPrerequisites.map(({ command }) => command)).not.toContain("bw");
     expect(prerequisitesForProvider("gemini").map(({ command }) => command)).not.toContain("bw");
+    expect(prerequisitesForProvider("claude").map(({ command }) => command)).not.toContain("bw");
   });
 
   it("checks only the selected agent provider", () => {
     expect(prerequisitesForProvider("gemini").some((item) => item.command === "gemini")).toBe(true);
     expect(prerequisitesForProvider("gemini").some((item) => item.command === "codex")).toBe(false);
+    expect(prerequisitesForProvider("claude").some((item) => item.command === "claude")).toBe(true);
+    expect(prerequisitesForProvider("claude").some((item) => item.command === "codex")).toBe(false);
     expect(() => prerequisitesForProvider("unknown")).toThrow("unknown agent provider");
     expect(parseAgentProviderArgs(["--provider", "gemini"], "usage")).toBe("gemini");
+    expect(parseAgentProviderArgs(["--provider", "claude"], "usage")).toBe("claude");
     expect(() => parseAgentProviderArgs(["--provider"], "usage")).toThrow("usage");
   });
 

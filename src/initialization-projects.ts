@@ -4,7 +4,7 @@ import { parseAgentProviderArgs } from "./prerequisites.js";
 import { ensureProjectClone, inspectProjectClone } from "./session/project-clone.js";
 
 export function parseInitializationArgs(args: string[]): { provider: string; cloneProjects: boolean } {
-  const usage = "Usage: pnpm init:harness [--provider codex|gemini] [--clone-projects]";
+  const usage = "Usage: pnpm init:harness [--provider codex|gemini|claude] [--clone-projects]";
   const count = args.filter((arg) => arg === "--clone-projects").length;
   if (count > 1) throw new Error(usage);
   return {

@@ -41,7 +41,7 @@ export const requiredDocumentationLinks: Record<string, readonly string[]> = {
 
 const decisionFile = /(?:^|\/)(?:adr|decision|policy|architecture|strategy|rfc)[^/]*\.md$/i;
 const decisionHeading = /^#{1,6}\s*.*\b(?:adr|decision|policy|architecture|strategy|rfc)\b/im;
-const allowedRootMarkdown = new Set(["AGENTS.md", "CONTEXT.md", "README.md", "CONTRIBUTING.md", "SECURITY.md"]);
+const allowedRootMarkdown = new Set(["AGENTS.md", "CLAUDE.md", "CONTEXT.md", "README.md", "CONTRIBUTING.md", "SECURITY.md"]);
 const historicalWikiMarker = "<!-- harness-wiki: historical -->";
 
 export interface DocumentationPolicyInput {

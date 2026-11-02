@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "attio": { "type": "http", "url": "https://mcp.attio.com/mcp" },
+    "granola": { "type": "http", "url": "https://mcp.granola.ai/mcp" },
+    "stitch": { "type": "http", "url": "https://stitch.googleapis.com/mcp" }
+  }
+}

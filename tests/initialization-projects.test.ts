@@ -23,10 +23,10 @@ async function configure(root: string, names: string[], remote: string | Record<
 afterEach(async () => { await Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
 
 describe("initialization arguments", () => {
-  it("supports clone opt-in with either provider and flag order", () => {
+  it("supports clone opt-in with each provider and flag order", () => {
     expect(parseInitializationArgs([])).toEqual({ provider: "codex", cloneProjects: false });
     expect(parseInitializationArgs(["--clone-projects"])).toEqual({ provider: "codex", cloneProjects: true });
-    for (const provider of ["codex", "gemini"]) {
+    for (const provider of ["codex", "gemini", "claude"]) {
       for (const args of [["--clone-projects", "--provider", provider], ["--provider", provider, "--clone-projects"]]) {
         expect(parseInitializationArgs(args)).toEqual({ provider, cloneProjects: true });
       }
