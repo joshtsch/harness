@@ -190,7 +190,7 @@ scope must remain explicit:
   Claude Code initialization does not install or verify these Codex plugins;
   Claude sessions have no Ponytail, Vercel, or Supabase plugin parity yet.
 - `pnpm init:harness` restores external project skills, links tracked harness skills,
-  and verifies every skill in the combined capability inventory is installed at
+  removes links to harness skills deleted from `harness-skills/`, and verifies every skill in the combined capability inventory is installed at
   `.agents/skills/<name>/SKILL.md`.
 - Ponytail and Vercel are approved harness-level plugins and are listed in
   `.codex/plugins.yml`. Vercel provides shared deployment, Next.js, and Vercel
