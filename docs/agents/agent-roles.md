@@ -52,6 +52,16 @@ hooks as a side effect of ordinary design work.
 See [Impeccable installation](tooling.md#impeccable-installation) for the
 launcher, hook-free operation, and fallback.
 
+## Project discovery routing
+
+When a task's owning project is unclear, route `project-discovery` and inspect
+`pnpm projects --json` before repository intake. Use
+`pnpm capabilities route codex project-discovery` (or `gemini`) for the skill.
+It supplies project evidence for broader scope decisions; `scope-router` may
+compose it as a companion. Discovery recommends ownership without registration
+or provisioning. Missing project metadata remains uncertainty, not a new-project
+signal.
+
 ## Research destination routing
 
 General source placement uses `knowledge-routing`; vault work uses

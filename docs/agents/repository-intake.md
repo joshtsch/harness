@@ -4,6 +4,12 @@ Use this workflow when a request requires creating, adopting, or changing a
 repository. Shared account configuration in a repository, such as GitHub community
 defaults, is still project work.
 
+Before intake, when the task's owning project is unclear or several projects
+could fit, use the [project-discovery skill](../../harness-skills/project-discovery/SKILL.md)
+and `pnpm projects --json`. Verify likely owners before proposing a new project.
+Discovery may conclude that the task needs no repository; incomplete metadata
+or inaccessible sources leave the choice unresolved.
+
 ## Resolve ownership and register
 
 1. Start at the harness root. Inspect the merged project inventory and classify

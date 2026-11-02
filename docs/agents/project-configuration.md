@@ -18,6 +18,7 @@ Each project entry should identify:
 
 - a unique logical name;
 - its Git remote and default branch;
+- optional project purpose, topics, and exclusions for task discovery;
 - `hcp_workspace` when the repository uses Terraform and needs its own HCP Terraform state;
 - `hcp_organization` when that project needs a dedicated HCP Terraform organization;
 - its issue-tracker type and project key;
@@ -86,6 +87,48 @@ The project owns the rule files, tool dependencies, setup behavior, and CI
 workflow. CI should run the same lint and format checks and make them required
 for changes to merge. The harness runs the configured commands in every session
 worktree, so local and agent changes receive the same checks.
+
+## Project discovery
+
+Run `pnpm projects` for a readable inventory or `pnpm projects --json` for agent
+use. The command validates merged public/local configuration and includes every
+configured project, including projects without wikis. It does not resolve
+environment references, contact providers, run project commands, or create
+checkouts. Each `projectRoot` is the expected managed-clone path, not proof that
+it exists or has the configured identity.
+
+Optional project-level routing fields describe ownership independently of wikis:
+
+```yaml
+projects:
+  example-app:
+    remote: https://github.com/example/example-app.git
+    purpose: Manage appointment scheduling
+    topics: [appointments, calendars]
+    excludes: [billing, shared agent orchestration]
+```
+
+`purpose` must be a non-empty string. `topics` and `excludes` must be lists of
+unique non-empty strings; empty lists can clear inherited public lists in the
+local overlay. These fields are project-specific and cannot be set in defaults.
+Existing entries without them remain valid. Local scalar overrides and list
+replacement follow the normal overlay rules. `excludes` describes work outside
+that project's ownership; it is not a filesystem ignore list or an access rule.
+
+The inventory returns only the logical name, expected checkout path, configured
+routing fields, and optional wiki metadata. It omits remotes, trackers, tool
+mappings, infrastructure identifiers, and executable commands. Its remaining
+metadata may still be private: use it only within the authorized task and do not
+copy local inventory into tracked artifacts or public issues. Parse failures
+produce a generic CLI error because YAML diagnostics can expose source values.
+
+Use the [project-discovery skill](../../harness-skills/project-discovery/SKILL.md)
+when ownership is unclear. It checks likely repository sources before selecting
+an existing owner or proposing a new one. Missing metadata or a missing checkout
+means missing evidence, not a requirement to create a project. Add or revise
+metadata only through an authorized configuration change; discovery is read-only.
+
+## Wiki discovery
 
 Projects with a durable agent wiki declare a short `wiki.description`, a
 non-empty `wiki.topics` list, and its relative paths under `wiki`. Run

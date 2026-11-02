@@ -31,11 +31,13 @@ skills:
   migration: { capability: migration, state: canonical, codex: supported, gemini: supported }
   safe-refactor: { capability: safe-refactor, state: canonical, codex: supported, gemini: supported }
   save: { capability: session-save, state: canonical, codex: supported, gemini: supported }
+  project-discovery: { capability: project-discovery, state: canonical, codex: supported, gemini: supported }
   scope-router: { capability: scope-router, state: canonical, codex: supported, gemini: supported }
   surgical-patch: { capability: surgical-patch, state: canonical, codex: supported, gemini: supported }
   verify-and-stop: { capability: verify-and-stop, state: canonical, codex: supported, gemini: supported }
   worktree-location: { capability: worktree-location, state: canonical, codex: supported, gemini: supported }
 companions:
+  scope-router: [project-discovery]
   harness-memory: [knowledge-routing]
   harness-grill-with-docs: [scope-router]
   investigate-first: [cavecrew]

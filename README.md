@@ -109,6 +109,13 @@ configuration. Reuse reads that value and refuses a conflicting explicit base.
 refresh, checks use the available remote-tracking refs. See
 [branch and base lifecycle](docs/agents/session-lifecycle.md#worktree-branches-and-bases).
 
+Use `pnpm projects --json` to inspect the merged project inventory before choosing
+an owner for a task. The [project-discovery skill](harness-skills/project-discovery/SKILL.md)
+checks likely project boundaries and distinguishes new-project candidates from
+missing evidence or tasks that need no repository. Optional project-level
+`purpose`, `topics`, and `excludes` metadata are documented under
+[project discovery](docs/agents/project-configuration.md#project-discovery).
+
 Before opening that issue, classify every repository the session may modify and
 register durable projects in `projects.yml` or ignored `projects.local.yml`.
 This includes durable external skill-source repositories; one-off dependencies
