@@ -30,6 +30,7 @@
     "continuation:projects": "node --import tsx scripts/continuation.ts projects",
     "verify": "node --import tsx scripts/verify-project.ts",
     "init:harness": "node --import tsx scripts/init.ts",
+    "projects": "node --import tsx scripts/list-projects.ts",
     "wikis": "node --import tsx scripts/list-wikis.ts",
     "knowledge": "node --import tsx scripts/knowledge.ts",
     "link:skill": "node --import tsx scripts/link-skill.ts",

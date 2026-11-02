@@ -6,6 +6,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 
 | Concern | Document |
 | --- | --- |
+| Task-to-project discovery | [`project-discovery` skill](../../harness-skills/project-discovery/SKILL.md) and [project inventory](project-configuration.md#project-discovery) |
 | Repository creation, adoption, and registration | [repository-intake.md](repository-intake.md) |
 | Ownership and repository boundaries | [architecture.md](architecture.md) |
 | `projects.yml` and project capabilities | [project-configuration.md](project-configuration.md) |

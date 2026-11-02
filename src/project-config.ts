@@ -38,6 +38,9 @@ export interface ProjectWiki {
 export interface ProjectDefinition {
   name: string;
   remote: string;
+  purpose?: string;
+  topics?: string[];
+  excludes?: string[];
   hcpWorkspace?: string;
   hcpOrganization?: string;
   defaultBranch: string;
@@ -61,6 +64,9 @@ export function requireProjectQuality(project: ProjectDefinition): ProjectQualit
 
 interface RawProject {
   remote?: unknown;
+  purpose?: unknown;
+  topics?: unknown;
+  excludes?: unknown;
   hcp_workspace?: unknown;
   hcp_organization?: unknown;
   default_branch?: unknown;
@@ -87,7 +93,7 @@ export interface LoadProjectsConfigOptions {
   environment?: Record<string, string | undefined>;
 }
 
-const rawProjectFields = new Set(["remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "verification", "workflows"]);
+const rawProjectFields = new Set(["purpose", "topics", "excludes", "remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "verification", "workflows"]);
 const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "quality", "verification", "workflows"]);
 const businessLineFields = new Set(["display_name", "tool_mappings"]);
 const issueTrackerFields = new Set(["type", "repository"]);
@@ -163,7 +169,7 @@ function parseWiki(value: unknown, name: string): ProjectWiki | undefined {
   };
 }
 
-function parseBusinessLines(value: unknown, label: string): string[] {
+function parseStringList(value: unknown, label: string): string[] {
   if (value === undefined) return [];
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string" || entry.trim() === "")) {
     throw new Error(`${label} must be a list of non-empty strings`);
@@ -247,6 +253,9 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
       return [name, {
         name,
         remote: requiredString(definition.remote, `projects.${name}.remote`),
+        ...(definition.purpose === undefined ? {} : { purpose: requiredString(definition.purpose, `projects.${name}.purpose`) }),
+        ...(definition.topics === undefined ? {} : { topics: parseStringList(definition.topics, `projects.${name}.topics`) }),
+        ...(definition.excludes === undefined ? {} : { excludes: parseStringList(definition.excludes, `projects.${name}.excludes`) }),
         ...(definition.hcp_workspace === undefined ? {} : { hcpWorkspace: requiredString(definition.hcp_workspace, `projects.${name}.hcp_workspace`) }),
         ...(definition.hcp_organization === undefined ? {} : { hcpOrganization: requiredString(definition.hcp_organization, `projects.${name}.hcp_organization`) }),
         defaultBranch: requiredString(definition.default_branch ?? defaults.default_branch, `projects.${name}.default_branch`),
@@ -254,7 +263,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
         issueTracker: mergeIssueTracker(defaults.issue_tracker, definition.issue_tracker, name),
         crm: parseCrm(definition.crm !== undefined ? definition.crm : defaults.crm, name),
         wiki: parseWiki(definition.wiki, name),
-        businessLines: parseBusinessLines(definition.business_lines, `projects.${name}.business_lines`).map((key) => {
+        businessLines: parseStringList(definition.business_lines, `projects.${name}.business_lines`).map((key) => {
           if (!parsedBusinessLines[key]) throw new Error(`projects.${name}.business_lines references unknown business line ${key}`);
           return key;
         }),
