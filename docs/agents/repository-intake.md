@@ -145,6 +145,8 @@ the project-owned setup script, and install dependencies before validation.
 An empty scaffold needs lint and non-mutating format checks of its setup/config
 files; tests, typechecking, and builds belong in `verification` when applicable.
 Absent verification checks are not reported as passed.
+For a project with a UI, add Storybook once the first UI lands; see
+[projects with a user interface](project-configuration.md#projects-with-a-user-interface).
 
 `bootstrap` independently executes the configured checks every time. Missing
 checks, unavailable executables, required failures, or repository mutations fail
