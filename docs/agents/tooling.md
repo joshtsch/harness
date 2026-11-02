@@ -97,8 +97,8 @@ Calendar and CRM provider adapters receive resolved, stable target identifiers a
 
 `capabilities.yml` defines provider-neutral skill purposes and contracts.
 `agent-policy.yml` assigns each locked project skill to one capability, names its
-canonical route, declares companions and wrapper dependencies, and records Codex
-and Gemini support.
+canonical route, declares companions and wrapper dependencies, and records Codex,
+Gemini, and Claude Code support.
 Run `pnpm capabilities check` after changing the lock or policy. To select a
 project skill, run `pnpm capabilities route <provider> <capability>`; add
 companions by capability name. A degraded route needs `--allow-degraded` after
@@ -106,7 +106,11 @@ reviewing its limitations. `pnpm init:harness` checks that the policy covers
 every locked project skill. With `--provider gemini`, it also checks that
 Gemini has loaded project-local canonical skills and disabled noncanonical or
 unavailable ones. `.gemini/settings.json` loads `AGENTS.md` for Gemini and
-applies those skill exclusions. Add `--json` to emit provider, capability, and skill
+applies those skill exclusions. With `--provider claude`, it checks that
+`CLAUDE.md` imports `AGENTS.md`, links each canonical, Claude-supported skill from
+`.agents/skills/` into ignored `.claude/skills/`, and removes only links it
+created for noncanonical or unavailable skills. It refuses to replace any other
+`.claude/skills/` entry. Add `--json` to emit provider, capability, and skill
 names as redacted selection output. After a capability is actually used, run
 `pnpm capabilities record <provider> <capability>` to append a redacted usage
 event under ignored `docs/.scratch/`. The event contains only timestamp,
@@ -116,7 +120,7 @@ Initialization also [reports project clone availability](session-lifecycle.md#in
 `--clone-projects` opts into restoring missing clones before dependency restoration.
 An installed `available` skill can serve as a canonical skill's dependency but
 cannot be selected as a primary route. Follow the task-choice and mode-routing
-rules in [Agent role routing](../../AGENTS.md#agent-role-routing).
+rules in [Agent role routing](agent-roles.md#capability-routing).
 
 This routing check governs the project skill inventory. Host-global skills and
 plugin-bundled skills have separate installation and enablement controls.
@@ -182,6 +186,8 @@ scope must remain explicit:
   Inventory capture is bounded at 8 MiB per stdout/stderr stream. Larger output
   fails verification; reduce the inventory output before retrying. Command
   failures report status or availability without reproducing plugin output.
+  Claude Code initialization does not install or verify these Codex plugins;
+  Claude sessions have no Ponytail, Vercel, or Supabase plugin parity yet.
 - `pnpm init:harness` restores external project skills, links tracked harness skills,
   and verifies every skill in the combined capability inventory is installed at
   `.agents/skills/<name>/SKILL.md`.
@@ -237,7 +243,8 @@ output inside the target worktree and out of tracked files. See
 
 `pnpm check:prereqs` verifies the commands required by routine harness workflows:
 Git, Node.js, pnpm, npx, the selected agent CLI, and `age`. Use
-`--provider gemini` to select Gemini; Codex is the default. It invokes only
+`--provider gemini` to select Gemini or `--provider claude` to select Claude
+Code; Codex is the default. It invokes only
 version commands.
 `pnpm init:harness` and `pnpm setup:session` run the same fast check before
 continuing. The checker reports installation guidance and never installs

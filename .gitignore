@@ -6,6 +6,8 @@
 /dist/
 /node_modules/
 /.agents/skills/
+/.claude/skills/
+/.claude/settings.local.json
 .DS_Store
 .pnpm-store/
 .terraform/

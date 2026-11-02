@@ -56,7 +56,7 @@ launcher, hook-free operation, and fallback.
 
 When a task's owning project is unclear, route `project-discovery` and inspect
 `pnpm projects --json` before repository intake. Use
-`pnpm capabilities route codex project-discovery` (or `gemini`) for the skill.
+`pnpm capabilities route codex project-discovery` (or `gemini` or `claude`) for the skill.
 It supplies project evidence for broader scope decisions; `scope-router` may
 compose it as a companion. Discovery recommends ownership without registration
 or provisioning. Missing project metadata remains uncertainty, not a new-project
@@ -117,7 +117,7 @@ In `capabilities.yml`, optional `actions` constrain a capability's leading reque
 action while `triggers` identify its subject. Other capabilities retain their
 existing matching rules.
 
-The provider value is `codex` or `gemini`. Run
+The provider value is `codex`, `gemini`, or `claude`. Run
 `pnpm capabilities record <provider> <capability>` after using a capability to
 record a redacted event in ignored session scratch.
 
@@ -125,6 +125,7 @@ record a redacted event in ignored session scratch.
 
 End a response with a concise prompt when it leaves a decision or action for the
 user. In Codex, use `request_user_input_async` with one to three short choices and
-leave free text available. If interactive input is unavailable, provide numbered
+leave free text available. In Claude Code, use `AskUserQuestion`, which always
+leaves free text available. If interactive input is unavailable, provide numbered
 choices and an explicit free-text option. Omit the prompt when no user action
 remains; do not interrupt authorized work with unnecessary choices.

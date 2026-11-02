@@ -28,15 +28,20 @@ const geminiPrerequisite: HarnessPrerequisite = {
   name: "Gemini CLI", command: "gemini", args: ["--version"], installHint: "Install and authenticate Gemini CLI for this host.",
 };
 
+const claudePrerequisite: HarnessPrerequisite = {
+  name: "Claude Code", command: "claude", args: ["--version"], installHint: "Install and authenticate the Claude Code CLI for this host; the desktop app does not add claude to PATH.",
+};
+
 export function prerequisitesForProvider(provider: string): HarnessPrerequisite[] {
   if (provider === "codex") return harnessPrerequisites;
   if (provider === "gemini") return harnessPrerequisites.map((item) => item.command === "codex" ? geminiPrerequisite : item);
+  if (provider === "claude") return harnessPrerequisites.map((item) => item.command === "codex" ? claudePrerequisite : item);
   throw new Error(`unknown agent provider ${provider}`);
 }
 
 export function parseAgentProviderArgs(args: string[], usage: string): string {
   if (args.length === 0) return "codex";
-  if (args.length === 2 && args[0] === "--provider" && ["codex", "gemini"].includes(args[1]!)) return args[1]!;
+  if (args.length === 2 && args[0] === "--provider" && ["codex", "gemini", "claude"].includes(args[1]!)) return args[1]!;
   throw new Error(usage);
 }
 

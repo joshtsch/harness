@@ -45,7 +45,7 @@ Enabled hooks still follow [dry-run-first review](harness-memory.md#dry-run-firs
 
 ## Initialization and project clones
 
-Run `pnpm init:harness [--provider codex|gemini] [--clone-projects]` from the
+Run `pnpm init:harness [--provider codex|gemini|claude] [--clone-projects]` from the
 harness root. Initialization checks prerequisites, then validates the merged
 `projects.yml` and local overlay before inspecting or cloning any project.
 Project inspection does not require environment variables for unrelated tool

@@ -5,6 +5,7 @@ import { loadRequiredPlugins, verifyRequiredPlugins } from "../src/codex-plugins
 import { verifyProjectSkills } from "../src/project-skills.js";
 import { loadCapabilityPolicy, verifyCapabilityInventory } from "../src/capability-policy.js";
 import { verifyGeminiProjectSkills } from "../src/gemini-skills.js";
+import { syncClaudeProjectSkills } from "../src/claude-skills.js";
 import { prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisites.js";
 import { initializeProjects, parseInitializationArgs } from "../src/initialization-projects.js";
 import { installHarnessSkills, loadHarnessSkillNames } from "../src/local-skill.js";
@@ -21,7 +22,7 @@ async function run(): Promise<void> {
       if (projects.length === 0) console.log("projects: none configured");
       for (const project of projects) console.log(`project: ${project.name}: ${project.status}`);
       const missing = projects.filter((project) => project.status === "missing").length;
-      if (missing > 0) console.log(`projects: ${missing} missing; restore with pnpm init:harness --clone-projects${provider === "gemini" ? " --provider gemini" : ""}`);
+      if (missing > 0) console.log(`projects: ${missing} missing; restore with pnpm init:harness --clone-projects${provider === "codex" ? "" : ` --provider ${provider}`}`);
       const failed = projects.filter((project) => project.status === "failed").length;
       if (failed > 0) throw new Error(`${failed} project(s) failed; check repository access and destination paths. Existing paths are preserved; repair partial clones before retrying.`);
     }],
@@ -32,6 +33,7 @@ async function run(): Promise<void> {
       const policy = await loadCapabilityPolicy(resolve(repoRoot, "capabilities.yml"), resolve(repoRoot, "agent-policy.yml"));
       await verifyCapabilityInventory(policy, resolve(repoRoot, "skills-lock.json"), await loadHarnessSkillNames(resolve(repoRoot, "harness-skills")));
       if (provider === "gemini") await verifyGeminiProjectSkills(repoRoot, policy);
+      if (provider === "claude") await syncClaudeProjectSkills(repoRoot, policy);
     }],
     ...(provider === "codex" ? [["codex plugins", async () => verifyRequiredPlugins(await loadRequiredPlugins(resolve(repoRoot, ".codex/plugins.yml")))]] as Array<[string, () => Promise<void>]> : []),
   ];

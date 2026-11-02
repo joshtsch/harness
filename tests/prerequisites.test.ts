@@ -15,8 +15,11 @@ describe("harness prerequisites", () => {
   it("checks only the selected agent provider", () => {
     expect(prerequisitesForProvider("gemini").some((item) => item.command === "gemini")).toBe(true);
     expect(prerequisitesForProvider("gemini").some((item) => item.command === "codex")).toBe(false);
+    expect(prerequisitesForProvider("claude").some((item) => item.command === "claude")).toBe(true);
+    expect(prerequisitesForProvider("claude").some((item) => item.command === "codex")).toBe(false);
     expect(() => prerequisitesForProvider("unknown")).toThrow("unknown agent provider");
     expect(parseAgentProviderArgs(["--provider", "gemini"], "usage")).toBe("gemini");
+    expect(parseAgentProviderArgs(["--provider", "claude"], "usage")).toBe("claude");
     expect(() => parseAgentProviderArgs(["--provider"], "usage")).toThrow("usage");
   });
 

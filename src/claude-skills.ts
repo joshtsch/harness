@@ -1,0 +1,60 @@
+import { access, lstat, mkdir, readFile, readlink, realpath, symlink, unlink } from "node:fs/promises";
+import { relative, resolve } from "node:path";
+import type { CapabilityPolicy } from "./capability-policy.js";
+
+export function verifyClaudeContext(contents: string): void {
+  if (!/^@AGENTS\.md\s*$/m.test(contents)) throw new Error("CLAUDE.md must import AGENTS.md with @AGENTS.md");
+}
+
+export function claudeSkillNames(policy: CapabilityPolicy): { enabled: string[]; disabled: string[] } {
+  const enabled: string[] = [];
+  const disabled: string[] = [];
+  for (const [name, route] of Object.entries(policy.skills)) {
+    (route.state === "canonical" && route.providers.claude !== "unavailable" ? enabled : disabled).push(name);
+  }
+  return { enabled: enabled.sort(), disabled: disabled.sort() };
+}
+
+function missing(error: unknown): boolean {
+  return error instanceof Error && "code" in error && (error as NodeJS.ErrnoException).code === "ENOENT";
+}
+
+export async function syncClaudeProjectSkills(root: string, policy: CapabilityPolicy): Promise<{ linked: string[]; removed: string[] }> {
+  verifyClaudeContext(await readFile(resolve(root, "CLAUDE.md"), "utf8"));
+  const sourceRoot = resolve(root, ".agents", "skills");
+  const destinationRoot = resolve(root, ".claude", "skills");
+  await mkdir(destinationRoot, { recursive: true });
+  const { enabled, disabled } = claudeSkillNames(policy);
+  const linked: string[] = [];
+  const removed: string[] = [];
+
+  for (const name of enabled) {
+    const source = resolve(sourceRoot, name);
+    const destination = resolve(destinationRoot, name);
+    await access(resolve(source, "SKILL.md"));
+    try {
+      await lstat(destination);
+      const [actual, expected] = await Promise.all([realpath(destination), realpath(source)]);
+      if (actual !== expected) throw new Error(`Claude skill destination conflicts with another installation: ${destination}`);
+    } catch (error) {
+      if (!missing(error)) throw error;
+      await symlink(relative(destinationRoot, source), destination, "junction");
+      linked.push(name);
+    }
+  }
+
+  for (const name of disabled) {
+    const destination = resolve(destinationRoot, name);
+    try {
+      const entry = await lstat(destination);
+      if (!entry.isSymbolicLink() || resolve(destinationRoot, await readlink(destination)) !== resolve(sourceRoot, name)) {
+        throw new Error(`${name} must be disabled for Claude; remove ${destination}`);
+      }
+      await unlink(destination);
+      removed.push(name);
+    } catch (error) {
+      if (!missing(error)) throw error;
+    }
+  }
+  return { linked, removed };
+}
