@@ -1,9 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
-import { createProject } from "../project-creation.js";
-import { loadProjectsConfig } from "../project-config.js";
+import { fileURLToPath } from "node:url";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createProject, type ProjectCreationCommandRunner } from "../project-creation.js";
 
 const directories: string[] = [];
 
@@ -28,88 +30,131 @@ async function harnessFixture(): Promise<string> {
   return root;
 }
 
+function readOnlyRunner() {
+  return vi.fn<ProjectCreationCommandRunner>(async (command, args) => {
+    if (command === "gh" && args.join(" ") === "api user --jq .login") return { code: 0, stdout: "alice\n", stderr: "" };
+    if (command === "gh" && args.join(" ") === "config get git_protocol") return { code: 0, stdout: "ssh\n", stderr: "" };
+    if (command === "gh" && args[0] === "api" && args[1]?.startsWith("repos/")) return { code: 1, stdout: "", stderr: "HTTP 404: Not Found" };
+    throw new Error("unexpected external command");
+  });
+}
+
+const input = { name: "new-project", visibility: "private" as const, dryRun: true };
+
 describe("createProject", () => {
-  it("validates required visibility and project names before running commands", async () => {
+  it.each([{}, { dryRun: false }, { resume: true }, { dryRun: true, resume: true }])("blocks unsafe execution before any filesystem or external work: %o", async (mode) => {
     const root = await harnessFixture();
-    const run = async () => ({ code: 0, stdout: "", stderr: "" });
-
-    await expect(createProject({ harnessRoot: root, name: "Bad Name", visibility: "private", run })).rejects.toThrow("lowercase kebab-case");
-    await expect(createProject({ harnessRoot: root, name: "new-project", visibility: undefined, run })).rejects.toThrow("exactly one visibility");
+    const config = await readFile(join(root, "projects.yml"), "utf8");
+    const before = await readdir(root, { recursive: true });
+    const run = readOnlyRunner();
+    await expect(createProject({ harnessRoot: root, name: "blocked-project", visibility: "private", ...mode, run })).rejects.toThrow("disabled");
+    expect(run).not.toHaveBeenCalled();
+    expect(await readFile(join(root, "projects.yml"), "utf8")).toBe(config);
+    expect(await readdir(root, { recursive: true })).toEqual(before);
   });
 
-  it("dry-runs validation without creating local or remote state", async () => {
+  it("preserves existing checkout, local overlay and completed recovery state on resume", async () => {
     const root = await harnessFixture();
-    const calls: string[] = [];
-    const run = async (command: string, args: string[]) => {
-      calls.push(`${command} ${args.join(" ")}`);
-      if (command === "gh" && args[0] === "api" && args[1] === "user") return { code: 0, stdout: "alice\n", stderr: "" };
-      if (command === "gh" && args[0] === "config") return { code: 0, stdout: "ssh\n", stderr: "" };
-      if (command === "gh" && args[0] === "api") return { code: 1, stdout: "", stderr: "HTTP 404: Not Found" };
-      return { code: 0, stdout: "", stderr: "" };
-    };
-
-    const result = await createProject({ harnessRoot: root, name: "new-project", visibility: "private", dryRun: true, run });
-
-    expect(result.status).toBe("dry-run");
-    expect(calls).toEqual(["gh config get git_protocol", "gh api user --jq .login", "gh api repos/alice/new-project --include"]);
-    await expect(stat(join(root, "projects", "new-project"))).rejects.toMatchObject({ code: "ENOENT" });
+    const project = join(root, "projects", input.name);
+    const recovery = join(root, "docs", ".scratch", "project-creation", input.name);
+    await mkdir(project, { recursive: true });
+    await mkdir(recovery, { recursive: true });
+    await writeFile(join(project, "uncommitted.txt"), "preserve checkout\n");
+    const saved = JSON.stringify({ name: input.name, owner: "alice", complete: true, pushed: true });
+    await writeFile(join(recovery, "state.json"), saved);
+    const overlay = "projects: {}\n";
+    await writeFile(join(root, "projects.local.yml"), overlay);
+    const run = readOnlyRunner();
+    await expect(createProject({ ...input, harnessRoot: root, resume: true, run })).rejects.toThrow("disabled");
+    expect(run).not.toHaveBeenCalled();
+    expect(await readFile(join(project, "uncommitted.txt"), "utf8")).toBe("preserve checkout\n");
+    expect(await readFile(join(recovery, "state.json"), "utf8")).toBe(saved);
+    expect(await readFile(join(root, "projects.local.yml"), "utf8")).toBe(overlay);
   });
 
-  it("creates minimal project, pushes it, and appends validated configuration", async () => {
+  it("validates fresh dry-run names, visibility and protocol before external commands", async () => {
     const root = await harnessFixture();
-    const calls: string[] = [];
-    const run = async (command: string, args: string[]) => {
-      calls.push(`${command} ${args.join(" ")}`);
-      if (command === "gh" && args[0] === "api" && args[1] === "user") return { code: 0, stdout: "alice\n", stderr: "" };
-      if (command === "gh" && args[0] === "config") return { code: 0, stdout: "ssh\n", stderr: "" };
-      if (command === "gh" && args[0] === "api") return { code: 1, stdout: "", stderr: "HTTP 404: Not Found" };
-      return { code: 0, stdout: "", stderr: "" };
-    };
-
-    const result = await createProject({ harnessRoot: root, name: "new-project", visibility: "public", remoteProtocol: "ssh", run });
-
-    expect(result.status).toBe("complete");
-    expect(calls).toEqual([
-      "gh api user --jq .login",
-      "gh api repos/alice/new-project --include",
-      "git -C " + join(root, "projects", "new-project") + " init --initial-branch main",
-      "git -C " + join(root, "projects", "new-project") + " add README.md .gitignore scripts/setup.sh",
-      "git -C " + join(root, "projects", "new-project") + " commit -m chore: initialize project",
-      "bash " + join(root, "projects", "new-project", "scripts/setup.sh") + " bootstrap",
-      "git -C " + join(root, "projects", "new-project") + " status --porcelain",
-      "gh repo create alice/new-project --public",
-      "git -C " + join(root, "projects", "new-project") + " remote add origin git@github.com:alice/new-project.git",
-      "git -C " + join(root, "projects", "new-project") + " push --set-upstream origin main",
-    ]);
-    expect(await readFile(join(root, "projects", "new-project", "README.md"), "utf8")).toContain("# new-project");
-    expect((await stat(join(root, "projects", "new-project", "scripts/setup.sh"))).mode & 0o111).toBeGreaterThan(0);
-    await expect(loadProjectsConfig(join(root, "projects.yml"))).resolves.toMatchObject({
-      "new-project": {
-        remote: "git@github.com:alice/new-project.git",
-        defaultBranch: "main",
-        issueTracker: { type: "github", repository: "alice/new-project" },
-      },
-    });
+    const run = readOnlyRunner();
+    await expect(createProject({ ...input, harnessRoot: root, name: "Bad Name", run })).rejects.toThrow("lowercase kebab-case");
+    await expect(createProject({ ...input, harnessRoot: root, visibility: undefined, run })).rejects.toThrow("exactly one visibility");
+    expect(run).not.toHaveBeenCalled();
   });
 
-  it("retains recovery state and resumes after a push failure", async () => {
+  it("dry-runs read-only validation without creating or changing local files", async () => {
     const root = await harnessFixture();
-    let failPush = true;
-    const run = async (command: string, args: string[]) => {
-      if (command === "gh" && args[0] === "api" && args[1] === "user") return { code: 0, stdout: "alice\n", stderr: "" };
-      if (command === "gh" && args[0] === "config") return { code: 0, stdout: "ssh\n", stderr: "" };
-      if (command === "gh" && args[0] === "api") return { code: 1, stdout: "", stderr: "HTTP 404: Not Found" };
-      if (command === "git" && args.includes("push") && failPush) return { code: 1, stdout: "", stderr: "push failed" };
-      return { code: 0, stdout: "", stderr: "" };
-    };
+    const config = await readFile(join(root, "projects.yml"), "utf8");
+    const before = await readdir(root, { recursive: true });
+    const run = readOnlyRunner();
+    const result = await createProject({ ...input, harnessRoot: root, run });
+    expect(result).toEqual({ status: "dry-run", projectPath: join(root, "projects", input.name), remote: "git@github.com:alice/new-project.git", statePath: join(root, "docs", ".scratch", "project-creation", input.name, "state.json") });
+    expect(run.mock.calls.map(([command, args]) => `${command} ${args.join(" ")}`)).toEqual(["gh config get git_protocol", "gh api user --jq .login", "gh api repos/alice/new-project --include"]);
+    expect(await readFile(join(root, "projects.yml"), "utf8")).toBe(config);
+    expect(await readdir(root, { recursive: true })).toEqual(before);
+    await expect(stat(result.projectPath)).rejects.toMatchObject({ code: "ENOENT" });
+  });
 
-    await expect(createProject({ harnessRoot: root, name: "recoverable", visibility: "private", run })).rejects.toThrow("push failed");
-    const statePath = join(root, "docs", ".scratch", "project-creation", "recoverable", "state.json");
-    expect(await readFile(statePath, "utf8")).toContain('"remoteCreated": true');
+  it("preserves explicit HTTPS remote selection without querying GitHub protocol", async () => {
+    const root = await harnessFixture();
+    const run = readOnlyRunner();
+    const result = await createProject({ ...input, harnessRoot: root, remoteProtocol: "https", run });
+    expect(result.remote).toBe("https://github.com/alice/new-project.git");
+    expect(run.mock.calls.some(([, args]) => args[0] === "config")).toBe(false);
+  });
 
-    failPush = false;
-    const result = await createProject({ harnessRoot: root, name: "recoverable", visibility: "private", resume: true, run });
-    expect(result.status).toBe("complete");
-    await expect(loadProjectsConfig(join(root, "projects.yml"))).resolves.toHaveProperty("recoverable");
+  it("validates merged configuration before checking remote availability", async () => {
+    const root = await harnessFixture();
+    await writeFile(join(root, "projects.local.yml"), "projects:\n  new-project:\n    remote: git@github.com:alice/new-project.git\n");
+    const run = readOnlyRunner();
+    await expect(createProject({ ...input, harnessRoot: root, remoteProtocol: "ssh", run })).rejects.toThrow("already configured");
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid local configuration without changing it", async () => {
+    const root = await harnessFixture();
+    const overlay = "unknown_field: invalid\n";
+    await writeFile(join(root, "projects.local.yml"), overlay);
+    const run = readOnlyRunner();
+    await expect(createProject({ ...input, harnessRoot: root, remoteProtocol: "ssh", run })).rejects.toThrow();
+    expect(run).not.toHaveBeenCalled();
+    expect(await readFile(join(root, "projects.local.yml"), "utf8")).toBe(overlay);
+  });
+
+  it("rejects an existing checkout without touching it", async () => {
+    const root = await harnessFixture();
+    await mkdir(join(root, "projects", input.name));
+    const run = readOnlyRunner();
+    await expect(createProject({ ...input, harnessRoot: root, remoteProtocol: "ssh", run })).rejects.toThrow("project path already exists");
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("preserves unreadable legacy recovery contents and directs dry-run callers to intake", async () => {
+    const root = await harnessFixture();
+    const recovery = join(root, "docs", ".scratch", "project-creation", input.name);
+    await mkdir(recovery, { recursive: true });
+    await writeFile(join(recovery, "state.json"), "partial legacy state");
+    const run = readOnlyRunner();
+    await expect(createProject({ ...input, harnessRoot: root, run })).rejects.toThrow("docs/agents/repository-intake.md");
+    expect(run).not.toHaveBeenCalled();
+    expect(await readFile(join(recovery, "state.json"), "utf8")).toBe("partial legacy state");
+  });
+
+  it.each([0, 500])("rejects existing repositories and non-404 availability failures: %s", async (status) => {
+    const root = await harnessFixture();
+    const run: ProjectCreationCommandRunner = async (_command, args) => args[1] === "user"
+      ? { code: 0, stdout: "alice\n", stderr: "" }
+      : { code: status === 0 ? 0 : 1, stdout: "", stderr: status === 0 ? "" : "HTTP 500" };
+    await expect(createProject({ ...input, harnessRoot: root, remoteProtocol: "ssh", run })).rejects.toThrow(status === 0 ? "already exists" : "could not verify");
+  });
+
+  it.each([{ flags: [] }, { flags: ["--resume"] }, { flags: ["--dry-run", "--resume"] }])("CLI rejects unsafe execution without GitHub access: $flags", async ({ flags }) => {
+    const root = await harnessFixture();
+    const script = fileURLToPath(new URL("../../scripts/create-project.ts", import.meta.url));
+    const before = await readdir(root, { recursive: true });
+    const result = spawnSync(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), script, input.name, "--private", ...flags], { cwd: root, encoding: "utf8", env: { ...process.env, PATH: "" } });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("disabled");
+    expect(result.stderr).toContain("docs/agents/repository-intake.md");
+    expect(result.stdout).toBe("");
+    expect(await readdir(root, { recursive: true })).toEqual(before);
   });
 });

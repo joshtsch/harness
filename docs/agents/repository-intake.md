@@ -111,12 +111,20 @@ report the exact blocker while preserving prepared work. A failed setup gate
 provides no authorization to bypass registration, use a different provisioning
 transport, or edit a main clone.
 
-Check a helper's actual behavior against this workflow before using its write
-path. The legacy `pnpm create:project` registers only after pushing; its live
-and resume paths do not meet this workflow. Register and validate first, create
-the repository with `gh repo create`, and then clone through the harness. Follow
-the infrastructure policy for separate infrastructure resources; missing access
-is not a coverage gap.
+The legacy `pnpm create:project` live and `--resume` paths are disabled before
+filesystem changes or external commands. Its fresh `--dry-run` checks inputs,
+merged configuration, local conflicts and GitHub availability; it does not
+provision, register or save recovery state. Use the registration-first steps
+above for new projects.
+
+For an interrupted legacy creation, preserve its existing checkout and
+`docs/.scratch/project-creation/<name>/state.json`. Inspect the actual local
+repository, remote and merged registration before choosing the matching intake
+path. Saved state records historical progress; it does not authorize rerunning
+provisioning or pushing. Register and validate any missing planned identity
+before continuing. Do not reset or overwrite an existing checkout to restart.
+Follow the infrastructure policy for separate resources; missing access is not
+a coverage gap.
 
 ## Local scaffold and remote standards gates
 

@@ -261,12 +261,13 @@ For repository creation or adoption, follow [Repository intake](docs/agents/repo
 Register and validate the project first, then provision or clone it through the
 harness lifecycle. Keep implementation in a managed worktree.
 
-`pnpm create:project` is a legacy command: it creates the GitHub repository through
-`gh`, pushes an initial default branch, and registers the project afterward. It
-does not implement the current registration-first or Terraform provisioning
-policy. Do not use its live or resume paths for new work until those gaps are
-resolved. Its `--dry-run` performs validation without provisioning; it does not
-prove that the live path meets policy.
+`pnpm create:project` supports only a fresh `--dry-run`. It checks inputs,
+merged configuration, local-path conflicts and GitHub repository availability
+without creating a repository or saving configuration or recovery state.
+Live and `--resume` calls fail before any filesystem changes or external
+commands. Existing recovery artifacts are preserved. Follow
+[Repository intake](docs/agents/repository-intake.md) to register and validate
+first, then provision or recover a project through the supported workflow.
 
 ## Secure records
 
