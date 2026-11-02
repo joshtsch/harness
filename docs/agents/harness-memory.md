@@ -243,6 +243,13 @@ authority. Deleting superseded files requires a separate bounded cleanup.
 
 ## Behavioral evaluation
 
+For a repeatable recall or ingestion investigation, use the
+[`memory-trials` skill](../../harness-skills/memory-trials/SKILL.md). It reuses
+the evaluator below, accepts custom synthetic cases, and separates proposal,
+approved application, identical rerun, and fresh recall outcomes. Its measurement
+reporter preserves missing observations and unavailable telemetry. Trials do not
+activate live sources or approve memory writes.
+
 Run `pnpm evaluate:harness-memory prepare [skill-directory]` to create a disposable
 snapshot and isolated cases, including provider selection. Have agents independent
 of the skill author run the generated `runs/<case>/prompt.md` files, limiting writes to each fixture and

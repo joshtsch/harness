@@ -1,4 +1,5 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { checkMemoryEvaluation, prepareMemoryEvaluation } from "../scripts/evaluate-harness-memory.js";
@@ -13,6 +14,26 @@ async function fixture() {
 }
 
 describe("harness-memory behavioral evaluation", () => {
+  it("prepares a custom reported failure and rejects duplicate IDs, writes, and escaping paths", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "memory-trial-cases-"));
+    roots.push(directory);
+    const casesFile = join(directory, "cases.json");
+    const scenario = { id: "reported-failure", task: "Retrieve the fixture setting", readOnly: true,
+      files: { "settings.json": "{\"retryLimit\":7}" }, rubric: ["Cite the configured value"] };
+    await writeFile(casesFile, JSON.stringify([scenario]));
+    const root = await prepareMemoryEvaluation(resolve("harness-skills/harness-memory"), casesFile);
+    roots.push(root);
+    expect(await readFile(join(root, "runs/reported-failure/vault/settings.json"), "utf8")).toContain("retryLimit");
+    expect((await checkMemoryEvaluation(root)).cases.map((item) => item.case)).toEqual(["reported-failure"]);
+    for (const invalid of [
+      [scenario, scenario], [{ ...scenario, readOnly: false }], [{ ...scenario, id: "../escape" }],
+      [{ ...scenario, files: { "../escape": "unsafe" } }], [{ ...scenario, files: { "/absolute": "unsafe" } }],
+      [{ ...scenario, files: { "topic\\escape": "unsafe" } }], [{ ...scenario, rubric: [] }],
+    ]) {
+      await writeFile(casesFile, JSON.stringify(invalid));
+      await expect(prepareMemoryEvaluation(resolve("harness-skills/harness-memory"), casesFile)).rejects.toThrow();
+    }
+  });
   it("keeps destination-choice cases independent of the protected local fixture", async () => {
     const root = await fixture();
     for (const id of ["choose-vault-home", "notion-setup-gap"]) {
