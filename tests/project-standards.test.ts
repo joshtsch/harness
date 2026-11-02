@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { parse } from "yaml";
+import { parse, stringify } from "yaml";
 import { projectStandardsWorkflow, publishBootstrap, standardsCheckName, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
 import type { ProjectDefinition } from "../src/project-config.js";
 import type { SetupCommandRunner } from "../src/session/project-setup.js";
@@ -156,4 +156,23 @@ it("scans committed PR content with an empty staging area and never echoes findi
     expect(failure.stderr).toContain("Sensitive content detected in committed changes");
     expect(failure.stderr + failure.stdout).not.toContain(secret);
   }
+});
+
+it("prepares and validates a registered project without resolving unrelated provider targets", async () => {
+  const root = await repository();
+  const path = join(root, "planned");
+  const quality = { lint: check, format: check };
+  await writeFile(join(root, "projects.yml"), stringify({
+    defaults: { default_branch: "main", setup_script: "scripts/setup.sh", issue_tracker: { type: "github" } },
+    projects: {
+      fixture: { remote: project.remote, quality },
+      unrelated: { remote: "https://example.invalid/unrelated.git", tool_mappings: { crm: { provider: "attio", targets: [{ id: "${HARNESS_STANDARDS_UNSET_TARGET}", access: "read" }] } } },
+    },
+  }));
+  const script = resolve("scripts/project-standards.ts");
+  const loader = resolve("node_modules/tsx/dist/loader.mjs");
+  await exec(process.execPath, ["--import", loader, script, "prepare", "fixture", path], { cwd: root });
+  const result = await exec(process.execPath, ["--import", loader, script, "bootstrap", "fixture", path], { cwd: root });
+  expect(result.stdout).toContain("locally-validated: 2 checks executed");
+  expect((await exec("git", ["remote"], { cwd: path })).stdout).toBe("");
 });

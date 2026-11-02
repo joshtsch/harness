@@ -9,7 +9,7 @@ try {
   if (!name || extra.length || !["prepare", "workflow", "bootstrap", "local", "publish", "remote"].includes(operation ?? "") || (operation !== "remote" && !directory)) {
     throw new Error("Usage: pnpm standards <prepare|workflow|bootstrap|local|publish|remote> <registered-project> [repository-path]");
   }
-  const configuration = await loadProjectsConfig(resolve("projects.yml")).catch(() => {
+  const configuration = await loadProjectsConfig(resolve("projects.yml"), { resolveEnvironment: false }).catch(() => {
     throw new Error("project configuration could not be loaded; validate the merged public/local configuration locally");
   });
   const project = configuration[name];
