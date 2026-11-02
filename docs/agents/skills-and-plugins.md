@@ -78,9 +78,11 @@ scope must remain explicit:
   `joshtsch/skills` repository, then install them here with `pnpm dlx skills`.
   Keep existing installations intact until each skill is reviewed for ownership
   and migrated deliberately.
-- The current `joshtsch/skills` entries `harness-grill-with-docs`,
-  `scope-router` and `save` depend on harness policy or
-  workflows; migrate them to `harness-skills/` in a separate inventory change.
+- The current `joshtsch/skills` entries `scope-router` and `save` depend on
+  harness policy or workflows; migrate them to `harness-skills/` in a separate
+  inventory change. `harness-grill-with-docs` is retired; the upstream
+  `grill-with-docs` skill is the canonical design interview that records domain
+  docs.
   `agent-system-audit` is the broadly reusable entry in that source set.
 - `mattpocock/skills` is an approved external skill source, not a native Codex
   plugin. Install selected skills project-locally with `pnpm dlx skills`; keep it
