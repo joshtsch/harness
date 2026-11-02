@@ -187,8 +187,14 @@ scope must remain explicit:
   Inventory capture is bounded at 8 MiB per stdout/stderr stream. Larger output
   fails verification; reduce the inventory output before retrying. Command
   failures report status or availability without reproducing plugin output.
-  Claude Code initialization does not install or verify these Codex plugins;
-  Claude sessions have no Ponytail, Vercel, or Supabase plugin parity yet.
+- `.claude/settings.json` enables the same approved plugins for Claude Code:
+  `ponytail@ponytail` from the Ponytail marketplace it declares, and
+  `vercel@claude-plugins-official` and `supabase@claude-plugins-official` from
+  the official Claude marketplace. Keep it aligned with `.codex/plugins.yml`;
+  a test compares the plugin names. For Claude sessions, `pnpm init:harness`
+  checks `claude plugin list --json` and fails with the exact
+  `claude plugin marketplace add` and `claude plugin install --scope project`
+  commands for any missing plugin. It never installs plugins itself.
 - `pnpm init:harness` restores external project skills, links tracked harness skills,
   and verifies every skill in the combined capability inventory is installed at
   `.agents/skills/<name>/SKILL.md`.
@@ -250,6 +256,33 @@ version commands.
 `pnpm init:harness` and `pnpm setup:session` run the same fast check before
 continuing. The checker reports installation guidance and never installs
 missing tools automatically.
+
+## Claude Code settings
+
+Tracked `.claude/settings.json` applies to Claude Code sessions started in the
+harness. Personal overrides belong in ignored `.claude/settings.local.json`.
+
+- **Deny rules** block Claude's file tools from reading or editing local
+  environment files (`.env`, `.env.local`, `.env.*.local`, `.env.production`)
+  and from reading `.secure-documents/`. `.env.example` stays editable. The rules
+  do not cover shell commands or reads through the resolved target of the
+  `.secure-documents` symlink; data-safety rules still apply to both.
+- **Commit guard** is a `PreToolUse` hook on Bash
+  (`scripts/claude-hooks/git-guard.mjs`). Commands without `git commit` exit
+  immediately. For a commit, `scripts/git-guard.ts` tokenizes the command,
+  honoring quotes, redirections, and heredocs, and finds the target repository
+  from the hook's working directory, earlier `cd <path>` commands, and `git -C`. It
+  blocks the call when the branch is `main` or `master`, when the staged paths
+  include `projects.local.yml` or an environment file other than `.env.example`,
+  or when the sensitive-content scan flags the staged diff. It also refuses
+  commits that include content outside the index (`git add … && git commit`,
+  `-a`, `-i`, `-o`, `--pathspec-from-file`, or paths) so the staged diff it
+  checks is the one committed. Stage in a separate command first. The guard
+  skips paths that are not Git repositories and leaves those errors to Git. If
+  the guard itself cannot run, for example before `pnpm install`, the hook blocks
+  the commit. The hook applies only to Claude Code; Codex and Gemini sessions
+  rely on the written rules. Pushes are not guarded; branch protection covers
+  `main`.
 
 The Bitwarden CLI is needed only for explicit secure-record and key operations.
 Those commands report their own missing-tool errors when invoked; routine setup
