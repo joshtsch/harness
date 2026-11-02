@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 import { resolve } from "node:path";
 import { loadProjectsConfig, requireProjectQuality } from "../src/project-config.js";
-import { ensureProjectClone, createProjectWorktree, recordSetupEvent, runProjectCommands, runProjectSetup, verifyProjectReady, resolveWorktreeRoot } from "../src/session/index.js";
+import { ensureProjectClone, createProjectWorktree, recordSetupEvent, runProjectSetup, verifyPreparedProject, resolveWorktreeRoot } from "../src/session/index.js";
 import { parseWorktreeArgs } from "../src/session/worktree-input.js";
 
 const args = process.argv.slice(2);
@@ -14,7 +14,7 @@ if (!configured) {
   console.error(`Unknown project: ${projectName}`);
   process.exitCode = 1;
 } else {
-  const quality = requireProjectQuality(configured);
+  requireProjectQuality(configured);
   const harnessRoot = resolve(".");
   const worktreesDirectory = await resolveWorktreeRoot(harnessRoot);
   const clone = await ensureProjectClone(configured, { projectsDirectory: resolve("projects") });
@@ -37,17 +37,11 @@ if (!configured) {
     },
   });
   const setupOptions = {
-    projectRoot: clone.path,
+    ...bootstrapOptions,
     worktreePath: result.path,
-    issueKey,
-    purpose: ticketTitle,
-    harnessRoot: resolve("."),
     sessionId: result.branch,
-    logDirectory: resolve("docs/.scratch/setup"),
   };
   await runProjectSetup(configured, "worktree", setupOptions);
-  await verifyProjectReady(result.path);
-  await runProjectCommands([quality.lint, quality.format], { project: configured, worktreePath: result.path, options: setupOptions });
-  await verifyProjectReady(result.path);
+  await verifyPreparedProject({ project: configured, worktreePath: result.path, options: setupOptions });
   console.log(`${result.action}: ${result.path}`);
 }

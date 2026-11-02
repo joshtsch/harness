@@ -12,10 +12,24 @@ For repository creation or adoption, complete [Repository intake](repository-int
 7. Work across the participating worktrees. Record transient session, project, issue, worktree, handoff, and recovery state in ignored `docs/.scratch/`.
 
 The preparation flow in `src/session/session-preparation.ts` owns phase order
-and per-Project state. The `scripts/setup-session.ts` entry point resolves inputs
-and supplies runtime adapters. Test phase order, failures, and manifest updates
+across selected Projects and per-Project state. The shared `ProjectSetupOptions`
+context in `src/session/project-setup.ts` carries setup metadata into setup and
+verification. Its `verifyPreparedProject` owns the clean check, required lint and
+format checks, and second clean check used by both session startup and standalone
+worktree creation. Session preparation supplies the following verification and
+workflow commands; standalone creation runs only the shared quality checks.
+
+The `scripts/setup-session.ts` entry point resolves inputs and supplies runtime
+adapters. Test phase order, failures, and manifest updates
 in `src/session/__tests__/session-preparation.test.ts`. The
-`session-start-integration.test.ts` test covers the CLI wiring.
+`project-preparation.test.ts` tests shared verification behavior through its
+interface. The `session-start-integration.test.ts` and
+`worktree-integration.test.ts` tests cover the command wiring.
+
+Standalone worktree creation reuses its bootstrap context for worktree setup and
+verification, with the worktree path and branch-based session ID. Its bootstrap
+session ID remains issue/title-based. Session startup keeps one session ID and
+setup events throughout; standalone setup retains its direct setup calls.
 
 At finalization, the harness emits one `SessionFinalization` value after worktrees,
 artifacts, and observed state are complete. It contains only traceable references,
