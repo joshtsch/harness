@@ -11,6 +11,10 @@ function hclLiteral(value: unknown): string {
   return JSON.stringify(value).replace(/\$\{|%\{/g, (marker) => marker[0] + marker);
 }
 
+function mapping(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 async function run(command: string, args: string[], environment: NodeJS.ProcessEnv): Promise<void> {
   const code = await new Promise<number>((done, reject) => {
     const child = spawn(command, args, { env: environment, stdio: "inherit" });
@@ -60,8 +64,6 @@ try {
   if (suppliedVariables?.trim()) {
     try {
       const parsed: unknown = JSON.parse(suppliedVariables);
-      const mapping = (value: unknown): value is Record<string, unknown> =>
-        value !== null && typeof value === "object" && !Array.isArray(value);
       if (!mapping(parsed) || !Object.entries(parsed).every(([workspace, categories]) =>
         names.includes(workspace) && mapping(categories) && Object.entries(categories).every(([category, variables]) =>
           ["environment", "terraform"].includes(category) && mapping(variables)
@@ -71,6 +73,27 @@ try {
       projectVariables = parsed;
     } catch {
       throw new Error("TF_VAR_project_workspace_variables must map registered workspaces to environment/terraform string maps");
+    }
+  }
+
+  let projectVcs: unknown;
+  const suppliedVcs = process.env.TF_VAR_project_workspace_vcs;
+  if (suppliedVcs?.trim()) {
+    try {
+      const parsed: unknown = JSON.parse(suppliedVcs);
+      const fields = ["identifier", "branch", "working_directory", "github_app_installation_id"];
+      if (!mapping(parsed) || !Object.entries(parsed).every(([workspace, vcs]) =>
+        names.includes(workspace) && mapping(vcs) && Object.keys(vcs).length === fields.length
+        && fields.every((key) => typeof vcs[key] === "string" && vcs[key].trim().length > 0)
+        && /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(vcs.identifier as string)
+        && /^ghain-[A-Za-z0-9]+$/.test(vcs.github_app_installation_id as string)
+        && /^[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*$/.test(vcs.working_directory as string)
+        && !(vcs.working_directory as string).split("/").some((part) => part === "." || part === ".."))) {
+        throw new Error();
+      }
+      projectVcs = parsed;
+    } catch {
+      throw new Error("TF_VAR_project_workspace_vcs must map registered workspaces to GitHub repository, branch, relative working directory, and HCP installation ID");
     }
   }
 
@@ -85,6 +108,7 @@ try {
       ...(contactMap === undefined ? [] : [`project_organization_admin_emails = ${hclLiteral(contactMap)}`]),
       ...(providerCredential ? [`tfe_provider_token = ${hclLiteral(providerCredential)}`] : []),
       ...(projectVariables === undefined ? [] : [`project_workspace_variables = ${hclLiteral(projectVariables)}`]),
+      ...(projectVcs === undefined ? [] : [`project_workspace_vcs = ${hclLiteral(projectVcs)}`]),
     ].join("\n") + "\n", { mode: 0o600, flag: "wx" });
     wroteVariables = true;
     const environment: NodeJS.ProcessEnv = {
