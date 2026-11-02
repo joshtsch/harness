@@ -31,7 +31,10 @@ namespaces, and preparation commands belong in a separate backend mapping.
 
 1. Inspect the selected backend and its applicable policy. Map prepare, ingest,
    retrieve, inspect, and reset to available tools/procedures, with capability
-   gaps explicit. Use [the repository-vault procedure](references/backends/repository-vault.md)
+   gaps explicit. Follow permitted entry points to the minimum native data needed
+   to verify the actual targets. Permission to inspect a fixture is distinct from
+   permission to mutate it; report an access blocker only when one exists.
+   Use [the repository-vault procedure](references/backends/repository-vault.md)
    only for that backend. Other backends need no vault, wiki, or harness-memory
    dependency. Creating a mapping does not implement missing backend operations.
 2. Prepare each variant and repetition in an isolated fixture or namespace.
