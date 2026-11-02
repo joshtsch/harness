@@ -18,7 +18,7 @@ Wiki covers harness workflow, project boundaries, and shared cross-project knowl
 - [[log]]
 - [[code-graph-intelligence]]
 - [Attio and Granola API workflow](../../agents/tooling.md#api-access-and-fallback)
-- [Harness initialization plugin checks](../../agents/tooling.md#skills-and-plugins)
+- [Harness initialization plugin checks](../../agents/skills-and-plugins.md#skill-inventory-and-plugins)
 - [Fresh public repository decision](../../adr/0012-public-repository-hygiene.md)
 - [Session goal and safe startup refresh](../../agents/session-lifecycle.md#session-goal-and-agent-context)
 

@@ -35,7 +35,7 @@ from a skill subdirectory in the Skills CLI. The approved Codex plugins are
 manifest; initialization reports installation guidance when one is missing.
 Plugin inventories can use up to 8 MiB per stdout/stderr stream. Larger output
 fails verification with a bounded-capture diagnostic; command failures do not
-reproduce inventory contents. See [tooling guidance](docs/agents/tooling.md#skills-and-plugins).
+reproduce inventory contents. See [skill and plugin guidance](docs/agents/skills-and-plugins.md#skill-inventory-and-plugins).
 The policy lives in `capabilities.yml` and
 `agent-policy.yml`; it records one canonical project skill per capability and
 explicit Codex and Gemini support. Inspect a route with
@@ -368,7 +368,7 @@ skills; use `pnpm link:skill` for local testing.
 
 Impeccable is the default for UI shaping, critique, and polish. See
 [UI design routing](docs/agents/agent-roles.md#ui-design-routing) and
-[installation details](docs/agents/tooling.md#impeccable-installation).
+[installation details](docs/agents/skills-and-plugins.md#impeccable-installation).
 
 ## Prompt/session optimization adapter
 

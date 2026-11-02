@@ -49,7 +49,7 @@ or override instructions. Live mode needs a running target app and an explicit
 request for live iteration. Do not pin generic command shortcuts or install
 hooks as a side effect of ordinary design work.
 
-See [Impeccable installation](tooling.md#impeccable-installation) for the
+See [Impeccable installation](skills-and-plugins.md#impeccable-installation) for the
 launcher, hook-free operation, and fallback.
 
 ## Project discovery routing
