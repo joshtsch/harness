@@ -26,7 +26,7 @@
 
 - October 9, 2026: Indexed [worktree branch and base lifecycle](../../agents/session-lifecycle.md#worktree-branches-and-bases). Existing branches retain commits; recorded bases govern stacked work. Policy stays in agent docs.
 
-- October 9, 2026: Indexed [initialization plugin checks](../../agents/tooling.md#skills-and-plugins). Capture permits 8 MiB per output stream; failure diagnostics omit inventory contents.
+- October 9, 2026: Indexed [initialization plugin checks](../../agents/skills-and-plugins.md#skill-inventory-and-plugins). Capture permits 8 MiB per output stream; failure diagnostics omit inventory contents.
 
 - October 9, 2026: Indexed [repository Terraform workspace management](../../../infrastructure/hcp/README.md#repository-workspaces). Inputs, adoption, and recovery stay in authoritative infrastructure guide. No existing workspace article needed revision.
 
@@ -35,6 +35,7 @@
 - October 9, 2026: Indexed [initialization clone restoration](../../agents/session-lifecycle.md#initialization-and-project-clones). Plain init reports missing clones; explicit opt-in restores them. Existing repositories preserved.
 
 - October 25, 2026: Indexed [harness memory](../../agents/harness-memory.md). Skill replaces the initializer route; existing sources stay active pending separate data migration.
+- November 2, 2026: Moved [skill and plugin guidance](../../agents/skills-and-plugins.md) out of tooling. Tooling keeps intake, API access, deployment, and prerequisites.
 
 ## Related pages
 

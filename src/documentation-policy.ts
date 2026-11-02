@@ -32,6 +32,7 @@ export const requiredDocumentationLinks: Record<string, readonly string[]> = {
     "triage-labels.md",
     "domain.md",
     "tooling.md",
+    "skills-and-plugins.md",
     "agent-roles.md",
     "documentation-strategy.md",
     "contributing.md",

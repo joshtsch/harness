@@ -69,7 +69,7 @@ describe("documentation policy", () => {
   });
 
   it("accepts valid documentation layout and links", () => {
-    const paths = ["AGENTS.md", "README.md", "CONTEXT.md", "docs/agents", "docs/agents/README.md", ...["architecture", "project-configuration", "infrastructure", "session-lifecycle", "issue-tracker", "triage-labels", "domain", "tooling", "agent-roles", "documentation-strategy", "contributing", "data-safety"].map((name) => `docs/agents/${name}.md`), "docs/adr", "docs/llm-wiki-harness/wiki/index.md", "docs/llm-wiki-harness/wiki/log.md"];
+    const paths = ["AGENTS.md", "README.md", "CONTEXT.md", "docs/agents", "docs/agents/README.md", ...["architecture", "project-configuration", "infrastructure", "session-lifecycle", "issue-tracker", "triage-labels", "domain", "tooling", "skills-and-plugins", "agent-roles", "documentation-strategy", "contributing", "data-safety"].map((name) => `docs/agents/${name}.md`), "docs/adr", "docs/llm-wiki-harness/wiki/index.md", "docs/llm-wiki-harness/wiki/log.md"];
     const contents = { "AGENTS.md": "[CONTEXT](CONTEXT.md) [docs](docs/agents/README.md)", "README.md": "[rules](AGENTS.md) [context](CONTEXT.md) [docs](docs/agents/)", "docs/agents/README.md": paths.slice(4).map((path) => `[x](${path.split("/").pop()})`).join(" ") };
     expect(documentationViolations({ paths, contents })).toEqual([]);
   });
