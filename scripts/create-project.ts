@@ -10,7 +10,7 @@ let dryRun = false;
 let resume = false;
 
 try {
-  if (!name) throw new Error("Usage: pnpm create:project <name> [--public|--private] [--remote-protocol ssh|https] [--dry-run|--resume]");
+  if (!name) throw new Error("Usage: pnpm create:project <name> [--public|--private] [--remote-protocol ssh|https] --dry-run (live and --resume are disabled; see docs/agents/repository-intake.md)");
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--public" || arg === "--private") {
