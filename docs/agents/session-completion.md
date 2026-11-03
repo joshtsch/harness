@@ -55,12 +55,13 @@ project's tracker and update the change request before merging.
 
 ## 5a. Run the paired review loop
 
-This loop pairs an [implementation session and a review session](../../CONTEXT.md#implementation-session).
+This loop pairs an implementation session and a review session, as defined in
+[Agent Context](../../CONTEXT.md#agent-context).
 
 1. After opening a change request, the implementation session offers the user a
    paired review session and starts it only on the user's yes. If the user
-   declines, the review gate in [section 3](#3-verify-and-review) still applies, and the completion report
-   notes that the paired review was declined.
+   declines, the review gate in [section 3](#3-verify-and-review) still
+   applies, and the completion report notes that the paired review was declined.
 2. The review session reviews the change request against its originating issue
    and the [two-axis review standards](contributing.md). It sends its findings to
    the originating implementation session without asking the user, and states
