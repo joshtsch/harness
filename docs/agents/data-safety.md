@@ -70,9 +70,26 @@ defines the routing boundary. Live source activation and content migration
 retain their separate setup and review gates; implementing the gateway does not
 authorize either operation.
 
+## Secret custody tiers
+
+Every harness secret has one custody tier, recorded with its agent path in
+[ADR-0019](../adr/0019-secret-custody-tiers.md):
+
+1. **Hardware-bound**: a non-exportable Secure Enclave key; each use needs Touch ID.
+2. **Vendor OAuth MCP**: the MCP client holds the token and agents call tools.
+3. **Scoped token**: a provider-restricted token in an owner-only file under
+   `~/.config/harness/`, with an accepted blast radius.
+4. **Human-only**: the user supplies it for a command they run; agents never receive it.
+
+Do not add tier 1, 2, or 4 secrets to the harness `.env`. Assign a tier when
+introducing a secret, and add a harness broker only when no vendor MCP server
+fits and the operation needs client-side cryptography or input validation.
+If a needed credential is unavailable to the agent, report the limitation; do
+not search for the value.
+
 ## Rules
 
-- Keep API keys, OAuth tokens, passwords, private keys, and connection strings in an external secret store or environment variables.
+- Keep API keys, OAuth tokens, passwords, private keys, and connection strings in the custody their tier assigns.
 - Keep `.env` files and local credential material untracked; commit only safe templates such as `.env.example`.
 - Treat CRM records, meeting notes, transcripts, attendee details, email addresses, phone numbers, and customer-specific context as PII or sensitive business data unless explicitly confirmed otherwise.
 - Do not copy MCP results from Attio or Granola into tracked files. Record only stable identifiers or redacted summaries when durable context is genuinely required.

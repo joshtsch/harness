@@ -146,8 +146,10 @@ login can start a remote run while that run's workspace credential lacks
 organization-creation permissions. Only user tokens can create organizations;
 use a user token with access to every organization managed by this control plane.
 
-For the first run or token rotation, supply `TFE_TOKEN` from protected custody
-through the local process environment or ignored `.env`. Load it with
+For the first run or token rotation, the user exports `TFE_TOKEN` from protected
+custody in their own shell. It is human-only under
+[secret custody tiers](../../docs/adr/0019-secret-custody-tiers.md), so never
+store it in `.env`. Run
 `node --env-file=.env --import tsx scripts/hcp-projects.ts plan`, then run
 `apply` after reviewing the plan. Onboarding places it in the private temporary
 tfvars as the sensitive `tfe_provider_token` input. The remote provider uses
