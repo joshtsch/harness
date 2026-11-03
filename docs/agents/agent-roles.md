@@ -70,6 +70,15 @@ slice, run `pnpm capabilities route <provider> backlog-select` and read its
 and epic scope and returns an evidence-backed recommendation. Continue an
 explicit implementation request through the normal development workflow.
 
+## Paired review routing
+
+Right after opening or pushing to a change request, and when acting as or
+hearing from a paired review session, run
+`pnpm capabilities route <provider> paired-review` and read its
+[skill](../../harness-skills/paired-review/SKILL.md). Codex and Gemini are
+degraded because they cannot start or message sessions; they relay the review
+prompt and findings through the user.
+
 ## Research destination routing
 
 General source placement uses `knowledge-routing`; vault work uses
