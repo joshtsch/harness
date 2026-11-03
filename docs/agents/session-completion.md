@@ -26,6 +26,15 @@ current target `main`.
 Do not merge while actionable review findings remain. Record accepted findings
 and user approval when an exception is necessary.
 
+### UI stories
+
+When a project has Storybook (a `storybook` script or `@storybook/*` dependency
+in `package.json`, or a `.storybook/` folder), a change that adds or changes a UI
+element adds or updates stories that cover it and each of its meaningful states,
+as defined in [projects with a user interface](project-configuration.md#projects-with-a-user-interface).
+Implementation and review sessions both ask: stories added or updated for every
+UI element touched?
+
 ## 4. Ingest durable knowledge into wikis
 
 Before reporting completion, check whether the session produced reusable
@@ -66,7 +75,8 @@ holds the review prompt.
    applies, and the completion report notes that the paired review was declined.
 2. The review session reviews the change request on both
    [review axes](architecture.md): repository standards and the originating
-   issue or specification. It sends its findings to
+   issue or specification, including the [UI stories](#ui-stories) check. It
+   sends its findings to
    the originating implementation session without asking the user, and states
    when none remain.
 3. The implementation session fixes or explicitly accepts each finding. After

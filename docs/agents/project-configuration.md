@@ -191,6 +191,7 @@ only the happy path. Add `storybook` and `build-storybook` package scripts,
 install Storybook through the project-owned setup, and register
 `build-storybook` as a required `verification` check so CI builds it. Keep
 rendering separable from data fetching so stories use the same code as the app.
+Every UI change follows the [UI stories](session-completion.md#ui-stories) check.
 Projects without a UI do not add Storybook. Railbird is the reference adopter.
 
 ## Standards onboarding

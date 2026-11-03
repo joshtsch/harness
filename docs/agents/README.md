@@ -11,7 +11,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | Ownership and repository boundaries | [architecture.md](architecture.md) |
 | `projects.yml` and project capabilities | [project-configuration.md](project-configuration.md) |
 | Infrastructure provisioning and configuration | [infrastructure.md](infrastructure.md) |
-| Sessions, setup, worktrees, change requests, wiki ingestion, and cleanup | [session-lifecycle.md](session-lifecycle.md) and [session-completion.md](session-completion.md) |
+| Sessions, setup, worktrees, change requests, wiki ingestion, UI stories, and cleanup | [session-lifecycle.md](session-lifecycle.md) and [session-completion.md](session-completion.md) |
 | GitHub issues and specs | [issue-tracker.md](issue-tracker.md) |
 | Triage labels and workflow | [triage-labels.md](triage-labels.md) |
 | Domain glossary and ADR consumption | [domain.md](domain.md) |
