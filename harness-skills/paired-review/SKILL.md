@@ -28,11 +28,12 @@ the pre-PR `code-review` gate in [contributing](../../docs/agents/contributing.m
 
 ## As the review session
 
-1. Review the change request against its originating issue and the
-   [two-axis review standards](../../docs/agents/contributing.md). Read the linked
+1. Review the change request on both [review axes](../../docs/agents/architecture.md):
+   repository standards and the originating issue or specification. Read the linked
    code, not only the diff. Do not edit the implementation branch.
 2. Send findings to the originating implementation session without asking the
-   user. Each finding names a location, the problem, and the expected fix. Treat
+   user; in Claude Code, use `SendMessage` to the session that started you. Each
+   finding names a location, the problem, and the expected fix. Treat
    findings the implementation session accepted with reasons as resolved.
 3. On each re-review request, review the new head and send only unresolved
    findings, or state that none remain.
@@ -45,8 +46,8 @@ Fill every field; the review session starts cold.
 Run $paired-review as the review session.
 Change request: <link>
 Originating issue: <link>
-Standards: docs/agents/contributing.md two-axis review, plus the issue's acceptance criteria.
-Send findings to: <implementation session id, or "relay to the user">
+Standards: repository standards (docs/agents/architecture.md) and the issue's acceptance criteria.
+Send findings to: <"the session that started you", a local_… session id, or "relay to the user">
 ```
 
 When the provider cannot start or message sessions, give the user this prompt

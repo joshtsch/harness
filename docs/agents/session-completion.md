@@ -64,8 +64,9 @@ holds the review prompt.
    paired review session and starts it only on the user's yes. If the user
    declines, the review gate in [section 3](#3-verify-and-review) still
    applies, and the completion report notes that the paired review was declined.
-2. The review session reviews the change request against its originating issue
-   and the [two-axis review standards](contributing.md). It sends its findings to
+2. The review session reviews the change request on both
+   [review axes](architecture.md): repository standards and the originating
+   issue or specification. It sends its findings to
    the originating implementation session without asking the user, and states
    when none remain.
 3. The implementation session fixes or explicitly accepts each finding. After
