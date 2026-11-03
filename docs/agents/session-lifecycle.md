@@ -93,7 +93,8 @@ authority. Setup never rewrites a project's tracked `AGENTS.md`.
 
 Session start always refreshes safe default clones. The legacy `--refresh` flag
 is accepted without an extra fetch. This exception permits synchronization,
-never implementation in the default clone. Standalone worktree creation retains
+never implementation in the default clone. Claude Code enforces this with the
+[default-clone guard](skills-and-plugins.md#claude-code-settings). Standalone worktree creation retains
 its explicit refresh behavior. Fetch and fast-forward failures are reported as
 skipped; bootstrap does not run on skipped clones.
 

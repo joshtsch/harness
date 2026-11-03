@@ -87,3 +87,8 @@ status and point to registered-vault discovery. Their local links and reachabili
 remain checked; public CI does not require a private vault checkout.
 `/code-review` checks new decision-bearing files against this
 strategy and reports misplaced, duplicated, or missing documentation.
+
+When a hook, CLI check, or CI job enforces a rule, keep one line stating the
+rule and link to the enforcement. The block message, not the documentation,
+explains how to recover. Keep fuller guidance only where enforcement has gaps
+or covers some providers but not others, such as Claude Code-only hooks.
