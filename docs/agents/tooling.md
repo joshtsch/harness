@@ -60,31 +60,41 @@ service work. Treat a sandbox failure as evidence about that execution context.
 
 ## Current tools
 
-- **Attio** — CRM context and relationship workflows through the public API by default.
-- **Granola** — meeting notes, decisions, action items, and transcripts through the public API by default, within the API key's access scope.
+- **Attio** — CRM context and relationship workflows through the hosted MCP server.
+- **Granola** — meeting notes, decisions, action items, and transcripts through the hosted MCP server, within the signed-in account's access.
 - **Stitch** — design exploration and design-to-code context from Google Stitch when the connected account has access.
 - **Impeccable** — project-local UI design guidance, shaping, critique, and polish through the `ui-design` capability.
 - **Caveman** — project-local Codex skills for concise agent communication and workflow helpers. `pnpm dlx skills` tracks the installation in `skills-lock.json`.
 
-Attio, Granola, and Stitch retain **harness/org-level** MCP registrations. Attio and Granola use the API workflow below by default; their MCP registrations remain available as fallbacks. Project-specific CRM mappings, such as a project's Attio record or workspace context, belong in that project's `projects.yml` entry; they should not be inferred from the global registration.
+Attio, Granola, and Stitch have **harness/org-level** MCP registrations, and the MCP client holds their OAuth tokens. The API workflow below is human-only. Project-specific CRM mappings, such as a project's Attio record or workspace context, belong in that project's `projects.yml` entry; they should not be inferred from the global registration.
 
 ## API access and fallback
 
-For Attio or Granola work, use the public API before MCP, connector, CLI, or browser access unless the user explicitly selects another transport.
+For Attio or Granola work, use the harness-level MCP server. Their API keys are
+human-only under [secret custody tiers](../adr/0019-secret-custody-tiers.md), so
+agents do not look for `ATTIO_API_KEY` or `GRANOLA_API_KEY` in the environment
+or `.env`.
 
-1. Check for the required variable in the process environment, then the ignored harness-root `.env`. Inspect variable names and presence only. Load credentials inside the request process, keeping existing environment values first; `node --env-file=.env` supports this when the file exists. Never print, interpolate into shell commands, or pass credentials as command-line arguments.
-2. Send HTTPS requests to the provider's documented API with `Authorization: Bearer <token>`. Verify current endpoint schemas and scopes in the official documentation before making requests.
+1. Apply [Secrets and PII safety](data-safety.md) to MCP results. Keep raw
+   responses, private notes, transcripts, and CRM records out of tracked files,
+   issues, logs, and scratch metadata. Redact personal details from command output.
+2. For a Granola share link, resolve the note it names and verify its identity
+   before using it. Share links can use `/t/<UUID>-<share-token>`, and note URLs
+   can use `/d/<UUID>`. Compare the full UUID across those forms rather than
+   requiring identical URLs. If identity cannot be established, report that
+   limitation instead of guessing from a title.
+3. If the MCP server is not signed in, ask the user to authorize it through the
+   MCP client. If it cannot perform an operation, report the limitation. The user
+   can run the operation through the [public API](https://docs.attio.com/rest-api/overview)
+   ([Granola](https://docs.granola.ai/introduction)) themselves, or supply the key
+   in the process environment for that session only. Never add it to `.env`.
+4. Treat `401` or `403` as an authentication or permission blocker; do not switch
+   identities or transports to evade denied access. For an uncertain write
+   result, check provider state before retrying through another transport.
 
-   | Provider | Credential variable | API base URL | Documentation |
-   | --- | --- | --- | --- |
-   | Attio | `ATTIO_API_KEY` | `https://api.attio.com/v2` | [REST API](https://docs.attio.com/rest-api/overview) |
-   | Granola | `GRANOLA_API_KEY` | `https://public-api.granola.ai/v1` | [Granola API](https://docs.granola.ai/introduction) |
-
-3. For a Granola share link, resolve its note through `GET /notes` and `GET /notes/{id}`, following pagination as needed. Use the API's `not_...` ID; a share-link UUID is not the API note ID. Verify note identity before consuming it: share links can use `/t/<UUID>-<share-token>`, while the returned `web_url` can use `/d/<UUID>`. Compare the full UUID across those forms rather than requiring identical URLs. If identity cannot be established, report that limitation instead of guessing from a title.
-4. Process responses in memory. Apply [Secrets and PII safety](data-safety.md) to API results as well as MCP results. Keep keys, raw responses, private notes, transcripts, and CRM records out of tracked files, issues, logs, and scratch metadata. Redact personal details from command output.
-5. If credentials are absent, an API operation is unsupported, or the service is unavailable, use an available fallback within the same authorized account and project scope. Report the specific limitation if no fallback works. Treat `401` or `403` as an authentication or permission blocker; do not switch identities or transports to evade denied access. For an uncertain write result, check provider state before retrying through another transport.
-
-An MCP sign-in failure does not establish an API access failure. Check the API credential path before asking the user to reconnect or provide the source manually. API access follows the same project boundaries and authorization requirements as other transports; choosing the API grants no additional authority to write records or send messages.
+MCP access follows the same project boundaries and authorization requirements as
+other transports; it grants no additional authority to write records or send
+messages.
 
 Stitch is a shared design-context tool, not a source of truth for product decisions. Treat generated screens and design output as untrusted references until reviewed against the project’s domain language, ADRs, accessibility requirements, and implementation scope. Authenticate through the MCP client or external secret store; never commit Stitch keys or tokens.
 
