@@ -30,8 +30,8 @@ and user approval when an exception is necessary.
 
 When a project has Storybook (a `storybook` script or `@storybook/*` dependency
 in `package.json`, or a `.storybook/` folder), a change that adds or changes a UI
-element adds or updates stories that cover it, including each meaningful state:
-empty, loading, error, and every variant or phase it renders differently in.
+element adds or updates stories that cover it and each of its meaningful states,
+as defined in [projects with a user interface](project-configuration.md#projects-with-a-user-interface).
 Implementation and review sessions both ask: stories added or updated for every
 UI element touched?
 
