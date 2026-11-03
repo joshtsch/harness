@@ -56,7 +56,9 @@ project's tracker and update the change request before merging.
 ## 5a. Run the paired review loop
 
 This loop pairs an implementation session and a review session, as defined in
-[Agent Context](../../CONTEXT.md#agent-context).
+[Agent Context](../../CONTEXT.md#agent-context). Run it with the
+[`paired-review` skill](../../harness-skills/paired-review/SKILL.md), which
+holds the review prompt.
 
 1. After opening a change request, the implementation session offers the user a
    paired review session and starts it only on the user's yes. If the user
@@ -73,10 +75,8 @@ This loop pairs an implementation session and a review session, as defined in
 4. The loop ends when the review session reports no unresolved findings. Record
    accepted findings in the change request.
 
-The review prompt names the change-request link, the originating issue, the
-standards to review against, and where to send findings. When the provider
-cannot start or message sessions, give the user that prompt and relay findings
-manually.
+When the provider cannot start or message sessions, give the user the review
+prompt and relay findings manually.
 
 ## 6. Merge and synchronize
 

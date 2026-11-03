@@ -18,6 +18,7 @@ capabilities:
   caveman-review: { intent: review code concisely, inputs: [diff], output: actionable findings, authority: observe, verification: check locations }
   caveman-setup: { intent: connect LLM calls to Caveman, inputs: [repository], output: instrumented calls, authority: modify, verification: run one request }
   caveman-stats: { intent: report Caveman usage, inputs: [session report], output: usage summary, authority: observe, verification: use recorded counts }
+  paired-review: { intent: run the paired review loop for a change request, triggers: [pull request opened, change request opened, review findings], inputs: [change request, originating issue, implementation or review session], output: review session started or findings exchanged until none remain, authority: suggest, verification: review session reports no unresolved findings }
   domain-modeling: { intent: sharpen domain vocabulary and decisions, inputs: [domain discussion], output: glossary or ADR, authority: modify, verification: terms and decisions match the conversation }
   grilling: { intent: stress-test a design, inputs: [idea], output: resolved decision tree, authority: suggest, verification: user confirms the decisions }
   grill-with-docs: { intent: interview on a design and record domain docs, inputs: [idea], output: resolved decisions and domain docs, authority: modify, verification: user confirms understanding }
