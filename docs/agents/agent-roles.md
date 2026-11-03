@@ -62,6 +62,14 @@ compose it as a companion. Discovery recommends ownership without registration
 or provisioning. Missing project metadata remains uncertainty, not a new-project
 signal.
 
+## Backlog selection routing
+
+For requests to choose backlog work, select an epic, or recommend a parallel
+slice, run `pnpm capabilities route <provider> backlog-select` and read its
+[skill](../../harness-skills/backlog-select/SKILL.md). It accepts optional project
+and epic scope and returns an evidence-backed recommendation. Continue an
+explicit implementation request through the normal development workflow.
+
 ## Research destination routing
 
 General source placement uses `knowledge-routing`; vault work uses
