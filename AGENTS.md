@@ -23,6 +23,7 @@ This harness improves its own workflows and coordinates work across independent 
 
 - For DNS failures, connection errors, or stalled network commands, follow [Sandbox network troubleshooting](docs/agents/tooling.md#sandbox-network-troubleshooting) before diagnosing the host network or remote service.
 - Follow [Agent role routing](docs/agents/agent-roles.md) for capability selection, provider-specific behavior, and skill ownership. Resolve skill routes with `pnpm capabilities`; unresolved or unsupported routes fail closed.
+- Immediately after opening or pushing to a change request, run `$paired-review` to offer or continue the paired review session.
 - When a project has Storybook, add or update stories for every UI element a change adds or changes. See [UI stories](docs/agents/session-completion.md#ui-stories).
 - Before reporting work complete, follow [Session completion](docs/agents/session-completion.md) and report remaining blockers or preserved changes.
 - Do not send messages or publish external content unless the user's request authorizes that action.
