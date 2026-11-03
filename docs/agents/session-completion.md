@@ -53,6 +53,31 @@ Every change request must:
 If a project change request has no issue link, create a redacted issue in that
 project's tracker and update the change request before merging.
 
+## 5a. Run the paired review loop
+
+This loop pairs an implementation session and a review session, as defined in
+[Agent Context](../../CONTEXT.md#agent-context).
+
+1. After opening a change request, the implementation session offers the user a
+   paired review session and starts it only on the user's yes. If the user
+   declines, the review gate in [section 3](#3-verify-and-review) still
+   applies, and the completion report notes that the paired review was declined.
+2. The review session reviews the change request against its originating issue
+   and the [two-axis review standards](contributing.md). It sends its findings to
+   the originating implementation session without asking the user, and states
+   when none remain.
+3. The implementation session fixes or explicitly accepts each finding. After
+   each push, it requests another review from the same review session and sends
+   the accepted findings with its reasons, so the review session treats them as
+   resolved.
+4. The loop ends when the review session reports no unresolved findings. Record
+   accepted findings in the change request.
+
+The review prompt names the change-request link, the originating issue, the
+standards to review against, and where to send findings. When the provider
+cannot start or message sessions, give the user that prompt and relay findings
+manually.
+
 ## 6. Merge and synchronize
 
 - Merge only change requests that are review-ready and provider-eligible.

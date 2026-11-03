@@ -355,6 +355,14 @@ _Avoid_: Permission (which describes a specific capability rather than the routi
 A session-wide operating posture that controls how the agent behaves, such as research, implementation, review, or triage.
 _Avoid_: Skill, personality
 
+**Implementation session**:
+A session that changes code or documentation and opens the change request for that work.
+_Avoid_: Author session
+
+**Review session**:
+A session paired with one implementation session that reviews its change request and sends findings back to it until none remain unresolved. It is a separate session, not the review mode of the implementation session.
+_Avoid_: Reviewer agent, code-review run
+
 **Skill**:
 A bounded procedure for performing a specific task within the active policy, workflow, and mode.
 _Avoid_: Rule, mode
