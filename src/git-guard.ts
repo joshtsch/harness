@@ -32,7 +32,7 @@ export function tokenizeCommand(command: string, keepRedirects = false): Token[]
       index = stop;
     } else if (char === "\\" && index + 1 < command.length) {
       word = (word ?? "") + command[++index];
-    } else if (command.startsWith("<<", index)) {
+    } else if (command.startsWith("<<", index) && command[index + 2] !== "<") {
       flush();
       const heredoc = /^<<-?\s*(['"]?)([A-Za-z0-9_]+)\1([^\n]*)\n?/.exec(command.slice(index));
       if (!heredoc) { index++; continue; }
@@ -48,7 +48,7 @@ export function tokenizeCommand(command: string, keepRedirects = false): Token[]
       flush();
       while (/[<>&]/.test(command[index + 1] ?? "")) index++;
       if (/\d/.test(command[index + 1] ?? "") && command[index] === "&") index++;
-      else if (keepRedirects) tokens.push(redirect);
+      else if (keepRedirects && char === ">") tokens.push(redirect);
       else skipNext = true;
     } else if (/[;&|()\n]/.test(char)) {
       flush();

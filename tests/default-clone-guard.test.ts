@@ -9,6 +9,7 @@ describe("default-clone guard", () => {
     expect(defaultCloneProject("/h/projects/railbird/README.md", projects, names)).toBe("railbird");
     expect(defaultCloneProject("/h/projects/railbird", projects, names)).toBe("railbird");
     expect(defaultCloneProject("/h/projects/skills/a/b.ts", projects, names)).toBe("skills");
+    expect(defaultCloneProject("/H/Projects/Railbird/new.ts", projects, names)).toBe("railbird");
   });
 
   it("allows external worktrees, unconfigured directories, and the harness", () => {
@@ -24,6 +25,10 @@ describe("default-clone guard", () => {
     expect(bashWriteTargets("cd railbird && cat <<'EOF' >> a.txt\nbody > b\nEOF", "/h/projects")).toEqual(["/h/projects/railbird/a.txt"]);
     expect(bashWriteTargets("ls 2>/dev/null | tee -a out.log 2>&1", "/w")).toEqual(["/w/out.log"]);
     expect(bashWriteTargets("git status && grep '>' a.ts", "/w")).toEqual([]);
+    expect(bashWriteTargets("sort < in.txt > out.txt", "/w")).toEqual(["/w/out.txt"]);
+    expect(bashWriteTargets("cd ~/h/projects/railbird && echo x > $HOME/a", "/w", "/u")).toEqual(["/u/a"]);
+    expect(bashWriteTargets("cd ~/r && echo x > b", "/w", "/u")).toEqual(["/u/r/b"]);
+    expect(bashWriteTargets("grep x <<<\"$v\"; echo > c", "/w")).toEqual(["/w/c"]);
   });
 
   it("reads the target of each file tool", () => {
