@@ -23,6 +23,15 @@ documentation, markdown, sensitive-content, prerequisite, and issue-tracker
 checks where available. Then run the required two-axis review against the
 current target `main`.
 
+### UI stories
+
+When a project has Storybook (a `storybook` script or `@storybook/*` dependency
+in `package.json`, or a `.storybook/` folder), a change that adds or changes a UI
+element adds or updates stories that cover it, including each meaningful state:
+empty, loading, error, and every variant or phase it renders differently in.
+Implementation and review sessions both ask: stories added or updated for every
+UI element touched?
+
 Do not merge while actionable review findings remain. Record accepted findings
 and user approval when an exception is necessary.
 
@@ -63,7 +72,8 @@ This loop pairs an implementation session and a review session, as defined in
    declines, the review gate in [section 3](#3-verify-and-review) still
    applies, and the completion report notes that the paired review was declined.
 2. The review session reviews the change request against its originating issue
-   and the [two-axis review standards](contributing.md). It sends its findings to
+   and the [two-axis review standards](contributing.md), including the
+   [UI stories](#ui-stories) check. It sends its findings to
    the originating implementation session without asking the user, and states
    when none remain.
 3. The implementation session fixes or explicitly accepts each finding. After
