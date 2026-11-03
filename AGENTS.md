@@ -5,7 +5,7 @@ This harness improves its own workflows and coordinates work across independent 
 ## Core boundaries
 
 - Protect secrets, credentials, raw MCP output, and PII. Follow [Secrets and PII safety](docs/agents/data-safety.md).
-- Keep child repositories' remotes, branches, and histories independent. Work in harness-managed worktrees outside the harness tree; preserve main clones and unsafe checkouts. See [Architecture and boundaries](docs/agents/architecture.md) and [Session lifecycle](docs/agents/session-lifecycle.md).
+- Keep child repositories' remotes, branches, and histories independent. Work in harness-managed worktrees outside the harness tree; preserve main clones and unsafe checkouts. Claude Code hooks block file writes in default clones. See [Architecture and boundaries](docs/agents/architecture.md) and [Session lifecycle](docs/agents/session-lifecycle.md).
 - Make harness changes on a feature branch. Follow the [harness contribution workflow](docs/agents/contributing.md) and complete its review gate before opening a change request.
 - When task ownership is unclear, use [project discovery](harness-skills/project-discovery/SKILL.md). Classify repository scope before provisioning or writing, and register durable projects before repository work. Follow [Repository intake](docs/agents/repository-intake.md).
 - Treat `projects.yml` as public configuration and ignored `projects.local.yml` as its installation-specific overlay. Validate the merged configuration; never commit the local file. See [Project configuration](docs/agents/project-configuration.md).

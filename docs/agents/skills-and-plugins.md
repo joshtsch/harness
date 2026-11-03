@@ -165,7 +165,10 @@ output inside the target worktree and out of tracked files. See
 ## Claude Code settings
 
 Tracked `.claude/settings.json` applies to Claude Code sessions started in the
-harness. Personal overrides belong in ignored `.claude/settings.local.json`.
+harness. Sessions started in `projects/` load the force-tracked
+`projects/.claude/settings.json` instead, which registers the same hooks through
+`$CLAUDE_PROJECT_DIR/../scripts/`. Keep the hook lists in both files in step.
+Personal overrides belong in ignored `.claude/settings.local.json`.
 
 - **Deny rules** block Claude's file tools from reading or editing local
   environment files (`.env`, `.env.local`, `.env.*.local`, `.env.production`)
@@ -188,3 +191,11 @@ harness. Personal overrides belong in ignored `.claude/settings.local.json`.
   the commit. The hook applies only to Claude Code; Codex and Gemini sessions
   rely on the written rules. Pushes are not guarded; branch protection covers
   `main`.
+- **Default-clone guard** is a `PreToolUse` hook on Edit, Write, NotebookEdit,
+  and Bash (`scripts/claude-hooks/default-clone-guard.mjs`). It blocks writes
+  inside `projects/<project>/` of the main harness checkout for every project in
+  the merged configuration and points the agent to `pnpm worktree`. Worktrees
+  under the external worktree root stay writable. For Bash it checks only
+  redirection and `tee` targets, after earlier `cd <path>` commands; other
+  programs that write files are not detected. Like the commit guard, it blocks
+  the call when it cannot run.

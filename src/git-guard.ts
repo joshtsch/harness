@@ -6,12 +6,14 @@ export interface CommitInvocation {
   stagesChanges: boolean;
 }
 
-const separator = Symbol("separator");
-type Token = string | typeof separator;
+export const separator = Symbol("separator");
+// Precedes a redirection target when tokenizeCommand keeps redirections.
+export const redirect = Symbol("redirect");
+type Token = string | typeof separator | typeof redirect;
 
 // Splits a shell command into words and command separators, honoring quotes and
-// skipping redirections and heredoc bodies. Not a full shell parser.
-export function tokenizeCommand(command: string): Token[] {
+// skipping heredoc bodies and (unless keepRedirects) redirections. Not a full shell parser.
+export function tokenizeCommand(command: string, keepRedirects = false): Token[] {
   const tokens: Token[] = [];
   let word: string | undefined;
   let skipNext = false;
@@ -32,8 +34,10 @@ export function tokenizeCommand(command: string): Token[] {
       word = (word ?? "") + command[++index];
     } else if (command.startsWith("<<", index)) {
       flush();
-      const heredoc = /^<<-?\s*(['"]?)([A-Za-z0-9_]+)\1[^\n]*\n?/.exec(command.slice(index));
+      const heredoc = /^<<-?\s*(['"]?)([A-Za-z0-9_]+)\1([^\n]*)\n?/.exec(command.slice(index));
       if (!heredoc) { index++; continue; }
+      // The rest of the heredoc's first line, such as `> file` or `| cmd`, still belongs to the command.
+      tokens.push(...tokenizeCommand(heredoc[3]!, keepRedirects));
       const bodyStart = index + heredoc[0].length;
       const lines = command.slice(bodyStart).split("\n");
       const close = lines.findIndex((line) => line.trim() === heredoc[2]);
@@ -44,6 +48,7 @@ export function tokenizeCommand(command: string): Token[] {
       flush();
       while (/[<>&]/.test(command[index + 1] ?? "")) index++;
       if (/\d/.test(command[index + 1] ?? "") && command[index] === "&") index++;
+      else if (keepRedirects) tokens.push(redirect);
       else skipNext = true;
     } else if (/[;&|()\n]/.test(char)) {
       flush();
@@ -93,7 +98,7 @@ export function parseCommitInvocation(command: string, cwd: string): CommitInvoc
   const segments: string[][] = [[]];
   for (const token of tokenizeCommand(command)) {
     if (token === separator) segments.push([]);
-    else segments.at(-1)!.push(token);
+    else if (typeof token === "string") segments.at(-1)!.push(token);
   }
   let directory = cwd;
   let staged = false;
