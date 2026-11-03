@@ -360,7 +360,7 @@ A session that changes code or documentation and opens the change request for th
 _Avoid_: Author session
 
 **Review session**:
-A session paired with one implementation session that reviews its change request and sends findings back to it until none remain unresolved.
+A session paired with one implementation session that reviews its change request and sends findings back to it until none remain unresolved. It is a separate session, not the review mode of the implementation session.
 _Avoid_: Reviewer agent, code-review run
 
 **Skill**:

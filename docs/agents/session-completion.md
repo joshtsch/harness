@@ -55,22 +55,27 @@ project's tracker and update the change request before merging.
 
 ## 5a. Run the paired review loop
 
-A session that opens a change request is an implementation session; a session
-that reviews one is a review session.
+This loop pairs an [implementation session and a review session](../../CONTEXT.md#implementation-session).
 
 1. After opening a change request, the implementation session offers the user a
-   paired review session and starts it only on the user's yes.
+   paired review session and starts it only on the user's yes. If the user
+   declines, the review gate in [section 3](#3-verify-and-review) still applies, and the completion report
+   notes that the paired review was declined.
 2. The review session reviews the change request against its originating issue
-   and the documented standards. It sends its findings to the originating
-   implementation session without asking the user, and states when none remain.
-3. The implementation session fixes or explicitly accepts each finding, pushes
-   the fixes, and requests another review from the same review session while
-   unresolved findings remain.
+   and the [two-axis review standards](contributing.md). It sends its findings to
+   the originating implementation session without asking the user, and states
+   when none remain.
+3. The implementation session fixes or explicitly accepts each finding. After
+   each push, it requests another review from the same review session and sends
+   the accepted findings with its reasons, so the review session treats them as
+   resolved.
 4. The loop ends when the review session reports no unresolved findings. Record
    accepted findings in the change request.
 
-When the provider cannot start or message sessions, give the user the review
-prompt and relay findings manually.
+The review prompt names the change-request link, the originating issue, the
+standards to review against, and where to send findings. When the provider
+cannot start or message sessions, give the user that prompt and relay findings
+manually.
 
 ## 6. Merge and synchronize
 
