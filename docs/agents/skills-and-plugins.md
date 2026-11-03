@@ -175,27 +175,16 @@ Personal overrides belong in ignored `.claude/settings.local.json`.
   and from reading `.secure-documents/`. `.env.example` stays editable. The rules
   do not cover shell commands or reads through the resolved target of the
   `.secure-documents` symlink; data-safety rules still apply to both.
-- **Commit guard** is a `PreToolUse` hook on Bash
-  (`scripts/claude-hooks/git-guard.mjs`). Commands without `git commit` exit
-  immediately. For a commit, `scripts/git-guard.ts` tokenizes the command,
-  honoring quotes, redirections, and heredocs, and finds the target repository
-  from the hook's working directory, earlier `cd <path>` commands, and `git -C`. It
-  blocks the call when the branch is `main` or `master`, when the staged paths
-  include `projects.local.yml` or an environment file other than `.env.example`,
-  or when the sensitive-content scan flags the staged diff. It also refuses
-  commits that include content outside the index (`git add … && git commit`,
-  `-a`, `-i`, `-o`, `--pathspec-from-file`, or paths) so the staged diff it
-  checks is the one committed. Stage in a separate command first. The guard
-  skips paths that are not Git repositories and leaves those errors to Git. If
-  the guard itself cannot run, for example before `pnpm install`, the hook blocks
-  the commit. The hook applies only to Claude Code; Codex and Gemini sessions
-  rely on the written rules. Pushes are not guarded; branch protection covers
-  `main`.
-- **Default-clone guard** is a `PreToolUse` hook on Edit, Write, NotebookEdit,
-  and Bash (`scripts/claude-hooks/default-clone-guard.mjs`). It blocks writes
-  inside `projects/<project>/` of the main harness checkout for every project in
-  the merged configuration and points the agent to `pnpm worktree`. Worktrees
-  under the external worktree root stay writable. For Bash it checks only
-  redirection and `tee` targets, after earlier `cd <path>` commands; other
-  programs that write files are not detected. Like the commit guard, it blocks
-  the call when it cannot run.
+- **Commit guard** (`scripts/claude-hooks/git-guard.mjs`, Bash) blocks commits
+  on `main` or `master`, commits of `projects.local.yml` or environment files
+  other than `.env.example`, and staged diffs the sensitive-content scan flags.
+  Stage in a separate command, then commit without paths or `-a`/`-i`/`-o`.
+  Pushes are not guarded; branch protection covers `main`.
+- **Default-clone guard** (`scripts/claude-hooks/default-clone-guard.mjs`, Edit,
+  Write, NotebookEdit, and Bash) blocks writes inside `projects/<project>/` for
+  configured projects and points to `pnpm worktree`. For Bash it sees only
+  redirection and `tee` targets.
+
+Both hooks block the call when they cannot run, for example before
+`pnpm install`. They apply only to Claude Code; Codex and Gemini sessions rely
+on the written rules.
