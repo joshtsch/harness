@@ -1,7 +1,9 @@
 name: PR issue link
 # Separate from Harness quality so body edits rerun only this check.
+# pull_request_target runs the base branch's copy, so a PR cannot rewrite the check that gates it.
+# Never check out or run the PR head here.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, reopened, synchronize]
 permissions:
   contents: read

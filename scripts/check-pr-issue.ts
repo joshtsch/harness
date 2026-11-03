@@ -11,9 +11,12 @@ const repository = process.env.GITHUB_REPOSITORY ?? "";
 const issueNumber = harnessBranchIssue(branch);
 let issueState: string | undefined;
 if (typeof issueNumber === "number") {
-  // A missing issue or pull request number fails the gh call or returns a non-issue; both leave the state unset.
-  const view = await promisify(execFile)("gh", ["issue", "view", String(issueNumber), "--repo", repository, "--json", "state,url"]).catch(() => undefined);
+  const view = await promisify(execFile)("gh", ["issue", "view", String(issueNumber), "--repo", repository, "--json", "state,url"]).catch((error: { stderr?: string }) => {
+    console.error(`::error::issue lookup for #${issueNumber} failed: ${error.stderr?.trim() || String(error)}`);
+    return undefined;
+  });
   const issue = view ? JSON.parse(view.stdout) as { state?: string; url?: string } : undefined;
+  // gh resolves pull request numbers too; only an issue URL counts.
   if (issue?.url?.includes("/issues/")) issueState = issue.state;
 }
 const violations = pullRequestIssueViolations({ branch, issueNumber, body, issueState });

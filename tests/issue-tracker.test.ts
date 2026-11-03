@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { issueStartViolations, pullRequestIssueViolations, resolveIssue } from "../src/issue-tracker.js";
+import { issueStartViolation, pullRequestIssueViolations, resolveIssue } from "../src/issue-tracker.js";
 
 describe("resolveIssue", () => {
   it("resolves a GitHub issue without storing its body", async () => {
@@ -35,22 +35,24 @@ describe("resolveIssue", () => {
     const run = vi.fn();
     await expect(resolveIssue({ type: "jira" }, "4", run)).rejects.toThrow("unsupported issue tracker type");
     await expect(resolveIssue({ type: "github" }, "4", run)).rejects.toThrow("repository is required");
+    await expect(resolveIssue({ type: "github", repository: "org/repo" }, "ENG-4", run)).rejects.toThrow("must be a GitHub issue number");
     expect(run).not.toHaveBeenCalled();
   });
 
   it("starts work only from an open, triaged deliverable issue", () => {
     const ready = { key: "7", state: "OPEN", labels: ["enhancement", "ready-for-human"] };
-    expect(issueStartViolations(ready)).toEqual([]);
-    expect(issueStartViolations({ ...ready, state: "CLOSED" })).toEqual(["issue 7 is closed; start from an open issue"]);
-    expect(issueStartViolations({ ...ready, labels: ["epic", "ready-for-planning"] })[0]).toContain("planning epic");
-    expect(issueStartViolations({ ...ready, labels: ["needs-triage"] })[0]).toContain("is needs-triage");
-    expect(issueStartViolations({ ...ready, labels: ["enhancement"] })[0]).toContain("no ready-for-agent or ready-for-human label");
+    expect(issueStartViolation(ready)).toBeUndefined();
+    expect(issueStartViolation({ ...ready, state: "CLOSED" })).toBe("issue 7 is closed; start from an open issue");
+    expect(issueStartViolation({ ...ready, labels: ["epic", "ready-for-planning"] })).toContain("planning epic");
+    expect(issueStartViolation({ ...ready, labels: ["needs-triage"] })).toContain("is needs-triage");
+    expect(issueStartViolation({ ...ready, labels: ["enhancement"] })).toContain("no ready-for-agent or ready-for-human label");
   });
 
   it("checks a pull request's branch, issue, and body", () => {
     const pr = { branch: "claude/7-x", issueNumber: 7, body: "Closes #7.", issueState: "OPEN" } as const;
     expect(pullRequestIssueViolations(pr)).toEqual([]);
     expect(pullRequestIssueViolations({ ...pr, body: "See https://github.com/o/r/issues/7" })).toEqual([]);
+    expect(pullRequestIssueViolations({ ...pr, body: "Closes joshtsch/harness#7" })).toEqual([]);
     expect(pullRequestIssueViolations({ ...pr, body: "Closes #70 and a#7" })).toEqual(["pull request body must reference #7"]);
     expect(pullRequestIssueViolations({ ...pr, issueState: "CLOSED" })).toEqual(["issue #7 is not an open issue"]);
     expect(pullRequestIssueViolations({ ...pr, issueState: undefined })).toEqual(["issue #7 is not an open issue"]);

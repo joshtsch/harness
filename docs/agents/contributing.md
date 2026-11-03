@@ -28,7 +28,7 @@ Requests to pick up, work on, or implement a backlog issue are end-to-end develo
 | --- | --- | --- |
 | Harness commits run on `<claude\|codex>/<issue-number>-<slug>` or `<claude\|codex>/provisional-<slug>` | Claude Code commit guard (`src/git-guard.ts`) | Harness repository only; child repositories keep their own conventions |
 | The issue exists, is open, has `ready-for-agent` or `ready-for-human`, and is neither `epic`, `ready-for-planning`, nor `needs-triage` | `resolveIssue` in `src/issue-tracker.ts`, called by `pnpm setup:session` and `pnpm worktree` | Projects whose `issue_tracker.type` is `github`; tracker failures fail closed |
-| The PR head branch matches `<claude\|codex>/<issue-number>-<slug>`, that number is an open issue, and the PR body references it | `PR issue link` workflow (`.github/workflows/pr-issue.yml`, `scripts/check-pr-issue.ts`) | Every harness pull request, from any provider |
+| The PR head branch matches `<claude\|codex>/<issue-number>-<slug>`, that number is an open issue, and the PR body references it | `PR issue link` workflow (`.github/workflows/pr-issue.yml`, `scripts/check-pr-issue.ts`) | Every harness pull request, from any provider; it runs the base branch's copy of the check and blocks merging only once branch protection requires it |
 
 A provisional branch passes the commit guard but always fails `PR issue link`,
 so it cannot look review-ready. `pnpm worktree --provisional` skips the tracker
