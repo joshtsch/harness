@@ -24,7 +24,8 @@ Typical deliverable flow: new issue -> `needs-triage` -> `ready-for-agent` or
 `ready-for-human`. Epic flow: new issue -> `needs-triage` -> `epic` ->
 add at least one child issue -> `ready-for-planning`. An epic cannot be
 `ready-for-agent` or `ready-for-human`; start implementation sessions from its
-deliverable issues.
+deliverable issues; session and worktree setup
+[enforce](contributing.md#enforced-issue-and-branch-rules) this.
 `ready-for-planning` is valid only on epics. Keep `needs-triage` for unreviewed
 or ambiguous issues; it cannot coexist with any readiness label.
 

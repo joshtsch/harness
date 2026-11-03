@@ -25,6 +25,7 @@ interface WorktreeOptions {
   branch?: string;
   base?: string;
   refresh?: boolean;
+  provisional?: boolean;
   onRefresh?: () => Promise<void>;
   run: CommandRunner;
   stat?: (path: string) => Promise<unknown>;
@@ -100,7 +101,7 @@ export async function createProjectWorktree(project: WorktreeProject, options: W
   const name = worktreeName(options.issueKey, options.ticketTitle, options.attempt);
   const directory = await resolveWorktreeRoot(options.harnessRoot, options.worktreesDirectory);
   const path = await resolveWorktreeRoot(options.harnessRoot, join(directory, project.name, name));
-  const branch = options.branch ?? name;
+  const branch = options.branch ?? (options.provisional ? `provisional-${name}` : name);
   const baseBranch = options.base?.replace(/^origin\//, "") ?? project.defaultBranch;
   for (const value of [branch, baseBranch]) {
     const valid = await options.run("git", ["check-ref-format", "--branch", value]);

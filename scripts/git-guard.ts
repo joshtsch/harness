@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 // Checks a Claude Code Bash tool call before it runs `git commit`. Exit 2 blocks the call.
 import { execFile } from "node:child_process";
+import { resolve } from "node:path";
 import { promisify } from "node:util";
 import { commitGuardViolations, parseCommitInvocation } from "../src/git-guard.js";
 
@@ -18,10 +19,13 @@ const git = async (...args: string[]): Promise<string | undefined> => {
     return undefined;
   }
 };
-const [branch, names, diff] = await Promise.all([
+const harnessRoot = resolve(import.meta.dirname, "..");
+const [branch, names, diff, commonDirectory, harnessCommonDirectory] = await Promise.all([
   git("symbolic-ref", "--short", "HEAD"),
   git("diff", "--cached", "--name-only", "-z"),
   git("diff", "--cached", "--no-ext-diff", "--no-textconv", "--binary", "--unified=0"),
+  git("rev-parse", "--path-format=absolute", "--git-common-dir"),
+  exec("git", ["-C", harnessRoot, "rev-parse", "--path-format=absolute", "--git-common-dir"]).then(({ stdout }) => stdout, () => undefined),
 ]);
 // Not a repository or git failed: let git report its own error.
 if (names === undefined || diff === undefined) process.exit(0);
@@ -31,6 +35,8 @@ const violations = commitGuardViolations({
   stagedPaths: names.split("\0").filter(Boolean),
   stagedDiff: diff,
   stagesChanges: invocation.stagesChanges,
+  // Branch naming is a harness rule; child repositories keep their own conventions.
+  harnessRepository: commonDirectory !== undefined && commonDirectory === harnessCommonDirectory,
 });
 if (violations.length) {
   console.error(`Harness commit guard blocked this commit in ${invocation.directory}:`);
