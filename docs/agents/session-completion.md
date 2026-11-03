@@ -23,6 +23,9 @@ documentation, markdown, sensitive-content, prerequisite, and issue-tracker
 checks where available. Then run the required two-axis review against the
 current target `main`.
 
+Do not merge while actionable review findings remain. Record accepted findings
+and user approval when an exception is necessary.
+
 ### UI stories
 
 When a project has Storybook (a `storybook` script or `@storybook/*` dependency
@@ -31,9 +34,6 @@ element adds or updates stories that cover it, including each meaningful state:
 empty, loading, error, and every variant or phase it renders differently in.
 Implementation and review sessions both ask: stories added or updated for every
 UI element touched?
-
-Do not merge while actionable review findings remain. Record accepted findings
-and user approval when an exception is necessary.
 
 ## 4. Ingest durable knowledge into wikis
 
