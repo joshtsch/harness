@@ -43,6 +43,10 @@ _Avoid_: Project (a GitHub Project is a planning view, not a parent issue)
 A bounded issue that can be implemented and verified on its own, or tracked as an epic's sub-issue.
 _Avoid_: Story (unless naming a provider's terminology)
 
+**Slice**:
+The smallest coherent set of deliverable issues advancing one useful outcome, selected so each can be implemented and verified in parallel with the others. A slice may contain one issue when no useful compatible partner exists.
+_Avoid_: Epic (which owns the larger outcome), batch (which need not be coherent or parallel)
+
 **Initiative**:
 A goal spanning one or more epics, often tracked in a GitHub Project.
 _Avoid_: Epic (which is a parent issue for a bounded outcome)

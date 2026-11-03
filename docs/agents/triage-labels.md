@@ -37,3 +37,11 @@ Use GitHub Projects to track initiatives that span multiple epics; a Project is
 a planning view, not an epic issue. Use milestones for releases or date-based
 targets. Use `theme:<name>` labels to group work by a recurring theme
 across epics; themes do not replace parent/sub-issue relationships.
+
+For choosing what to work on next, route
+`pnpm capabilities route <provider> backlog-select` and use the
+[backlog selection skill](../../harness-skills/backlog-select/SKILL.md).
+It selects an epic and a parallel slice using live priority, board ranking, and
+readiness evidence. Readiness labels establish eligibility; they do not establish
+priority. A selection request returns a recommendation; an implementation request
+continues through the existing contribution or project-session workflow.

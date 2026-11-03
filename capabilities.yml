@@ -1,5 +1,6 @@
 version: 1
 capabilities:
+  backlog-select: { intent: select an epic and a parallel backlog slice, inputs: [current project, optional project, optional epic, issue and board evidence], output: ranked epic and coherent eligible slice or a blocking question, authority: suggest, verification: cite priority and board rank and establish readiness cohesion and parallel feasibility }
   agent-system-audit: { intent: audit agent setup or a session, inputs: [session evidence], output: review candidates, authority: suggest, verification: evidence linked to each candidate }
   codebase-architecture: { intent: find deepening opportunities in a codebase, inputs: [repository, domain context, recent change history], output: ranked architecture candidates and HTML report, authority: suggest, verification: evidence linked to each candidate }
   codebase-design: { intent: design deep modules and interfaces, inputs: [module, interface, design constraints], output: interface alternatives and design rationale, authority: suggest, verification: compare alternatives against the stated constraints }

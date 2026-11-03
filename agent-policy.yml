@@ -1,6 +1,7 @@
 version: 1
 providers: [codex, gemini, claude]
 skills:
+  backlog-select: { capability: backlog-select, state: canonical, codex: supported, gemini: supported, claude: supported }
   agent-system-audit: { capability: agent-system-audit, state: canonical, codex: supported, gemini: supported, claude: supported }
   codebase-design: { capability: codebase-design, state: canonical, codex: supported, gemini: supported, claude: supported }
   improve-codebase-architecture: { capability: codebase-architecture, state: canonical, requires: [codebase-design], codex: supported, gemini: supported, claude: supported }
