@@ -24,6 +24,18 @@ describe("findSensitiveContent", () => {
     expect(findings.map(({ kind }) => kind)).toEqual(["email", "phone"]);
   });
 
+  it("does not treat ISO dates as phone numbers", () => {
+    const date = (day: string) => ["2026", "03", day].join("-");
+    const findings = findSensitiveContent([
+      `+## ${date("18")}`,
+      `+version_date: "${date("18")}"`,
+      `+(${date("18")} ${date("19")})`,
+      `+call ${["416", "555", "0199"].join("-")} on ${date("18")}`,
+    ].join("\n"));
+
+    expect(findings.map(({ match }) => match)).toEqual([["416", "555", "0199"].join("-")]);
+  });
+
   it("ignores removed lines from a staged diff", () => {
     expect(findSensitiveContent(`-const token = "${["old", "secret", "value"].join("-")}";`)).toEqual([]);
   });
