@@ -109,7 +109,8 @@ scope must remain explicit:
   `ponytail@ponytail` from the Ponytail marketplace it declares, and
   `vercel@claude-plugins-official` and `supabase@claude-plugins-official` from
   the official Claude marketplace. It also enables
-  `mattpocock-skills@claude-plugins-official`, which has no Codex counterpart.
+  `mattpocock-skills@claude-plugins-official` and `impeccable@impeccable` (from
+  the Impeccable marketplace it declares), which have no Codex counterpart.
   Keep the rest aligned with `.codex/plugins.yml`; a test compares the plugin
   names. Keep `enabledPlugins` in `projects/.claude/settings.json` in step.
   `claude plugin install --scope project` installs for the folder it runs in,
@@ -153,8 +154,10 @@ pnpm capabilities check
 Track the installation in `skills-lock.json` and `.codex/skill-sources.yml`.
 The installed guidance and launcher stay ignored under `.agents/skills/`.
 Harness initialization restores them with the existing skills installer.
-Codex and Gemini use the shared project-local skill. Restart the agent session
-if the new skill does not appear.
+Codex and Gemini use the shared project-local skill. Claude Code uses the native
+`impeccable@impeccable` plugin instead; initialization stops linking the locked
+copy for Claude once that plugin is installed at user scope or for the harness
+root. Restart the agent session if the new skill does not appear.
 
 This installs the skill without Impeccable's native hooks. Automatic edit
 detectors are not enabled; follow the upstream manual detector guidance during

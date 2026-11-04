@@ -98,7 +98,7 @@ describe("Claude plugins", () => {
     const settings = JSON.parse(await readFile(resolve(repository, ".claude/settings.json"), "utf8"));
     const codex = parse(await readFile(resolve(repository, ".codex/plugins.yml"), "utf8")) as { plugins: Array<{ name: string }> };
     // Codex installs these plugins' skills from skills-lock.json instead.
-    const claudeOnly = ["mattpocock-skills"];
+    const claudeOnly = ["mattpocock-skills", "impeccable"];
     const claudeNames = requiredClaudePlugins(settings).map(({ id }) => id.split("@")[0]!).filter((name) => !claudeOnly.includes(name)).sort();
     expect(claudeNames).toEqual(codex.plugins.map(({ name }) => name).sort());
   });
