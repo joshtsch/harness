@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resolve } from "node:path";
 
 const originalArgs = process.argv;
 const originalExitCode = process.exitCode;
@@ -56,7 +57,12 @@ describe("initialization CLI", () => {
     expect(output).toContain("init: claude plugins");
     expect(output).not.toContain("init: codex plugins");
     expect((await import("../src/claude-skills.js")).syncClaudeProjectSkills).toHaveBeenCalledWith(expect.any(String), undefined, new Set(["grilling"]));
-    expect((await import("../src/claude-plugins.js")).verifyClaudePlugins).toHaveBeenCalledWith(expect.stringContaining(".claude/settings.json"));
+    const { verifyClaudePlugins } = await import("../src/claude-plugins.js");
+    const repoRoot = resolve(import.meta.dirname, "..");
+    expect(vi.mocked(verifyClaudePlugins).mock.calls).toEqual([
+      [resolve(repoRoot, ".claude/settings.json")],
+      [resolve(repoRoot, "projects/.claude/settings.json")],
+    ]);
     expect(output).toContain("init: complete");
   });
 

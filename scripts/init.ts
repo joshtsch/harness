@@ -37,7 +37,10 @@ async function run(): Promise<void> {
       if (provider === "claude") await syncClaudeProjectSkills(repoRoot, policy, await claudePluginSkillNames(resolve(repoRoot, ".claude/settings.json")));
     }],
     ...(provider === "codex" ? [["codex plugins", async () => verifyRequiredPlugins(await loadRequiredPlugins(resolve(repoRoot, ".codex/plugins.yml")))]] as Array<[string, () => Promise<void>]> : []),
-    ...(provider === "claude" ? [["claude plugins", async () => verifyClaudePlugins(resolve(repoRoot, ".claude/settings.json"))]] as Array<[string, () => Promise<void>]> : []),
+    ...(provider === "claude" ? [["claude plugins", async () => {
+      // Sessions in projects/ load projects/.claude/settings.json, so its plugins need their own install.
+      for (const settings of [".claude/settings.json", "projects/.claude/settings.json"]) await verifyClaudePlugins(resolve(repoRoot, settings));
+    }]] as Array<[string, () => Promise<void>]> : []),
   ];
 
   for (const [name, stage] of stages) {

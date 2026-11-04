@@ -12,7 +12,8 @@ describe("Claude plugins", () => {
       extraKnownMarketplaces: { ponytail: { source: { source: "github", repo: "DietrichGebert/ponytail" } } },
     });
     expect(required).toEqual([{ id: "ponytail@ponytail", marketplaceRepository: "DietrichGebert/ponytail" }, { id: "vercel@claude-plugins-official" }]);
-    expect(claudePluginInstallCommands(required)).toEqual([
+    expect(claudePluginInstallCommands(required, "/repo")).toEqual([
+      'cd "/repo"',
       "claude plugin marketplace add DietrichGebert/ponytail",
       "claude plugin install ponytail@ponytail --scope project",
       "claude plugin install vercel@claude-plugins-official --scope project",
@@ -21,10 +22,21 @@ describe("Claude plugins", () => {
   });
 
   it("reads installed plugin ids from either JSON list shape", () => {
-    expect(installedClaudePluginIds("[]")).toEqual(new Set());
-    expect(installedClaudePluginIds('[{"pluginId":"Vercel@claude-plugins-official"}]')).toEqual(new Set(["vercel@claude-plugins-official"]));
-    expect(installedClaudePluginIds('[{"pluginId":"ponytail@ponytail","enabled":false}]')).toEqual(new Set());
-    expect(installedClaudePluginIds('{"installed":[{"id":"ponytail@ponytail"}],"available":[{"pluginId":"x@y"}]}')).toEqual(new Set(["ponytail@ponytail"]));
+    expect(installedClaudePluginIds("[]", "/repo")).toEqual(new Set());
+    expect(installedClaudePluginIds('[{"pluginId":"Vercel@claude-plugins-official"}]', "/repo")).toEqual(new Set(["vercel@claude-plugins-official"]));
+    expect(installedClaudePluginIds('[{"pluginId":"ponytail@ponytail","enabled":false}]', "/repo")).toEqual(new Set());
+    expect(installedClaudePluginIds('{"installed":[{"id":"ponytail@ponytail"}],"available":[{"pluginId":"x@y"}]}', "/repo")).toEqual(new Set(["ponytail@ponytail"]));
+  });
+
+  it("counts project and local installs only for their own folder", () => {
+    const list = JSON.stringify([
+      { id: "a@m", scope: "project", projectPath: "/repo" },
+      { id: "b@m", scope: "project", projectPath: "/repo/projects" },
+      { id: "c@m", scope: "local", projectPath: "/repo/projects/" },
+      { id: "d@m", scope: "user" },
+    ]);
+    expect(installedClaudePluginIds(list, "/repo")).toEqual(new Set(["a@m", "d@m"]));
+    expect(installedClaudePluginIds(list, "/repo/projects")).toEqual(new Set(["b@m", "c@m", "d@m"]));
   });
 
   it("selects enabled plugins installed for the project root or user", () => {

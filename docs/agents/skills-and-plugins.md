@@ -112,9 +112,14 @@ scope must remain explicit:
   `mattpocock-skills@claude-plugins-official`, which has no Codex counterpart.
   Keep the rest aligned with `.codex/plugins.yml`; a test compares the plugin
   names. Keep `enabledPlugins` in `projects/.claude/settings.json` in step.
-  For Claude sessions, `pnpm init:harness` checks `claude plugin list --json` and fails with the exact
-  `claude plugin marketplace add` and `claude plugin install --scope project`
-  commands for any missing plugin. It never installs plugins itself.
+  `claude plugin install --scope project` installs for the folder it runs in,
+  and sessions in `projects/` load that folder's settings, so each settings file
+  needs its own install. For Claude sessions, `pnpm init:harness` checks
+  `claude plugin list --json` for each settings file: user-scope installs count
+  for both, project and local installs only for their own folder. It fails with
+  the exact `cd`, `claude plugin marketplace add`, and
+  `claude plugin install --scope project` commands for any missing plugin. It
+  never installs plugins itself.
 - `pnpm init:harness` restores external project skills, links tracked harness skills,
   removes links to harness skills deleted from `harness-skills/`, and verifies every skill in the combined capability inventory is installed at
   `.agents/skills/<name>/SKILL.md`.
