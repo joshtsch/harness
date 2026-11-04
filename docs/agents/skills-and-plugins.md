@@ -21,8 +21,10 @@ applies those skill exclusions. With `--provider claude`, it checks that
 `CLAUDE.md` imports `AGENTS.md`, links each canonical, Claude-supported skill from
 `.agents/skills/` into ignored `.claude/skills/`, and removes only links it
 created for skills that are no longer enabled, including skills dropped from
-policy. A skill that an enabled, installed Claude plugin bundles counts as not
-enabled, so Claude loads only the plugin's copy. It refuses to replace any other
+policy. A skill that an enabled Claude plugin bundles counts as not enabled when
+that plugin is installed at user scope or for the harness root, so Claude loads
+only the plugin's copy. Init lists plugins with `claude plugin list --json` for
+this check. It refuses to replace any other
 `.claude/skills/` entry. Add `--json` to emit provider, capability, and skill
 names as redacted selection output. After a capability is actually used, run
 `pnpm capabilities record <provider> <capability>` to append a redacted usage
@@ -108,7 +110,7 @@ scope must remain explicit:
   the official Claude marketplace. It also enables
   `mattpocock-skills@claude-plugins-official`, which has no Codex counterpart.
   Keep the rest aligned with `.codex/plugins.yml`; a test compares the plugin
-  names. For Claude sessions, `pnpm init:harness`
+  names. Keep `enabledPlugins` in `projects/.claude/settings.json` in step. For Claude sessions, `pnpm init:harness`
   checks `claude plugin list --json` and fails with the exact
   `claude plugin marketplace add` and `claude plugin install --scope project`
   commands for any missing plugin. It never installs plugins itself.

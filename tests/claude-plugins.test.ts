@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { claudePluginInstallCommands, claudePluginSkills, installedClaudePluginIds, requiredClaudePlugins } from "../src/claude-plugins.js";
+import { claudePluginInstallCommands, claudePluginSkills, enabledClaudePluginPaths, installedClaudePluginIds, requiredClaudePlugins } from "../src/claude-plugins.js";
 
 describe("Claude plugins", () => {
   it("requires enabled plugins and records their non-official marketplaces", () => {
@@ -25,6 +25,19 @@ describe("Claude plugins", () => {
     expect(installedClaudePluginIds('[{"pluginId":"Vercel@claude-plugins-official"}]')).toEqual(new Set(["vercel@claude-plugins-official"]));
     expect(installedClaudePluginIds('[{"pluginId":"ponytail@ponytail","enabled":false}]')).toEqual(new Set());
     expect(installedClaudePluginIds('{"installed":[{"id":"ponytail@ponytail"}],"available":[{"pluginId":"x@y"}]}')).toEqual(new Set(["ponytail@ponytail"]));
+  });
+
+  it("selects enabled plugins installed for the project root or user", () => {
+    const settings = { enabledPlugins: { "a@m": true, "b@m": true, "c@m": true, "d@m": false } };
+    const list = JSON.stringify([
+      { id: "a@m", scope: "project", projectPath: "/repo", installPath: "/cache/a" },
+      { id: "b@m", scope: "project", projectPath: "/repo/projects", installPath: "/cache/b" },
+      { id: "c@m", scope: "user", installPath: "/cache/c" },
+      { id: "d@m", scope: "user", installPath: "/cache/d" },
+      { id: "e@m", scope: "user", installPath: "/cache/e" },
+      { id: "a@m", scope: "local", projectPath: "/repo", enabled: false, installPath: "/cache/a-off" },
+    ]);
+    expect(enabledClaudePluginPaths(settings, list, "/repo")).toEqual(["/cache/a", "/cache/c"]);
   });
 
   it("lists skills from the default directory and manifest paths", async () => {

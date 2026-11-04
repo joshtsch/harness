@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { access, readFile, readdir } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -24,13 +24,20 @@ export function requiredClaudePlugins(settings: ClaudeSettings): ClaudePlugin[] 
   });
 }
 
-function installedClaudePlugins(listJson: string): Array<{ id: string; installPath?: string }> {
+interface InstalledClaudePlugin {
+  id: string;
+  installPath?: unknown;
+  scope?: unknown;
+  projectPath?: unknown;
+}
+
+function installedClaudePlugins(listJson: string): InstalledClaudePlugin[] {
   const parsed = JSON.parse(listJson) as unknown;
   const items = Array.isArray(parsed) ? parsed : (parsed as { installed?: unknown[] } | null)?.installed ?? [];
   return items.flatMap((item) => {
-    const { pluginId, id, enabled, installPath } = (item ?? {}) as { pluginId?: unknown; id?: unknown; enabled?: unknown; installPath?: unknown };
+    const { pluginId, id, enabled, installPath, scope, projectPath } = (item ?? {}) as { pluginId?: unknown; id?: unknown; enabled?: unknown } & Omit<InstalledClaudePlugin, "id">;
     const value = pluginId ?? id;
-    return typeof value === "string" && enabled !== false ? [{ id: value.toLowerCase(), ...(typeof installPath === "string" ? { installPath } : {}) }] : [];
+    return typeof value === "string" && enabled !== false ? [{ id: value.toLowerCase(), installPath, scope, projectPath }] : [];
   });
 }
 
@@ -65,10 +72,19 @@ async function claudePluginList(): Promise<string> {
   }
 }
 
+// Install paths of enabled plugins that load in projectRoot: project and local installs count only for their own directory.
+export function enabledClaudePluginPaths(settings: ClaudeSettings, listJson: string, projectRoot: string): string[] {
+  const required = new Set(requiredClaudePlugins(settings).map(({ id }) => id.toLowerCase()));
+  return installedClaudePlugins(listJson).flatMap(({ id, installPath, scope, projectPath }) =>
+    required.has(id) && typeof installPath === "string"
+      && ((scope !== "project" && scope !== "local") || (typeof projectPath === "string" && resolve(projectPath) === resolve(projectRoot)))
+      ? [installPath] : []);
+}
+
 export async function claudePluginSkillNames(settingsPath: string): Promise<Set<string>> {
-  const required = new Set(requiredClaudePlugins(JSON.parse(await readFile(settingsPath, "utf8")) as ClaudeSettings).map(({ id }) => id.toLowerCase()));
-  const installed = installedClaudePlugins(await claudePluginList()).filter((plugin) => required.has(plugin.id) && plugin.installPath);
-  return new Set((await Promise.all(installed.map((plugin) => claudePluginSkills(plugin.installPath!)))).flat());
+  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as ClaudeSettings;
+  const paths = enabledClaudePluginPaths(settings, await claudePluginList(), dirname(dirname(settingsPath)));
+  return new Set((await Promise.all(paths.map(claudePluginSkills))).flat());
 }
 
 export function claudePluginInstallCommands(missing: ClaudePlugin[]): string[] {
