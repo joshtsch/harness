@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resolve } from "node:path";
 
 const originalArgs = process.argv;
 const originalExitCode = process.exitCode;
@@ -29,7 +30,7 @@ async function runInitialization(args: string[], projects: Array<{ name: string;
   vi.doMock("../src/gemini-skills.js", () => ({ verifyGeminiProjectSkills: vi.fn() }));
   vi.doMock("../src/codex-plugins.js", () => ({ loadRequiredPlugins: vi.fn(), verifyRequiredPlugins: vi.fn() }));
   vi.doMock("../src/claude-skills.js", () => ({ syncClaudeProjectSkills: vi.fn() }));
-  vi.doMock("../src/claude-plugins.js", () => ({ claudePluginSkillNames: vi.fn().mockResolvedValue(new Set(["grilling"])), verifyClaudePlugins: vi.fn() }));
+  vi.doMock("../src/claude-plugins.js", () => ({ claudePluginSkillNames: vi.fn().mockResolvedValue(new Set(["grilling"])), verifyClaudePlugins: vi.fn().mockResolvedValue(undefined) }));
   await import("../scripts/init.js");
   await vi.waitFor(() => expect(log.mock.calls.flat().includes("init: complete") || process.exitCode === 1).toBe(true));
   return { initializeProjects, output: log.mock.calls.flat().join("\n"), errors: error.mock.calls.flat().join("\n") };
@@ -56,7 +57,12 @@ describe("initialization CLI", () => {
     expect(output).toContain("init: claude plugins");
     expect(output).not.toContain("init: codex plugins");
     expect((await import("../src/claude-skills.js")).syncClaudeProjectSkills).toHaveBeenCalledWith(expect.any(String), undefined, new Set(["grilling"]));
-    expect((await import("../src/claude-plugins.js")).verifyClaudePlugins).toHaveBeenCalledWith(expect.stringContaining(".claude/settings.json"));
+    const { verifyClaudePlugins } = await import("../src/claude-plugins.js");
+    const repoRoot = resolve(import.meta.dirname, "..");
+    expect(vi.mocked(verifyClaudePlugins).mock.calls).toEqual([
+      [resolve(repoRoot, ".claude/settings.json")],
+      [resolve(repoRoot, "projects/.claude/settings.json")],
+    ]);
     expect(output).toContain("init: complete");
   });
 

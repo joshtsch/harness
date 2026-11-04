@@ -41,8 +41,13 @@ function installedClaudePlugins(listJson: string): InstalledClaudePlugin[] {
   });
 }
 
-export function installedClaudePluginIds(listJson: string): Set<string> {
-  return new Set(installedClaudePlugins(listJson).map(({ id }) => id));
+// Project and local installs load only in the folder they were installed for.
+function loadsIn({ scope, projectPath }: InstalledClaudePlugin, projectRoot: string): boolean {
+  return (scope !== "project" && scope !== "local") || (typeof projectPath === "string" && resolve(projectPath) === resolve(projectRoot));
+}
+
+export function installedClaudePluginIds(listJson: string, projectRoot: string): Set<string> {
+  return new Set(installedClaudePlugins(listJson).filter((plugin) => loadsIn(plugin, projectRoot)).map(({ id }) => id));
 }
 
 async function hasSkill(directory: string): Promise<boolean> {
@@ -72,13 +77,10 @@ async function claudePluginList(): Promise<string> {
   }
 }
 
-// Install paths of enabled plugins that load in projectRoot: project and local installs count only for their own directory.
 export function enabledClaudePluginPaths(settings: ClaudeSettings, listJson: string, projectRoot: string): string[] {
   const required = new Set(requiredClaudePlugins(settings).map(({ id }) => id.toLowerCase()));
-  return installedClaudePlugins(listJson).flatMap(({ id, installPath, scope, projectPath }) =>
-    required.has(id) && typeof installPath === "string"
-      && ((scope !== "project" && scope !== "local") || (typeof projectPath === "string" && resolve(projectPath) === resolve(projectRoot)))
-      ? [installPath] : []);
+  return installedClaudePlugins(listJson).flatMap((plugin) =>
+    required.has(plugin.id) && typeof plugin.installPath === "string" && loadsIn(plugin, projectRoot) ? [plugin.installPath] : []);
 }
 
 export async function claudePluginSkillNames(settingsPath: string): Promise<Set<string>> {
@@ -87,18 +89,21 @@ export async function claudePluginSkillNames(settingsPath: string): Promise<Set<
   return new Set((await Promise.all(paths.map(claudePluginSkills))).flat());
 }
 
-export function claudePluginInstallCommands(missing: ClaudePlugin[]): string[] {
+export function claudePluginInstallCommands(missing: ClaudePlugin[], projectRoot: string): string[] {
   const marketplaces = [...new Set(missing.flatMap((plugin) => plugin.marketplaceRepository ? [plugin.marketplaceRepository] : []))];
   return [
+    `cd '${projectRoot.replaceAll("'", "'\\''")}'`,
     ...marketplaces.map((repository) => `claude plugin marketplace add ${repository}`),
     ...missing.map((plugin) => `claude plugin install ${plugin.id} --scope project`),
   ];
 }
 
+// Checks the plugins a settings file enables are installed for the folder that holds it.
 export async function verifyClaudePlugins(settingsPath: string): Promise<void> {
+  const projectRoot = dirname(dirname(settingsPath));
   const required = requiredClaudePlugins(JSON.parse(await readFile(settingsPath, "utf8")) as ClaudeSettings);
-  const installed = installedClaudePluginIds(await claudePluginList());
+  const installed = installedClaudePluginIds(await claudePluginList(), projectRoot);
   const missing = required.filter((plugin) => !installed.has(plugin.id.toLowerCase()));
-  for (const plugin of required) console.log(`claude plugin: ${plugin.id}: ${missing.includes(plugin) ? "missing" : "installed"}`);
-  if (missing.length) throw new Error(`missing Claude plugins; install with:\n${claudePluginInstallCommands(missing).join("\n")}`);
+  for (const plugin of required) console.log(`claude plugin: ${plugin.id}: ${missing.includes(plugin) ? "missing" : "installed"} for ${projectRoot}`);
+  if (missing.length) throw new Error(`missing Claude plugins for ${projectRoot}; install with:\n${claudePluginInstallCommands(missing, projectRoot).join("\n")}`);
 }
