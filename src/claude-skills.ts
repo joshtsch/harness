@@ -6,11 +6,12 @@ export function verifyClaudeContext(contents: string): void {
   if (!/^@AGENTS\.md\s*$/m.test(contents)) throw new Error("CLAUDE.md must import AGENTS.md with @AGENTS.md");
 }
 
-export function claudeSkillNames(policy: CapabilityPolicy): { enabled: string[]; disabled: string[] } {
+// Skills an enabled Claude plugin bundles are disabled so Claude loads only the plugin's copy.
+export function claudeSkillNames(policy: CapabilityPolicy, pluginSkills: ReadonlySet<string> = new Set()): { enabled: string[]; disabled: string[] } {
   const enabled: string[] = [];
   const disabled: string[] = [];
   for (const [name, route] of Object.entries(policy.skills)) {
-    (route.state === "canonical" && route.providers.claude !== "unavailable" ? enabled : disabled).push(name);
+    (route.state === "canonical" && route.providers.claude !== "unavailable" && !pluginSkills.has(name) ? enabled : disabled).push(name);
   }
   return { enabled: enabled.sort(), disabled: disabled.sort() };
 }
@@ -19,12 +20,12 @@ function missing(error: unknown): boolean {
   return error instanceof Error && "code" in error && (error as NodeJS.ErrnoException).code === "ENOENT";
 }
 
-export async function syncClaudeProjectSkills(root: string, policy: CapabilityPolicy): Promise<{ linked: string[]; removed: string[] }> {
+export async function syncClaudeProjectSkills(root: string, policy: CapabilityPolicy, pluginSkills: ReadonlySet<string> = new Set()): Promise<{ linked: string[]; removed: string[] }> {
   verifyClaudeContext(await readFile(resolve(root, "CLAUDE.md"), "utf8"));
   const sourceRoot = resolve(root, ".agents", "skills");
   const destinationRoot = resolve(root, ".claude", "skills");
   await mkdir(destinationRoot, { recursive: true });
-  const { enabled, disabled } = claudeSkillNames(policy);
+  const { enabled, disabled } = claudeSkillNames(policy, pluginSkills);
   const linked: string[] = [];
   const removed: string[] = [];
 

@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
+import { basename, join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -23,14 +24,51 @@ export function requiredClaudePlugins(settings: ClaudeSettings): ClaudePlugin[] 
   });
 }
 
-export function installedClaudePluginIds(listJson: string): Set<string> {
+function installedClaudePlugins(listJson: string): Array<{ id: string; installPath?: string }> {
   const parsed = JSON.parse(listJson) as unknown;
   const items = Array.isArray(parsed) ? parsed : (parsed as { installed?: unknown[] } | null)?.installed ?? [];
-  return new Set(items.flatMap((item) => {
-    const { pluginId, id, enabled } = (item ?? {}) as { pluginId?: unknown; id?: unknown; enabled?: unknown };
+  return items.flatMap((item) => {
+    const { pluginId, id, enabled, installPath } = (item ?? {}) as { pluginId?: unknown; id?: unknown; enabled?: unknown; installPath?: unknown };
     const value = pluginId ?? id;
-    return typeof value === "string" && enabled !== false ? [value.toLowerCase()] : [];
-  }));
+    return typeof value === "string" && enabled !== false ? [{ id: value.toLowerCase(), ...(typeof installPath === "string" ? { installPath } : {}) }] : [];
+  });
+}
+
+export function installedClaudePluginIds(listJson: string): Set<string> {
+  return new Set(installedClaudePlugins(listJson).map(({ id }) => id));
+}
+
+async function hasSkill(directory: string): Promise<boolean> {
+  return access(join(directory, "SKILL.md")).then(() => true, () => false);
+}
+
+async function skillNamesIn(directory: string): Promise<string[]> {
+  if (await hasSkill(directory)) return [basename(directory)];
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+  return (await Promise.all(entries.filter((entry) => entry.isDirectory())
+    .map(async (entry) => await hasSkill(join(directory, entry.name)) ? [entry.name] : []))).flat();
+}
+
+// Plugin skills come from skills/ plus any manifest "skills" paths, each a skill or a directory of skills.
+export async function claudePluginSkills(installPath: string): Promise<string[]> {
+  const manifest = JSON.parse(await readFile(join(installPath, ".claude-plugin", "plugin.json"), "utf8").catch(() => "{}")) as { skills?: unknown };
+  const paths = [manifest.skills].flat().filter((path): path is string => typeof path === "string");
+  const names = await Promise.all(["skills", ...paths].map((path) => skillNamesIn(join(installPath, path))));
+  return [...new Set(names.flat())].sort();
+}
+
+async function claudePluginList(): Promise<string> {
+  try {
+    return (await execFileAsync("claude", ["plugin", "list", "--json"], { maxBuffer: 8 * 1024 * 1024 })).stdout;
+  } catch {
+    throw new Error("Claude plugin inventory unavailable; check that claude plugin list --json runs on this host");
+  }
+}
+
+export async function claudePluginSkillNames(settingsPath: string): Promise<Set<string>> {
+  const required = new Set(requiredClaudePlugins(JSON.parse(await readFile(settingsPath, "utf8")) as ClaudeSettings).map(({ id }) => id.toLowerCase()));
+  const installed = installedClaudePlugins(await claudePluginList()).filter((plugin) => required.has(plugin.id) && plugin.installPath);
+  return new Set((await Promise.all(installed.map((plugin) => claudePluginSkills(plugin.installPath!)))).flat());
 }
 
 export function claudePluginInstallCommands(missing: ClaudePlugin[]): string[] {
@@ -43,13 +81,7 @@ export function claudePluginInstallCommands(missing: ClaudePlugin[]): string[] {
 
 export async function verifyClaudePlugins(settingsPath: string): Promise<void> {
   const required = requiredClaudePlugins(JSON.parse(await readFile(settingsPath, "utf8")) as ClaudeSettings);
-  let output: string;
-  try {
-    output = (await execFileAsync("claude", ["plugin", "list", "--json"], { maxBuffer: 8 * 1024 * 1024 })).stdout;
-  } catch {
-    throw new Error("Claude plugin inventory unavailable; check that claude plugin list --json runs on this host");
-  }
-  const installed = installedClaudePluginIds(output);
+  const installed = installedClaudePluginIds(await claudePluginList());
   const missing = required.filter((plugin) => !installed.has(plugin.id.toLowerCase()));
   for (const plugin of required) console.log(`claude plugin: ${plugin.id}: ${missing.includes(plugin) ? "missing" : "installed"}`);
   if (missing.length) throw new Error(`missing Claude plugins; install with:\n${claudePluginInstallCommands(missing).join("\n")}`);

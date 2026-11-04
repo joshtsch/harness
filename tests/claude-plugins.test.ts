@@ -1,8 +1,9 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { claudePluginInstallCommands, installedClaudePluginIds, requiredClaudePlugins } from "../src/claude-plugins.js";
+import { claudePluginInstallCommands, claudePluginSkills, installedClaudePluginIds, requiredClaudePlugins } from "../src/claude-plugins.js";
 
 describe("Claude plugins", () => {
   it("requires enabled plugins and records their non-official marketplaces", () => {
@@ -26,11 +27,28 @@ describe("Claude plugins", () => {
     expect(installedClaudePluginIds('{"installed":[{"id":"ponytail@ponytail"}],"available":[{"pluginId":"x@y"}]}')).toEqual(new Set(["ponytail@ponytail"]));
   });
 
+  it("lists skills from the default directory and manifest paths", async () => {
+    const root = await mkdtemp(join(tmpdir(), "harness-claude-plugin-"));
+    try {
+      for (const skill of ["skills/top", "skills/group/nested", "extra/one", "more/two"]) {
+        await mkdir(join(root, skill), { recursive: true });
+        await writeFile(join(root, skill, "SKILL.md"), "---\n---\n");
+      }
+      await mkdir(join(root, ".claude-plugin"));
+      await writeFile(join(root, ".claude-plugin/plugin.json"), JSON.stringify({ skills: ["./extra/one", "./more"] }));
+      expect(await claudePluginSkills(root)).toEqual(["one", "top", "two"]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("enables the same approved plugins as Codex", async () => {
     const repository = resolve(import.meta.dirname, "..");
     const settings = JSON.parse(await readFile(resolve(repository, ".claude/settings.json"), "utf8"));
     const codex = parse(await readFile(resolve(repository, ".codex/plugins.yml"), "utf8")) as { plugins: Array<{ name: string }> };
-    const claudeNames = requiredClaudePlugins(settings).map(({ id }) => id.split("@")[0]).sort();
+    // Codex installs these plugins' skills from skills-lock.json instead.
+    const claudeOnly = ["mattpocock-skills"];
+    const claudeNames = requiredClaudePlugins(settings).map(({ id }) => id.split("@")[0]!).filter((name) => !claudeOnly.includes(name)).sort();
     expect(claudeNames).toEqual(codex.plugins.map(({ name }) => name).sort());
   });
 });

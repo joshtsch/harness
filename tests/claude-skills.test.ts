@@ -37,6 +37,13 @@ describe("Claude skill discovery", () => {
     expect(claudeSkillNames(policy)).toEqual({ enabled: ["active"], disabled: ["dependency", "ignored"] });
   });
 
+  it("removes harness links for skills an enabled plugin provides", async () => {
+    const root = await fixture();
+    expect(await syncClaudeProjectSkills(root, policy)).toEqual({ linked: ["active"], removed: [] });
+    expect(await syncClaudeProjectSkills(root, policy, new Set(["active"]))).toEqual({ linked: [], removed: ["active"] });
+    await expect(lstat(join(root, ".claude/skills/active"))).rejects.toThrow();
+  });
+
   it("links enabled project skills and removes stale harness links", async () => {
     const root = await fixture();
     await mkdir(join(root, ".claude/skills"), { recursive: true });
