@@ -21,7 +21,10 @@ applies those skill exclusions. With `--provider claude`, it checks that
 `CLAUDE.md` imports `AGENTS.md`, links each canonical, Claude-supported skill from
 `.agents/skills/` into ignored `.claude/skills/`, and removes only links it
 created for skills that are no longer enabled, including skills dropped from
-policy. It refuses to replace any other
+policy. A skill that an enabled Claude plugin bundles counts as not enabled when
+that plugin is installed at user scope or for the harness root, so Claude loads
+only the plugin's copy. Init lists plugins with `claude plugin list --json` for
+this check. It refuses to replace any other
 `.claude/skills/` entry. Add `--json` to emit provider, capability, and skill
 names as redacted selection output. After a capability is actually used, run
 `pnpm capabilities record <provider> <capability>` to append a redacted usage
@@ -86,7 +89,10 @@ scope must remain explicit:
 - `mattpocock/skills` is an approved external skill source, not a native Codex
   plugin. Install selected skills project-locally with `pnpm dlx skills`; keep it
   in `.codex/skill-sources.yml`, not `.codex/plugins.yml`, and use the manifest's
-  recorded installer command.
+  recorded installer command. Claude Code uses its native
+  `mattpocock-skills@claude-plugins-official` plugin instead; initialization
+  stops linking the locked copies for Claude once that plugin is installed at
+  user scope or for the harness root.
 - During local development of a skill in another repository, use a symlink into
   `.agents/skills/` so the harness loads the working copy without copying unpushed
   changes. Keep that target outside this repository; never commit the symlink.
@@ -102,9 +108,11 @@ scope must remain explicit:
 - `.claude/settings.json` enables the same approved plugins for Claude Code:
   `ponytail@ponytail` from the Ponytail marketplace it declares, and
   `vercel@claude-plugins-official` and `supabase@claude-plugins-official` from
-  the official Claude marketplace. Keep it aligned with `.codex/plugins.yml`;
-  a test compares the plugin names. For Claude sessions, `pnpm init:harness`
-  checks `claude plugin list --json` and fails with the exact
+  the official Claude marketplace. It also enables
+  `mattpocock-skills@claude-plugins-official`, which has no Codex counterpart.
+  Keep the rest aligned with `.codex/plugins.yml`; a test compares the plugin
+  names. Keep `enabledPlugins` in `projects/.claude/settings.json` in step.
+  For Claude sessions, `pnpm init:harness` checks `claude plugin list --json` and fails with the exact
   `claude plugin marketplace add` and `claude plugin install --scope project`
   commands for any missing plugin. It never installs plugins itself.
 - `pnpm init:harness` restores external project skills, links tracked harness skills,

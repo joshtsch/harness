@@ -35,6 +35,7 @@
   "enabledPlugins": {
     "ponytail@ponytail": true,
     "vercel@claude-plugins-official": true,
-    "supabase@claude-plugins-official": true
+    "supabase@claude-plugins-official": true,
+    "mattpocock-skills@claude-plugins-official": true
   }
 }
