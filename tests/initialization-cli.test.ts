@@ -30,7 +30,7 @@ async function runInitialization(args: string[], projects: Array<{ name: string;
   vi.doMock("../src/gemini-skills.js", () => ({ verifyGeminiProjectSkills: vi.fn() }));
   vi.doMock("../src/codex-plugins.js", () => ({ loadRequiredPlugins: vi.fn(), verifyRequiredPlugins: vi.fn() }));
   vi.doMock("../src/claude-skills.js", () => ({ syncClaudeProjectSkills: vi.fn() }));
-  vi.doMock("../src/claude-plugins.js", () => ({ claudePluginSkillNames: vi.fn().mockResolvedValue(new Set(["grilling"])), verifyClaudePlugins: vi.fn() }));
+  vi.doMock("../src/claude-plugins.js", () => ({ claudePluginSkillNames: vi.fn().mockResolvedValue(new Set(["grilling"])), verifyClaudePlugins: vi.fn().mockResolvedValue(undefined) }));
   await import("../scripts/init.js");
   await vi.waitFor(() => expect(log.mock.calls.flat().includes("init: complete") || process.exitCode === 1).toBe(true));
   return { initializeProjects, output: log.mock.calls.flat().join("\n"), errors: error.mock.calls.flat().join("\n") };

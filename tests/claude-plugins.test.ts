@@ -1,9 +1,15 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import { claudePluginInstallCommands, claudePluginSkills, enabledClaudePluginPaths, installedClaudePluginIds, requiredClaudePlugins } from "../src/claude-plugins.js";
+
+afterEach(() => {
+  vi.doUnmock("node:child_process");
+  vi.restoreAllMocks();
+  vi.resetModules();
+});
 
 describe("Claude plugins", () => {
   it("requires enabled plugins and records their non-official marketplaces", () => {
@@ -13,7 +19,7 @@ describe("Claude plugins", () => {
     });
     expect(required).toEqual([{ id: "ponytail@ponytail", marketplaceRepository: "DietrichGebert/ponytail" }, { id: "vercel@claude-plugins-official" }]);
     expect(claudePluginInstallCommands(required, "/repo")).toEqual([
-      'cd "/repo"',
+      "cd '/repo'",
       "claude plugin marketplace add DietrichGebert/ponytail",
       "claude plugin install ponytail@ponytail --scope project",
       "claude plugin install vercel@claude-plugins-official --scope project",
@@ -50,6 +56,26 @@ describe("Claude plugins", () => {
       { id: "a@m", scope: "local", projectPath: "/repo", enabled: false, installPath: "/cache/a-off" },
     ]);
     expect(enabledClaudePluginPaths(settings, list, "/repo")).toEqual(["/cache/a", "/cache/c"]);
+  });
+
+  it("quotes the install folder for the shell", () => {
+    expect(claudePluginInstallCommands([{ id: "a@m" }], "/it's $HOME")[0]).toBe("cd '/it'\\''s $HOME'");
+  });
+
+  it("verifies plugins against installs for the settings file's folder", async () => {
+    const root = await mkdtemp(join(tmpdir(), "harness-claude-verify-"));
+    try {
+      await mkdir(join(root, "projects/.claude"), { recursive: true });
+      const settingsPath = join(root, "projects/.claude/settings.json");
+      await writeFile(settingsPath, JSON.stringify({ enabledPlugins: { "a@m": true } }));
+      const list = JSON.stringify([{ id: "a@m", scope: "project", projectPath: root }]);
+      vi.doMock("node:child_process", () => ({ execFile: (_command: string, _args: string[], _options: unknown, callback: (error: Error | null, result: { stdout: string; stderr: string }) => void) => callback(null, { stdout: list, stderr: "" }) }));
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      const { verifyClaudePlugins } = await import("../src/claude-plugins.js");
+      await expect(verifyClaudePlugins(settingsPath)).rejects.toThrow(`missing Claude plugins for ${join(root, "projects")}; install with:\ncd '${join(root, "projects")}'`);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("lists skills from the default directory and manifest paths", async () => {

@@ -39,7 +39,11 @@ async function run(): Promise<void> {
     ...(provider === "codex" ? [["codex plugins", async () => verifyRequiredPlugins(await loadRequiredPlugins(resolve(repoRoot, ".codex/plugins.yml")))]] as Array<[string, () => Promise<void>]> : []),
     ...(provider === "claude" ? [["claude plugins", async () => {
       // Sessions in projects/ load projects/.claude/settings.json, so its plugins need their own install.
-      for (const settings of [".claude/settings.json", "projects/.claude/settings.json"]) await verifyClaudePlugins(resolve(repoRoot, settings));
+      const failures: string[] = [];
+      for (const settings of [".claude/settings.json", "projects/.claude/settings.json"]) {
+        await verifyClaudePlugins(resolve(repoRoot, settings)).catch((error: unknown) => { failures.push(error instanceof Error ? error.message : String(error)); });
+      }
+      if (failures.length) throw new Error(failures.join("\n\n"));
     }]] as Array<[string, () => Promise<void>]> : []),
   ];
 

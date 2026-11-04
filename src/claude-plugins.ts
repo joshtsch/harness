@@ -92,7 +92,7 @@ export async function claudePluginSkillNames(settingsPath: string): Promise<Set<
 export function claudePluginInstallCommands(missing: ClaudePlugin[], projectRoot: string): string[] {
   const marketplaces = [...new Set(missing.flatMap((plugin) => plugin.marketplaceRepository ? [plugin.marketplaceRepository] : []))];
   return [
-    `cd ${JSON.stringify(projectRoot)}`,
+    `cd '${projectRoot.replaceAll("'", "'\\''")}'`,
     ...marketplaces.map((repository) => `claude plugin marketplace add ${repository}`),
     ...missing.map((plugin) => `claude plugin install ${plugin.id} --scope project`),
   ];
