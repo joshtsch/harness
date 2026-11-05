@@ -40,6 +40,8 @@ linked change requests, and current work before choosing. Validate applicable
 for the harness. Report unrelated triage failures separately; independently
 validate every proposed issue rather than treating a global failure as a pass.
 
+The harness priority scale and rank rule are in
+[triage labels](../../docs/agents/triage-labels.md#priority-and-rank).
 Find the relevant project board and planning view from project guidance,
 repository links, and issue memberships. A portfolio board may be relevant, but
 filter it to the selected project. Inspect its priority field, priority meanings,

@@ -38,6 +38,27 @@ a planning view, not an epic issue. Use milestones for releases or date-based
 targets. Use `theme:<name>` labels to group work by a recurring theme
 across epics; themes do not replace parent/sub-issue relationships.
 
+## Priority and rank
+
+The owner's Portfolio Backlog GitHub Project board is the only priority source
+for every configured project. Add each open issue to the board when it is
+created or triaged. Do not use repository `priority:` labels.
+
+| Priority | Meaning |
+| --- | --- |
+| `P0` | Urgent: blocks use, data, security or other work; do before anything else. |
+| `P1` | High value for the current goal; do next. |
+| `P2` | Normal backlog: valuable, no urgency. |
+| `P3` | Low: nice to have or speculative. |
+| `Unreviewed` | Not assessed yet. Unknown, never treated as low. |
+
+Rank within a priority is the board's manual item order: higher on the board
+ranks first. Reorder by dragging in a view with no sort, or with the
+`updateProjectV2ItemPosition` GraphQL mutation. Read rank from the API with
+`items(orderBy: {field: POSITION, direction: ASC})`; `gh project item-list`
+output order is not rank. Priority and rank are independent of readiness:
+labels decide whether an issue may be picked, the board decides which first.
+
 For choosing what to work on next, route
 `pnpm capabilities route <provider> backlog-select` and use the
 [backlog selection skill](../../harness-skills/backlog-select/SKILL.md).
