@@ -40,23 +40,24 @@ across epics; themes do not replace parent/sub-issue relationships.
 
 ## Priority and rank
 
-The owner's Portfolio Backlog GitHub Project board is the only priority source
-for every configured project. Add each open issue to the board when it is
-created or triaged. Do not use repository `priority:` labels.
+The owner's Portfolio Backlog GitHub Project board is the priority source for
+configured projects. A project adopts it by putting its open issues on the
+board and retiring repository `priority:` labels; after that, add each new issue
+to the board when it is triaged. A project with no board items has not adopted
+it yet, so its issues are not `Unreviewed`.
 
 | Priority | Meaning |
 | --- | --- |
-| `P0` | Urgent: blocks use, data, security or other work; do before anything else. |
+| `P0` | Urgent: breaks use, risks data loss or security, or blocks other work; do before anything else. |
 | `P1` | High value for the current goal; do next. |
 | `P2` | Normal backlog: valuable, no urgency. |
 | `P3` | Low: nice to have or speculative. |
-| `Unreviewed` | Not assessed yet. Unknown, never treated as low. |
+| `Unreviewed` | Priority not assessed yet; unknown, never treated as low. Separate from the `needs-triage` label, which is about readiness. |
 
 Rank within a priority is the board's manual item order: higher on the board
 ranks first. Reorder by dragging in a view with no sort, or with the
 `updateProjectV2ItemPosition` GraphQL mutation. Read rank from the API with
-`items(orderBy: {field: POSITION, direction: ASC})`; `gh project item-list`
-output order is not rank. Priority and rank are independent of readiness:
+`items(orderBy: {field: POSITION, direction: ASC})`. Priority and rank are independent of readiness:
 labels decide whether an issue may be picked, the board decides which first.
 
 For choosing what to work on next, route
