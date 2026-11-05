@@ -72,8 +72,8 @@ explicit implementation request through the normal development workflow.
 
 ## Paired review routing
 
-Right after opening or pushing to a change request, and when acting as or
-hearing from a paired review session, run
+Before opening a change request, after pushing to an open one, and when acting
+as or hearing from a paired review session, run
 `pnpm capabilities route <provider> paired-review` and read its
 [skill](../../harness-skills/paired-review/SKILL.md). Codex and Gemini are
 degraded because they cannot start or message sessions; they relay the review
