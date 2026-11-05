@@ -69,22 +69,30 @@ This loop pairs an implementation session and a review session, as defined in
 [`paired-review` skill](../../harness-skills/paired-review/SKILL.md), which
 holds the review prompt.
 
-1. After opening a change request, the implementation session offers the user a
-   paired review session and starts it only on the user's yes. If the user
+The review runs before the change request opens:
+
+1. The implementation session runs the change locally, commits it on the
+   feature branch, and then offers the user a paired review session against the
+   local branch. It starts the session only on the user's yes. If the user
    declines, the review gate in [section 3](#3-verify-and-review) still
-   applies, and the completion report notes that the paired review was declined.
-2. The review session reviews the change request on both
+   applies, the change request may open, and both the change request and the
+   completion report note that the paired review was declined.
+2. The review session reviews the branch on both
    [review axes](architecture.md): repository standards and the originating
-   issue or specification, including the [UI stories](#ui-stories) check. It
-   sends its findings to
-   the originating implementation session without asking the user, and states
-   when none remain.
+   issue or specification, including the [UI stories](#ui-stories) check. An
+   unpushed branch is reviewed from its worktree path with
+   `git diff main...HEAD`. It sends its findings to the originating
+   implementation session without asking the user, and states when none remain.
 3. The implementation session fixes or explicitly accepts each finding. After
-   each push, it requests another review from the same review session and sends
-   the accepted findings with its reasons, so the review session treats them as
-   resolved.
-4. The loop ends when the review session reports no unresolved findings. Record
-   accepted findings in the change request.
+   each fix commit, it requests another review from the same review session and
+   sends the accepted findings with its reasons, so the review session treats
+   them as resolved.
+4. When the review session reports no unresolved findings, the implementation
+   session opens the change request and records the review outcome in it: clean,
+   or the accepted findings with their reasons.
+5. After any later push to an open change request, the implementation session
+   requests another review from the same review session and repeats steps 3–4,
+   updating the recorded outcome.
 
 When the provider cannot start or message sessions, give the user the review
 prompt and relay findings manually.
