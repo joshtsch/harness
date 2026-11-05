@@ -40,10 +40,13 @@ linked change requests, and current work before choosing. Validate applicable
 for the harness. Report unrelated triage failures separately; independently
 validate every proposed issue rather than treating a global failure as a pass.
 
-Find the relevant project board and planning view from project guidance,
-repository links, and issue memberships. A portfolio board may be relevant, but
-filter it to the selected project. Inspect its priority field, priority meanings,
-rank field or saved view ordering, status, iteration/milestone, and deadlines.
+Use the Portfolio Backlog board, its priority scale and its manual-order rank
+as defined in
+[triage labels](../../docs/agents/triage-labels.md#priority-and-rank), filtered
+to the selected project. Rank is the board's manual item order, not a saved
+view's sort. Also inspect status, iteration/milestone, and deadlines. For a
+project with other guidance or no board items, find its planning view from
+project guidance, repository links, and issue memberships.
 Read all candidate pages; API limits and hidden filters must not silently define
 the candidate pool. Keep retrieval within the project's access and data scope.
 
