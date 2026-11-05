@@ -131,8 +131,11 @@ describe("worktree branches and bases with real Git", () => {
   });
 
   it("passes branch and base options through the CLI", async () => {
-    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n  quality:\n    lint:\n      command: node\n      args: [--version]\n    format:\n      command: node\n      args: [--version]\n  verification:\n    - command: node\n      args: [--eval, "process.exit(13)"]\n  workflows:\n    - command: node\n      args: [--eval, "process.exit(14)"]\nprojects:\n  example-project:\n    remote: ${join(root, "origin.git")}\n`);
-    await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/create-worktree.ts"), "--branch", "feature/existing", "--base", "feature/base", "example-project", "13", "CLI tracking"], { cwd: root, env: { ...env, HARNESS_WORKTREE_ROOT: root + "-worktrees" } });
+    const bin = join(root, "bin");
+    await mkdir(bin);
+    await writeFile(join(bin, "gh"), '#!/bin/sh\nprintf \'{"number":13,"title":"CLI tracking","state":"OPEN","labels":[{"name":"ready-for-agent"}]}\\n\'\n', { mode: 0o755 });
+    await writeFile(join(root, "projects.yml"), `defaults:\n  default_branch: main\n  setup_script: scripts/setup.sh\n  issue_tracker:\n    type: github\n    repository: example/fixture\n  quality:\n    lint:\n      command: node\n      args: [--version]\n    format:\n      command: node\n      args: [--version]\n  verification:\n    - command: node\n      args: [--eval, "process.exit(13)"]\n  workflows:\n    - command: node\n      args: [--eval, "process.exit(14)"]\nprojects:\n  example-project:\n    remote: ${join(root, "origin.git")}\n`);
+    await exec(process.execPath, ["--import", createRequire(import.meta.url).resolve("tsx"), resolve("scripts/create-worktree.ts"), "--branch", "feature/existing", "--base", "feature/base", "example-project", "13", "CLI tracking"], { cwd: root, env: { ...env, HARNESS_WORKTREE_ROOT: root + "-worktrees", PATH: `${bin}:${process.env.PATH}` } });
     expect(await readFile(join(root, "docs/.scratch/setup/13-cli-tracking/example-project-bootstrap.state.json"), "utf8")).toContain('"status":"complete"');
     expect(await readFile(join(root, "docs/.scratch/setup/feature/existing/example-project-worktree.state.json"), "utf8")).toContain('"status":"complete"');
     await expect(readFile(join(root, "docs/.scratch/setup/feature/existing/session.events.jsonl"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });

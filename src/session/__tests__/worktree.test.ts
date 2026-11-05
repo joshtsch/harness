@@ -64,6 +64,21 @@ describe("createProjectWorktree", () => {
     expect(run).not.toHaveBeenCalledWith("git", ["-C", project.path, "fetch", "--prune", "origin"]);
   });
 
+  it("prefixes provisional worktree branches", async () => {
+    const run = runnerFor({
+      [`git -C ${harnessRoot}/projects/example-project symbolic-ref --short HEAD`]: { code: 0, stdout: "main\n" },
+      [`git -C ${harnessRoot}/projects/example-project rev-parse main`]: { code: 0, stdout: "abc\n" },
+      [`git -C ${harnessRoot}/projects/example-project rev-parse origin/main`]: { code: 0, stdout: "abc\n" },
+    });
+    const result = await createProjectWorktree(project, {
+      harnessRoot, worktreesDirectory: `${harnessRoot}-worktrees`, run, provisional: true,
+      stat: vi.fn().mockRejectedValue(Object.assign(new Error("missing"), { code: "ENOENT" })),
+      mkdir: vi.fn().mockResolvedValue(undefined),
+      issueKey: "12", ticketTitle: "Outage",
+    });
+    expect(result).toMatchObject({ branch: "provisional-12-outage", name: "12-outage" });
+  });
+
   it("rejects a dirty or stale default branch before creating a worktree", async () => {
     const run = runnerFor({
       [`git -C ${harnessRoot}/projects/example-project symbolic-ref --short HEAD`]: { code: 0, stdout: "main\n" },

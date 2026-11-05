@@ -110,8 +110,8 @@ service-role key.
 Coverage checked 2 November 2026 against the existing `integrations/github` 6.13
 provider: [`github_branch_protection`](https://registry.terraform.io/providers/integrations/github/6.13.0/docs/resources/branch_protection)
 represents strict required status checks and administrator enforcement.
-`branch-protection.tf` requires `Harness quality` on `main` of the active harness
-repository. It belongs in the existing `harness` HCP workspace, alongside that
+`branch-protection.tf` requires `Harness quality` and `PR issue link` on `main` of
+the active harness repository. It belongs in the existing `harness` HCP workspace, alongside that
 repository's state. No child repository is affected.
 
 Read existing protection before planning. If a rule already exists, import it

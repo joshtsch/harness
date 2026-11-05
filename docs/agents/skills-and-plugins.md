@@ -190,10 +190,12 @@ Personal overrides belong in ignored `.claude/settings.local.json`.
   do not cover shell commands or reads through the resolved target of the
   `.secure-documents` symlink; data-safety rules still apply to both.
 - **Commit guard** (`scripts/claude-hooks/git-guard.mjs`, Bash) blocks commits
-  on `main` or `master`, commits of `projects.local.yml` or environment files
-  other than `.env.example`, and staged diffs the sensitive-content scan flags.
-  Stage in a separate command, then commit without paths or `-a`/`-i`/`-o`.
-  Pushes are not guarded; branch protection covers `main`.
+  on `main` or `master`, harness commits on branches that break the
+  [naming rule](contributing.md#enforced-issue-and-branch-rules), commits of
+  `projects.local.yml` or environment files other than `.env.example`, and
+  staged diffs the sensitive-content scan flags. Stage in a separate command,
+  then commit without paths or `-a`/`-i`/`-o`. Pushes are not guarded; branch
+  protection covers `main`.
 - **Default-clone guard** (`scripts/claude-hooks/default-clone-guard.mjs`, Edit,
   Write, NotebookEdit, and Bash) blocks writes inside `projects/<project>/` for
   configured projects and points to `pnpm worktree`. For Bash it sees only
@@ -201,4 +203,7 @@ Personal overrides belong in ignored `.claude/settings.local.json`.
 
 Both hooks block the call when they cannot run, for example before
 `pnpm install`. They apply only to Claude Code; Codex and Gemini sessions rely
-on the written rules.
+on the written rules, except that the `PR issue link` CI check reports branch
+naming and the linked issue for every provider. It blocks merges only once
+branch protection requires it; see
+[required checks](contributing.md#executable-ci-and-required-checks).

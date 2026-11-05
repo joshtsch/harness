@@ -7,6 +7,6 @@ resource "github_branch_protection" "harness_quality" {
 
   required_status_checks {
     strict   = true
-    contexts = ["Harness quality"]
+    contexts = ["Harness quality", "PR issue link"]
   }
 }
