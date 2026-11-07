@@ -96,6 +96,8 @@ async function saveProjectsLocal(
 }
 
 async function save(): Promise<void> {
+  const label = option("--label");
+  if (args.includes("--label") && (label === undefined || label.startsWith("--"))) throw new Error("--label requires a value");
   const keyMaterial = continuationKeyFromEnvironment();
   const encrypt = continuationEncryptor();
   const store = serviceStore();
@@ -125,7 +127,6 @@ async function save(): Promise<void> {
     projectConfigRevision = result.revision;
     projectConfigQueued = result.queued;
   }
-  const label = option("--label");
   const manifest = await persistSaveToKey(store, keyMaterial, key, checkpoint?.value.owner ?? null, Date.now(), artifacts, encrypt, {
     ...(label === undefined ? {} : { label }),
     retryQueue: queue,

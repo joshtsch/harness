@@ -71,7 +71,7 @@ function key(secret: Uint8Array, namespace: string, value: string): string {
 }
 
 export function assertSafeContinuationLabel(label: string): void {
-  if (!label.trim() || label.length > 80 || /[\r\n]/.test(label)) throw new Error("continuation label must be one line of 1 to 80 characters");
+  if (!label.trim() || label.length > 80 || /[\r\n\u0085\u2028\u2029]/.test(label)) throw new Error("continuation label must be one line of 1 to 80 characters");
   assertSafeContinuationArtifact(label);
 }
 

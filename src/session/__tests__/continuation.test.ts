@@ -123,7 +123,7 @@ describe("portable continuation contract", () => {
     const fresh = new MemoryStore();
     await persistSave(fresh, keyMaterial, "private issue title", null, 1000, input, encryptForTest);
     expect(fresh.manifest && "label" in fresh.manifest).toBe(false);
-    for (const label of ["", "two\nlines", "x".repeat(81), `email ${["jane.doe", "example.com"].join("@")}`]) {
+    for (const label of ["", "two\nlines", "two\u2028lines", "x".repeat(81), `email ${["jane.doe", "example.com"].join("@")}`]) {
       await expect(persistSave(fresh, keyMaterial, "private issue title", null, 3000, input, encryptForTest, { label })).rejects.toThrow();
     }
     expect(fresh.manifest?.revision).toBe(1);

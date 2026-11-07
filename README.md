@@ -251,7 +251,7 @@ Add `--label <text>` to name the session in `pnpm continuation:list`, for
 example its goal. The label is the only plaintext session field: it is stored
 unencrypted in the manifest, limited to one line of 80 characters, and rejected
 when it looks like a credential or personal information. Later saves keep the
-label unless they pass a new one.
+label unless they pass a new one; a label cannot be removed.
 
 Use `--projects-local <file>` to sync portable project metadata. Resume with
 `pnpm resume -- --session-key <key>`, list sessions with
