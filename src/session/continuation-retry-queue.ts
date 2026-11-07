@@ -199,7 +199,7 @@ export class EncryptedContinuationRetryQueue {
           content: await encryptSensitive(content.plaintext),
         };
       }));
-      const prepared = save(session, current, intent.owner, now, inputs, intent.operationId, true);
+      const prepared = save(session, current, intent.owner, now, inputs, intent.operationId, true, intent.label);
       try {
         await store.commit(current?.revision ?? null, prepared.manifest, prepared.artifacts);
         return;
@@ -233,6 +233,7 @@ function parseQueueEnvelope(source: string): QueueEnvelope {
       && typeof value.intent.operationId === "string" && typeof value.intent.keyMaterial === "string"
       && typeof value.intent.session === "string" && /^sessions\/[0-9a-f]{64}$/.test(value.intent.session)
       && (value.intent.expectedRevision === undefined || value.intent.expectedRevision === null || Number.isSafeInteger(value.intent.expectedRevision))
+      && (value.intent.label === undefined || typeof value.intent.label === "string")
       && Array.isArray(value.intent.artifacts)) {
     return value as Extract<QueueEnvelope, { kind: "save" }>;
   }

@@ -15,6 +15,7 @@ export interface ContinuationSaveIntent {
   owner: string | null;
   expectedRevision?: number | null;
   artifacts: Array<{ id: string; kind: ArtifactKind; content: ContinuationArtifactInput }>;
+  label?: string;
 }
 
 export type ContinuationArtifact = ArtifactContent & {
@@ -28,6 +29,8 @@ export interface ContinuationManifest {
   revision: number;
   state: ContinuationState;
   lease?: { owner: string; expiresAt: number };
+  // Plaintext by design: the one field readable without decrypting, so lists can tell sessions apart.
+  label?: string;
   latest: Record<string, number>;
   events: Array<{ type: "saved" | "claimed" | "taken-over" | "renewed" | "resolved" | "superseded"; at: string; actor?: string; operationId?: string }>;
 }
@@ -65,6 +68,11 @@ function key(secret: Uint8Array, namespace: string, value: string): string {
   if (secret.length < 32) throw new Error("continuation key must be at least 32 bytes");
   if (!value.trim()) throw new Error(`${namespace} identity is required`);
   return createHmac("sha256", secret).update(`${namespace}\0${value}`).digest("hex");
+}
+
+export function assertSafeContinuationLabel(label: string): void {
+  if (!label.trim() || label.length > 80 || /[\r\n]/.test(label)) throw new Error("continuation label must be one line of 1 to 80 characters");
+  assertSafeContinuationArtifact(label);
 }
 
 export function sessionKey(secret: Uint8Array, sessionId: string): string {
@@ -112,6 +120,7 @@ export function save(
   artifacts: Array<{ key: string; kind: ArtifactKind; content: ArtifactContent }>,
   operationId: string = randomUUID(),
   allowExpiredClaim = false,
+  label?: string,
 ): { manifest: ContinuationManifest; artifacts: ContinuationArtifact[] } {
   const at = timestamp(now);
   if (!operationIdPattern.test(operationId)) throw new Error("invalid continuation operation id");
@@ -127,11 +136,13 @@ export function save(
     latest[artifact] = revision;
     return { key: `${artifact}/revisions/${revision}`, kind, revision, ...content };
   });
+  const keptLabel = label ?? current?.label;
   return {
     manifest: {
       key: session,
       revision: (current?.revision ?? 0) + 1,
       state: "active",
+      ...(keptLabel ? { label: keptLabel } : {}),
       latest,
       events: [...(current?.events ?? []), { type: "saved", at, operationId, ...(current?.state === "in-progress" ? { actor: ownerDigest(owner!) } : {}) }],
     },
@@ -161,6 +172,7 @@ export async function persistSave(
     };
     isRetryable?: (error: unknown) => boolean;
     operationId?: string;
+    label?: string;
   } = {},
 ): Promise<ContinuationManifest> {
   const session = sessionKey(keyMaterial, sessionId);
@@ -181,10 +193,12 @@ export async function persistSaveToKey(
     };
     isRetryable?: (error: unknown) => boolean;
     operationId?: string;
+    label?: string;
   } = {},
 ): Promise<ContinuationManifest> {
   if (!/^sessions\/[0-9a-f]{64}$/.test(session)) throw new Error("invalid continuation session key");
   for (const artifact of artifacts) assertSafeContinuationArtifact(artifact.content.plaintext);
+  if (options.label !== undefined) assertSafeContinuationLabel(options.label);
   const operationId = options.operationId ?? randomUUID();
   const intent: ContinuationSaveIntent = {
     operationId,
@@ -193,6 +207,7 @@ export async function persistSaveToKey(
     owner,
     expectedRevision: undefined,
     artifacts,
+    ...(options.label === undefined ? {} : { label: options.label }),
   };
   let current: ContinuationManifest | null;
   try {
@@ -209,7 +224,7 @@ export async function persistSaveToKey(
     kind,
     content: await encryptSensitive(content.plaintext),
   })));
-  const prepared = save(session, current, owner, now, preparedInputs, operationId);
+  const prepared = save(session, current, owner, now, preparedInputs, operationId, false, options.label);
   const expectedRevision = current?.revision ?? null;
   try {
     await store.commit(expectedRevision, prepared.manifest, prepared.artifacts);

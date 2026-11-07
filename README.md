@@ -173,7 +173,8 @@ same sensitive-content and transcript checks as other continuation artifacts.
    [the repository infrastructure guide](infrastructure/README.md), then
    apply the checked-in [continuation migration](supabase/migrations/20261004040031_continuation_state.sql),
    [artifact revision fix](supabase/migrations/20261006222000_continuation_artifact_revision_advancement.sql),
-   and [session todos migration](supabase/migrations/20261012000000_continuation_session_todos.sql)
+   [session todos migration](supabase/migrations/20261012000000_continuation_session_todos.sql),
+   and [session label migration](supabase/migrations/20261106000000_continuation_session_label.sql)
    in order through your database deployment workflow. Terraform provisions the project;
    the migration installs the tables and RPC functions used by the CLI.
 2. Configure the five settings below through your external secret store or an
@@ -245,6 +246,12 @@ that key to resume on another configured machine or provider. A `queued` respons
 encrypted local retry intent and cannot yet be resumed. Once the backend is
 reachable, run `pnpm continuation:flush` and confirm it succeeds before
 resuming.
+
+Add `--label <text>` to name the session in `pnpm continuation:list`, for
+example its goal. The label is the only plaintext session field: it is stored
+unencrypted in the manifest, limited to one line of 80 characters, and rejected
+when it looks like a credential or personal information. Later saves keep the
+label unless they pass a new one.
 
 Use `--projects-local <file>` to sync portable project metadata. Resume with
 `pnpm resume -- --session-key <key>`, list sessions with

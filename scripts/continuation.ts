@@ -125,7 +125,9 @@ async function save(): Promise<void> {
     projectConfigRevision = result.revision;
     projectConfigQueued = result.queued;
   }
+  const label = option("--label");
   const manifest = await persistSaveToKey(store, keyMaterial, key, checkpoint?.value.owner ?? null, Date.now(), artifacts, encrypt, {
+    ...(label === undefined ? {} : { label }),
     retryQueue: queue,
     isRetryable: (error) => error instanceof ContinuationBackendUnavailableError,
   });
@@ -212,6 +214,7 @@ async function list(): Promise<void> {
   const manifests = await serviceStore().list(state);
   console.log(JSON.stringify(manifests.map((manifest) => ({
     sessionKey: manifest.key,
+    ...(manifest.label ? { label: manifest.label } : {}),
     state: manifest.state,
     revision: manifest.revision,
     artifactCount: Object.keys(manifest.latest).length,
@@ -255,7 +258,7 @@ async function flush(): Promise<void> {
 const actions: Record<string, () => Promise<void>> = { save, todos: saveTodos, audit, resume, renew: renewLease, list, close, flush, projects: projectsPull };
 try {
   const action = command ? actions[command] : undefined;
-  if (!action) throw new Error("usage: pnpm save -- --handoff <file> [--todos <json-file>] | pnpm continuation:todos -- --session-key <key> --todos <json-file> | pnpm resume | pnpm continuation:renew | pnpm continuation:list | pnpm continuation:close | pnpm continuation:flush | pnpm continuation:projects");
+  if (!action) throw new Error("usage: pnpm save -- --handoff <file> [--label <text>] [--todos <json-file>] | pnpm continuation:todos -- --session-key <key> --todos <json-file> | pnpm resume | pnpm continuation:renew | pnpm continuation:list | pnpm continuation:close | pnpm continuation:flush | pnpm continuation:projects");
   await action();
 } catch (error) {
   if (error instanceof ContinuationQueuedError) {
