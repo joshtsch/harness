@@ -132,10 +132,21 @@ export function forbiddenStagedPath(path: string): boolean {
   return name === ".env" || (name.startsWith(".env.") && name !== ".env.example");
 }
 
-export function commitGuardViolations(input: { branch: string | undefined; stagedPaths: string[]; stagedDiff: string; stagesChanges: boolean }): string[] {
+// Harness branches: `<provider>/<issue-number>-<slug>`, or `<provider>/provisional-<slug>` during a tracker outage.
+const harnessBranchPattern = /^(?:claude|codex)\/(?:(\d+)|provisional)-[a-z0-9-]+$/;
+
+// Returns the branch's issue number, "provisional", or undefined when the name breaks the convention.
+export function harnessBranchIssue(branch: string): number | "provisional" | undefined {
+  const match = harnessBranchPattern.exec(branch);
+  if (!match) return undefined;
+  return match[1] ? Number(match[1]) : "provisional";
+}
+
+export function commitGuardViolations(input: { branch: string | undefined; stagedPaths: string[]; stagedDiff: string; stagesChanges: boolean; harnessRepository?: boolean }): string[] {
   const violations: string[] = [];
   if (input.stagesChanges) violations.push("stage changes in a separate command, then commit without paths or -a/-i/-o, so the guard checks exactly what is committed");
   if (input.branch === "main" || input.branch === "master") violations.push(`commits on ${input.branch} are not allowed; create a feature branch`);
+  else if (input.harnessRepository && input.branch && harnessBranchIssue(input.branch) === undefined) violations.push(`harness branch ${input.branch} must be named <claude|codex>/<issue-number>-<slug>; rename it with git branch -m`);
   for (const path of input.stagedPaths.filter(forbiddenStagedPath)) violations.push(`${path} must never be committed; unstage it`);
   for (const finding of findSensitiveContent(input.stagedDiff)) violations.push(`likely ${finding.kind} in the staged diff; inspect it locally and remove it`);
   return [...new Set(violations)];

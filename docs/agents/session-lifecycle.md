@@ -4,7 +4,7 @@ For repository creation or adoption, complete [Repository intake](repository-int
 
 0. Run the repository-scope gate: inventory every repository the session may modify, classify each boundary, and register every durable project before opening issues or creating branches/worktrees.
 1. Validate `projects.yml` and its permitted local overlay, then resolve the selected projects.
-2. Require an explicit `--goal` and resolve the coordinating issue and purpose. Every implementation session must resolve an existing issue through the configured tracker; tracker access failures fail closed. Session setup rejects issues marked `epic` or `ready-for-planning`; use a deliverable sub-issue for implementation. Store the goal in the session manifest and adjacent generated `AGENTS.md`.
+2. Require an explicit `--goal` and resolve the coordinating issue and purpose. The issue must be an open, triaged deliverable issue; see [enforced issue rules](contributing.md#enforced-issue-and-branch-rules). Store the goal in the session manifest and adjacent generated `AGENTS.md`.
 3. Clone missing projects. At session start, inspect each participating default clone, fetch clean default checkouts with pruning, and fast-forward only when the local branch is an ancestor of its fetched origin branch. Preserve dirty, ahead, divergent, detached, and nondefault checkouts.
 4. Report every prepared clone as `updated`, `current`, or `skipped` with a reason; record those outcomes in the manifest and events. If any clone is skipped, stop before bootstrap or worktree creation. Otherwise run project bootstrap setup when needed and verify the default branch is clean and exactly matches its remote-tracking branch.
 5. Create one deterministic worktree per `{project, issue, branch}` tuple under the [external worktree root](project-configuration.md#worktree-root). Create an issue-derived branch or attach the selected existing branch. Include the issue key and normalized ticket title in bounded, filesystem-safe names. Use an explicit attempt suffix for parallel retries.
@@ -195,6 +195,11 @@ existing sessions, but all newly created worktrees must use the external root.
 For harness changes, follow the branch, verification, review, and merge-request workflow in [contributing.md](contributing.md).
 
 ## Worktree branches and bases
+
+`pnpm worktree` checks the issue the same way as session setup
+([enforced issue rules](contributing.md#enforced-issue-and-branch-rules)). During
+a tracker outage, `--provisional` skips that check and names the new branch
+`provisional-<issue>-<title>`; it cannot be combined with `--branch`.
 
 `pnpm worktree` accepts `--branch <branch>` and `--base <origin-branch>`.
 The worktree path still comes from issue identity and title. A selected existing

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { commitGuardViolations, forbiddenStagedPath, parseCommitInvocation } from "../src/git-guard.js";
+import { commitGuardViolations, forbiddenStagedPath, harnessBranchIssue, parseCommitInvocation } from "../src/git-guard.js";
 
-const clean = { branch: "claude/1-change", stagedPaths: ["src/a.ts"], stagedDiff: "+const a = 1;\n", stagesChanges: false };
+const clean = { harnessRepository: true, branch: "claude/1-change", stagedPaths: ["src/a.ts"], stagedDiff: "+const a = 1;\n", stagesChanges: false };
 
 describe("git commit guard", () => {
   it("finds the repository a command commits in", () => {
@@ -43,5 +43,14 @@ describe("git commit guard", () => {
     expect(commitGuardViolations({ ...clean, stagedPaths: [".env"] })).toEqual([".env must never be committed; unstage it"]);
     expect(commitGuardViolations({ ...clean, stagesChanges: true })[0]).toContain("separate command");
     expect(commitGuardViolations({ ...clean, stagedDiff: `+${["-----BEGIN OPENSSH", "PRIVATE KEY-----"].join(" ")}\n` })).toEqual(["likely private-key in the staged diff; inspect it locally and remove it"]);
+  });
+
+  it("requires issue-numbered provider branches in the harness repository", () => {
+    expect(harnessBranchIssue("codex/153-backlog-select")).toBe(153);
+    expect(harnessBranchIssue("claude/provisional-tracker-outage")).toBe("provisional");
+    for (const branch of ["claude/sad-agnesi-8eee2f", "codex/issue-40-skill", "feature/1-x", "claude/1-Upper", "claude/1", "pr-42"]) expect(harnessBranchIssue(branch)).toBeUndefined();
+    expect(commitGuardViolations({ ...clean, branch: "claude/sad-agnesi-8eee2f" })).toEqual(["harness branch claude/sad-agnesi-8eee2f must be named <claude|codex>/<issue-number>-<slug>; rename it with git branch -m"]);
+    expect(commitGuardViolations({ ...clean, branch: "12-child-change", harnessRepository: false })).toEqual([]);
+    expect(commitGuardViolations({ ...clean, branch: undefined })).toEqual([]);
   });
 });
