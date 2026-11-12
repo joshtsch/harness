@@ -39,6 +39,7 @@ try {
     console.log("initial scaffold published; remote enforcement remains unverified; run standards remote");
   } else {
     const result = await validateLocalStandards({ project, path, bootstrap: operation === "bootstrap" });
+    for (const warning of result.warnings) console.warn(`warning: ${warning}`);
     console.log(`${result.status}: ${result.checks} checks executed; ${result.optionalFailures} optional failures; remote enforcement unverified`);
   }
 } catch (error) {

@@ -193,6 +193,9 @@ install Storybook through the project-owned setup, and register
 rendering separable from data fetching so stories use the same code as the app.
 Every UI change follows the [UI stories](session-completion.md#ui-stories) check.
 Projects without a UI do not add Storybook. Railbird is the reference adopter.
+This applies to registered projects as well as new ones: `pnpm standards local
+<project> <path>` warns when a project has a user interface but no Storybook,
+using the detection rules in [UI stories](session-completion.md#ui-stories).
 
 ## Standards onboarding
 

@@ -28,12 +28,24 @@ and user approval when an exception is necessary.
 
 ### UI stories
 
-When a project has Storybook (a `storybook` script or `@storybook/*` dependency
-in `package.json`, or a `.storybook/` folder), a change that adds or changes a UI
-element adds or updates stories that cover it and each of its meaningful states,
-as defined in [projects with a user interface](project-configuration.md#projects-with-a-user-interface).
+A project has Storybook when any `package.json` has a `storybook` script or a
+`@storybook/*` dependency, or the repository has a `.storybook/` folder. A
+project has a user interface when any `package.json` depends on `react`,
+`react-native`, `next`, `vue` or `svelte`. `pnpm standards local` applies both
+rules and warns, as an optional failure, when a project has a user interface
+but no Storybook.
+
+When a project has Storybook, a change that adds or changes a UI element adds or
+updates stories that cover it and each of its meaningful states, as defined in
+[projects with a user interface](project-configuration.md#projects-with-a-user-interface).
 Implementation and review sessions both ask: stories added or updated for every
 UI element touched?
+
+When a project has a user interface but no Storybook, do not skip the check.
+Implementation sessions report the missing Storybook as a blocker in the
+completion report, and review sessions raise it as a standards finding. Either
+session proposes a separate issue to adopt Storybook instead of setting it up
+inside an unrelated change.
 
 ## 4. Ingest durable knowledge into wikis
 

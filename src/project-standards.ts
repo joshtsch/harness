@@ -109,7 +109,24 @@ async function requireBootstrap(options: StandardsOptions): Promise<void> {
   if (Number(commits.trim()) > 1) throw new Error("bootstrap is limited to the initial scaffold; use normal session setup");
 }
 
-export async function validateLocalStandards(options: StandardsOptions): Promise<{ status: "locally-validated"; fingerprint: string; optionalFailures: number; checks: number }> {
+// UI heuristic: a UI framework dependency in any package.json. Storybook detection matches the session-completion UI stories check.
+const uiFrameworks = ["react", "react-native", "next", "vue", "svelte"];
+export const missingStorybookWarning = "project has a user interface but no Storybook; set it up as described in projects with a user interface";
+
+async function storybookWarnings(options: StandardsOptions): Promise<string[]> {
+  const paths = (await commandOutput(options, "git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"])).split("\0").filter(Boolean);
+  let ui = false;
+  let storybook = paths.some((path) => path.startsWith(".storybook/") || path.includes("/.storybook/"));
+  for (const path of paths.filter((path) => path === "package.json" || path.endsWith("/package.json"))) {
+    const manifest = await readFile(join(options.path, path), "utf8").then(JSON.parse).catch(() => ({}));
+    const dependencies = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies, ...manifest.peerDependencies });
+    ui ||= dependencies.some((name) => uiFrameworks.includes(name));
+    storybook ||= Boolean(manifest.scripts?.storybook) || dependencies.some((name) => name.startsWith("@storybook/"));
+  }
+  return ui && !storybook ? [missingStorybookWarning] : [];
+}
+
+export async function validateLocalStandards(options: StandardsOptions): Promise<{ status: "locally-validated"; fingerprint: string; optionalFailures: number; checks: number; warnings: string[] }> {
   const commands = checks(options.project);
   if (options.bootstrap) await requireBootstrap(options);
   await readFile(join(options.path, options.project.setupScript));
@@ -125,7 +142,8 @@ export async function validateLocalStandards(options: StandardsOptions): Promise
     }
   }
   if (await snapshot(options) !== before) throw new Error("checks changed repository content; use non-mutating checks and validate again");
-  return { status: "locally-validated", fingerprint: before, optionalFailures, checks: commands.length };
+  const warnings = await storybookWarnings(options);
+  return { status: "locally-validated", fingerprint: before, optionalFailures: optionalFailures + warnings.length, checks: commands.length, warnings };
 }
 
 export async function publishBootstrap(options: StandardsOptions): Promise<void> {
