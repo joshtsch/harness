@@ -21,7 +21,8 @@ skills:
   caveman-stats: { capability: caveman-stats, state: canonical, codex: supported, gemini: degraded, claude: supported }
   paired-review: { capability: paired-review, state: canonical, codex: degraded, gemini: degraded, claude: supported }
   domain-modeling: { capability: domain-modeling, state: canonical, codex: supported, gemini: supported, claude: supported }
-  grill-with-docs: { capability: grill-with-docs, state: canonical, requires: [grilling, domain-modeling], codex: supported, gemini: degraded, claude: supported }
+  grill-with-docs: { capability: interview, state: available, requires: [grilling, domain-modeling], codex: supported, gemini: degraded, claude: supported }
+  interview: { capability: interview, state: canonical, requires: [domain-modeling], codex: supported, gemini: supported, claude: supported }
   grilling: { capability: grilling, state: canonical, codex: supported, gemini: supported, claude: supported }
   impeccable: { capability: ui-design, state: canonical, codex: supported, gemini: supported, claude: supported }
   harness-memory: { capability: harness-memory, state: canonical, requires: [knowledge-routing], codex: supported, gemini: supported, claude: supported }
@@ -41,7 +42,7 @@ skills:
 companions:
   scope-router: [project-discovery]
   harness-memory: [knowledge-routing]
-  grill-with-docs: [scope-router]
+  interview: [scope-router]
   investigate-first: [cavecrew]
   lean-build: [cavecrew, caveman-explore, ui-design]
   migration: [cavecrew]

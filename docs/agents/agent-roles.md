@@ -70,6 +70,15 @@ slice, run `pnpm capabilities route <provider> backlog-select` and read its
 and epic scope and returns an evidence-backed recommendation. Continue an
 explicit implementation request through the normal development workflow.
 
+## Interview routing
+
+Run `pnpm capabilities route <provider> interview` and read its
+[skill](../../harness-skills/interview/SKILL.md) when the user asks to be grilled,
+interviewed, or interrogated; when triaging an underspecified issue or request;
+or when work depends on two or more linked decisions only the user can make.
+When only one question is open, ask it directly. Look up facts rather than
+asking for them.
+
 ## Paired review routing
 
 Before opening a change request, after pushing to an open one, and when acting
