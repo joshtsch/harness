@@ -13,7 +13,7 @@ export interface IssueLabels {
 }
 
 export function hasGherkinAcceptanceCriteria(body: string): boolean {
-  const step = (keyword: string) => new RegExp(`^\\s*(?:[-*]\\s+)?(?:\\*\\*)?${keyword}(?!\\w)`, "im").test(body);
+  const step = (keyword: string) => new RegExp(`^\\s*(?:(?:[-*]|\\d+\\.)\\s+(?:\\[[ xX]\\]\\s+)?)?(?:\\*\\*)?${keyword}(?!\\w)`, "im").test(body);
   return step("Scenario(?: Outline)?:") && step("Given") && step("When") && step("Then");
 }
 

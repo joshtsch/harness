@@ -17,7 +17,8 @@ issues and fails when a ready issue lacks exactly one issue-type label
 issue has neither intake nor a complete ready state. It also checks that
 `ready-for-planning` is used only with `epic`, that epics are not
 marked ready for deliverable work, and that every ready epic has at least one
-child issue. The checker reads GitHub sub-issues through the API when available;
+child issue, and that every non-epic `ready-for-agent` issue has Gherkin
+acceptance criteria (a `Scenario:` with `Given`/`When`/`Then` lines). The checker reads GitHub sub-issues through the API when available;
 if GitHub returns 404, it counts issue references in task-list entries in the
 epic body instead.
 

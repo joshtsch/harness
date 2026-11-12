@@ -45,6 +45,8 @@ describe("triage labels", () => {
   it("recognizes Gherkin scenarios in fenced, bulleted, or bold form", () => {
     expect(hasGherkinAcceptanceCriteria(gherkin)).toBe(true);
     expect(hasGherkinAcceptanceCriteria("**Scenario Outline:** x\n- **Given** a\n- **When** b\n- **Then** c")).toBe(true);
+    expect(hasGherkinAcceptanceCriteria("- [ ] Scenario: x\n- [ ] Given a\n- [x] When b\n- [ ] Then c")).toBe(true);
+    expect(hasGherkinAcceptanceCriteria("Scenario: x\n1. Given a\n2. When b\n3. Then c")).toBe(true);
     expect(hasGherkinAcceptanceCriteria("Scenario: x\nGiven a\nThen c")).toBe(false);
     expect(hasGherkinAcceptanceCriteria("Given that we want it, then do it when ready")).toBe(false);
   });
