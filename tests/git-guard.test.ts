@@ -1,5 +1,8 @@
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { commitGuardViolations, forbiddenStagedPath, parseCommitInvocation, parsePublishBodies, publishGuardViolations } from "../src/git-guard.js";
+import { commitGuardViolations, forbiddenStagedPath, parseCommitInvocation, parsePublishBodies, publishBodyViolations, publishGuardViolations } from "../src/git-guard.js";
 
 const clean = { branch: "claude/1-change", stagedPaths: ["src/a.ts"], stagedDiff: "+const a = 1;\n", stagesChanges: false };
 
@@ -55,11 +58,24 @@ describe("gh publication guard", () => {
     expect(parsePublishBodies("gh pr comment 3 --body-file=-", "/repo")).toEqual([{ file: "-" }]);
     expect(parsePublishBodies("gh issue comment 5 -b 'Looks *good*'", "/repo")).toEqual([{ text: "Looks *good*" }]);
     expect(parsePublishBodies("gh pr edit 7 --body='## Summary'", "/repo")).toEqual([{ text: "## Summary" }]);
+    expect(parsePublishBodies("gh -R owner/repo issue create -b hi", "/repo")).toEqual([{ text: "hi" }]);
+    expect(parsePublishBodies("gh --repo=owner/repo pr comment 1 -F c.md", "/repo")).toEqual([{ file: "/repo/c.md" }]);
+    expect(parsePublishBodies("gh issue edit 5 --body-file ~/b.md", "/repo")).toEqual([{ file: join(homedir(), "b.md") }]);
   });
 
   it("reports markdown and sensitive-content findings with their source", () => {
     expect(publishGuardViolations("body.md", "## Summary\n\nAll good.\n")).toEqual([]);
     expect(publishGuardViolations("body.md", "```sh\nunclosed\n")[0]).toMatch(/^body\.md:\d+: /);
     expect(publishGuardViolations("the inline body", `Contact ${["someone", "example.org"].join("@")}`)).toContain("likely email in the inline body; remove it before publishing");
+  });
+
+  it("blocks bodies it cannot check and checks readable files", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "publish-guard-"));
+    const body = join(directory, "body.md");
+    await writeFile(body, "## Summary\n\nDone.\n");
+    expect(await publishBodyViolations({ file: body })).toEqual([]);
+    expect(await publishBodyViolations({ file: "-" })).toEqual(["the body comes from standard input; save it to a file and pass --body-file <path>"]);
+    expect(await publishBodyViolations({ file: join(directory, "missing.md") })).toEqual([`cannot read ${join(directory, "missing.md")}; check the --body-file path`]);
+    expect(await publishBodyViolations({ text: "plain" })).toEqual([]);
   });
 });

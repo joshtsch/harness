@@ -52,4 +52,4 @@ When a skill says to publish to the issue tracker, create a GitHub issue. When i
 
 ## Markdown publication gate
 
-Pass issue and change-request bodies to `gh` with `--body-file`. In Claude Code the [Bash guard](skills-and-plugins.md#claude-code-settings) checks them before publishing; elsewhere, and for any other external consumer, run `pnpm check:markdown -- <file>` and `pnpm check:sensitive` first. Both checks catch structure and likely secrets or PII only; review meaning and links yourself.
+Pass issue and change-request bodies to `gh` with `--body-file`. In Claude Code the [Bash guard](skills-and-plugins.md#claude-code-settings) checks them before publishing; elsewhere, and for any other external consumer, run `pnpm check:markdown -- <file>` and `pnpm check:sensitive -- <file>` first. Both checks catch structure and likely secrets or PII only; review meaning and links yourself.

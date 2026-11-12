@@ -31,3 +31,8 @@ export function findSensitiveContent(diff: string): SensitiveContentFinding[] {
   }
   return findings;
 }
+
+// Scans plain text, such as a publication body, by presenting every line as an added diff line.
+export function findSensitiveText(text: string): SensitiveContentFinding[] {
+  return findSensitiveContent(text.replace(/^/gm, "+"));
+}

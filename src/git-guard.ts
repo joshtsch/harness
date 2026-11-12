@@ -1,6 +1,8 @@
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { posix, resolve } from "node:path";
 import { markdownViolations } from "./markdown-policy.js";
-import { findSensitiveContent } from "./sensitive-content.js";
+import { findSensitiveContent, findSensitiveText } from "./sensitive-content.js";
 
 export interface CommitInvocation {
   directory: string;
@@ -93,8 +95,6 @@ function commitStages(args: string[]): boolean {
   return false;
 }
 
-// Best-effort parse of the repository a Bash command commits in. Returns
-// undefined when the command runs no `git commit`.
 // Yields each simple command's words, without leading variable assignments and
 // wrappers, with the directory it runs in after any preceding `cd`.
 function* commandSegments(command: string, cwd: string): Generator<{ words: string[]; directory: string }> {
@@ -113,6 +113,8 @@ function* commandSegments(command: string, cwd: string): Generator<{ words: stri
   }
 }
 
+// Best-effort parse of the repository a Bash command commits in. Returns
+// undefined when the command runs no `git commit`.
 export function parseCommitInvocation(command: string, cwd: string): CommitInvocation | undefined {
   let staged = false;
   for (const { words, directory } of commandSegments(command, cwd)) {
@@ -155,14 +157,19 @@ export type PublishBody = { text: string } | { file: string };
 export function parsePublishBodies(command: string, cwd: string): PublishBody[] {
   const bodies: PublishBody[] = [];
   for (const { words, directory } of commandSegments(command, cwd)) {
-    if (words[0] !== "gh" || !["issue", "pr"].includes(words[1]!) || !["create", "edit", "comment"].includes(words[2]!)) continue;
-    for (let index = 3; index < words.length; index++) {
+    if (words[0] !== "gh") continue;
+    // Skip global flags such as `-R owner/repo` before the subcommand.
+    let start = 1;
+    while (words[start]?.startsWith("-")) start += words[start] === "-R" || words[start] === "--repo" ? 2 : 1;
+    if (!["issue", "pr"].includes(words[start]!) || !["create", "edit", "comment"].includes(words[start + 1]!)) continue;
+    for (let index = start + 2; index < words.length; index++) {
       const [name, inline] = words[index]!.split(/=(.*)/s, 2) as [string, string | undefined];
       const value = inline ?? words[index + 1];
       if (value === undefined || !["--body", "-b", "--body-file", "-F"].includes(name)) continue;
       if (inline === undefined) index++;
       if (name === "--body" || name === "-b") bodies.push({ text: value });
-      else bodies.push({ file: value === "-" ? value : resolve(directory, value) });
+      // The shell expands a leading ~ before gh sees the path.
+      else bodies.push({ file: value === "-" ? value : resolve(directory, value.replace(/^~(?=\/|$)/, homedir())) });
     }
   }
   return bodies;
@@ -171,7 +178,15 @@ export function parsePublishBodies(command: string, cwd: string): PublishBody[] 
 export function publishGuardViolations(label: string, body: string): string[] {
   return [
     ...markdownViolations(body).map(({ line, message }) => `${label}:${line}: ${message}`),
-    // The scanner reads added diff lines, so present every body line as added.
-    ...findSensitiveContent(body.replace(/^/gm, "+")).map((finding) => `likely ${finding.kind} in ${label}; remove it before publishing`),
+    ...findSensitiveText(body).map((finding) => `likely ${finding.kind} in ${label}; remove it before publishing`),
   ];
+}
+
+// Checks one publication body. A body gh would read from standard input or from a
+// file the guard cannot read is blocked, so nothing is published unchecked.
+export async function publishBodyViolations(body: PublishBody): Promise<string[]> {
+  if ("text" in body) return publishGuardViolations("the inline body", body.text);
+  if (body.file === "-") return ["the body comes from standard input; save it to a file and pass --body-file <path>"];
+  const text = await readFile(body.file, "utf8").catch(() => undefined);
+  return text === undefined ? [`cannot read ${body.file}; check the --body-file path`] : publishGuardViolations(body.file, text);
 }
