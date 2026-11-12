@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { loadProjectsConfig, requireProjectQuality } from "../src/project-config.js";
 import { ensureProjectClone, createProjectWorktree, recordSetupEvent, runProjectSetup, verifyPreparedProject, resolveWorktreeRoot } from "../src/session/index.js";
 import { parseWorktreeArgs } from "../src/session/worktree-input.js";
+import { resolveIssue } from "../src/issue-tracker.js";
 
 const args = process.argv.slice(2);
 const { projectName, issueKey, ticketTitle, refresh, branch, base } = parseWorktreeArgs(args);
@@ -15,6 +16,11 @@ if (!configured) {
   process.exitCode = 1;
 } else {
   requireProjectQuality(configured);
+  const run = async (command: string, args: string[]) => {
+    const { execFile } = await import("node:child_process");
+    return new Promise<{ code: number; stdout: string; stderr: string }>((resolveResult) => execFile(command, args, (error, stdout, stderr) => resolveResult({ code: error ? (typeof error.code === "number" ? error.code : 1) : 0, stdout, stderr })));
+  };
+  await resolveIssue(configured.issueTracker, issueKey, run);
   const harnessRoot = resolve(".");
   const worktreesDirectory = await resolveWorktreeRoot(harnessRoot);
   const clone = await ensureProjectClone(configured, { projectsDirectory: resolve("projects") });
@@ -31,10 +37,7 @@ if (!configured) {
     harnessRoot, worktreesDirectory, issueKey, ticketTitle,
     refresh, branch, base,
     onRefresh: () => recordSetupEvent(bootstrapOptions, { type: "clone-refresh-requested", project: configured.name }),
-    run: async (command, args) => {
-      const { execFile } = await import("node:child_process");
-      return new Promise((resolveResult) => execFile(command, args, (error, stdout, stderr) => resolveResult({ code: error ? (typeof error.code === "number" ? error.code : 1) : 0, stdout, stderr })));
-    },
+    run,
   });
   const setupOptions = {
     ...bootstrapOptions,

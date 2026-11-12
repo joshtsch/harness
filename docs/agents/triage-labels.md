@@ -34,11 +34,11 @@ non-goals, and known dependencies or risks. Write deliverable issues around one
 bounded result, its acceptance criteria, and how to verify it. A
 `ready-for-agent` issue states its acceptance criteria in Gherkin: at least one
 `Scenario:` (or `Scenario Outline:`) with `Given`, `When`, and `Then` steps,
-each step starting its own line, plain or as a bullet, numbered, or task-list
-item (a fenced `gherkin` block works). Agents do not
-pick up deliverables without them; return the issue to `needs-triage` instead.
-The automated check enforces labels, parent-child structure, and the Gherkin
-scenario's presence; triage still judges its quality.
+each step starting its own line, plain or as a heading, blockquote, bullet,
+numbered, or task-list item (a fenced `gherkin` block works).
+`pnpm check:triage` enforces labels, parent-child structure, and the scenario's
+presence on `ready-for-agent` issues; [session setup](session-lifecycle.md) refuses to start work on any
+issue without one. Triage still judges its quality.
 
 Use GitHub Projects to track initiatives that span multiple epics; a Project is
 a planning view, not an epic issue. Use milestones for releases or date-based
