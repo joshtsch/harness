@@ -83,9 +83,7 @@ scope must remain explicit:
   and migrated deliberately.
 - The current `joshtsch/skills` entries `scope-router` and `save` depend on
   harness policy or workflows; migrate them to `harness-skills/` in a separate
-  inventory change. The harness `interview` skill is the canonical design
-  interview that records domain docs; upstream `grill-with-docs` stays installed
-  but no longer routes.
+  inventory change.
   `agent-system-audit` is the broadly reusable entry in that source set.
 - `mattpocock/skills` is an approved external skill source, not a native Codex
   plugin. Install selected skills project-locally with `pnpm dlx skills`; keep it

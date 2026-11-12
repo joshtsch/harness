@@ -77,7 +77,8 @@ Run `pnpm capabilities route <provider> interview` and read its
 interviewed, or interrogated; when triaging an underspecified issue or request;
 or when work depends on two or more linked decisions only the user can make.
 When only one question is open, ask it directly. Look up facts rather than
-asking for them.
+asking for them. `interview` is the canonical design interview; upstream
+`grill-with-docs` stays installed but no longer routes.
 
 ## Paired review routing
 
