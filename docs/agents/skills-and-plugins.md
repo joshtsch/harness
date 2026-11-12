@@ -202,8 +202,8 @@ Personal overrides belong in ignored `.claude/settings.local.json`.
 - **Commit guard** (`scripts/claude-hooks/git-guard.mjs`, Bash) blocks commits
   on `main` or `master`, commits of `projects.local.yml` or environment files
   other than `.env.example`, and staged diffs the sensitive-content scan flags.
-  Stage in a separate command, then commit without paths or `-a`/`-i`/`-o`.
-  Pushes are not guarded; branch protection covers `main`. The same hook checks
+  Pushes are not guarded, and `main` has no active branch protection yet; see
+  [required checks](contributing.md#executable-ci-and-required-checks). The same hook checks
   the body of `gh issue` and `gh pr` `create`, `edit`, and `comment` calls
   (inline `--body` or `--body-file`) with the markdown publication check and the
   sensitive-content scan; a body from standard input is blocked.
