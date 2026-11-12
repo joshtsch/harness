@@ -5,7 +5,7 @@ through `needs-triage`. Triage adds exactly one issue-type label (`bug` or
 `enhancement`) and replaces `needs-triage` with exactly one readiness label when
 scope and verification are complete. An epic uses `epic` and the
 `ready-for-planning` state; deliverable issues use `ready-for-agent` or
-`ready-for-human`. `pnpm check:triage` enforces label consistency and checks
+`ready-for-human`. `pnpm check:triage` checks label consistency and
 that a planning-ready epic has a child issue and that every `ready-for-agent`
 issue has Gherkin acceptance criteria. It uses GitHub sub-issues when the
 API is available; otherwise, add issue references as task-list items in the epic
@@ -36,7 +36,7 @@ bounded result, its acceptance criteria, and how to verify it. A
 `Scenario:` (or `Scenario Outline:`) with `Given`, `When`, and `Then` steps,
 each step starting its own line, plain or as a heading, blockquote, bullet,
 numbered, or task-list item (a fenced `gherkin` block works).
-`pnpm check:triage` enforces labels, parent-child structure, and the scenario's
+`pnpm check:triage` checks labels, parent-child structure, and the scenario's
 presence on `ready-for-agent` issues; [session setup](session-lifecycle.md) refuses to start work on any
 issue without one. Triage still judges its quality.
 

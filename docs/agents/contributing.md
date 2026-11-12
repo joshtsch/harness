@@ -9,7 +9,7 @@ Harness changes are developed on feature branches, never directly on `main`.
 2. Create or identify the originating issue in the classified repository. Record its repository and number in the work notes. Harness branches skip session setup, so check the issue has [Gherkin acceptance criteria](triage-labels.md) yourself; if it has none, offer the user a scenario before starting.
 3. Fetch `origin/main`, then fast-forward the local `main` to it. Stop if the local branch has diverged or contains uncommitted changes.
 4. Create a feature branch using the repository's provider prefix, `codex/` through Codex or `claude/` through Claude Code, and include the issue number when the provider supports it.
-5. Implement the change and run relevant tests, typechecking, and build checks.
+5. Implement the change and run the [completion checks](session-completion.md#3-verify-and-review).
 6. Run `code-review` against `main`. The review must cover both documented standards and the originating GitHub issue or specification.
 7. Resolve or explicitly accept review findings.
 8. Commit on the feature branch and run the [paired review loop](session-completion.md#5a-run-the-paired-review-loop) against the local branch until the review session reports no unresolved findings, or the user declines it.
@@ -29,9 +29,6 @@ The `Harness quality` workflow runs tests, typecheck, build, documentation polic
 changed Markdown validation, the capability inventory check, and
 sensitive-content scanning on committed PR changes. The runner installs `age` for the existing encryption integration tests. Required failures fail the job. CI uses the PR base and head commits;
 it never treats an empty staging area as evidence that PR changes were scanned.
-Local `pnpm check:sensitive` continues to scan the staging area. Use
-`pnpm check:sensitive --base <base-ref> [head-ref]` for committed changes, or
-`pnpm check:sensitive -- <file>` for a file such as a publication body.
 
 Portfolio `check:triage` and host `check:prereqs` stay separate from code-quality
 CI: disclose unrelated triage failures during completion. Branch protection is

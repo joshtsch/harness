@@ -35,7 +35,6 @@ knowledge sources; retained in-harness wiki pages are historical rollback copies
 4. Update `CONTEXT.md` when terminology changes.
 5. Create an ADR only for a hard-to-reverse, surprising trade-off.
 6. Keep non-memory transient handoffs and recovery metadata in ignored `docs/.scratch/`.
-7. Run `pnpm check:docs` before review.
 
 Ordinary policy, code, and documentation edits follow the normal
 [contribution workflow](contributing.md). Memory capture, including corrections
