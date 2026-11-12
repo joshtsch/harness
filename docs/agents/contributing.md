@@ -26,8 +26,8 @@ Requests to pick up, work on, or implement a backlog issue are end-to-end develo
 ## Executable CI and required checks
 
 The `Harness quality` workflow runs tests, typecheck, build, documentation policy,
-changed Markdown validation, and sensitive-content scanning on committed PR
-changes. The runner installs `age` for the existing encryption integration tests. Required failures fail the job. CI uses the PR base and head commits;
+changed Markdown validation, the capability inventory check, and
+sensitive-content scanning on committed PR changes. The runner installs `age` for the existing encryption integration tests. Required failures fail the job. CI uses the PR base and head commits;
 it never treats an empty staging area as evidence that PR changes were scanned.
 Local `pnpm check:sensitive` continues to scan the staging area. Use
 `pnpm check:sensitive --base <base-ref> [head-ref]` for committed changes.

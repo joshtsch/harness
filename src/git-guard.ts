@@ -1,4 +1,5 @@
 import { posix, resolve } from "node:path";
+import { markdownViolations } from "./markdown-policy.js";
 import { findSensitiveContent } from "./sensitive-content.js";
 
 export interface CommitInvocation {
@@ -94,22 +95,27 @@ function commitStages(args: string[]): boolean {
 
 // Best-effort parse of the repository a Bash command commits in. Returns
 // undefined when the command runs no `git commit`.
-export function parseCommitInvocation(command: string, cwd: string): CommitInvocation | undefined {
+// Yields each simple command's words, without leading variable assignments and
+// wrappers, with the directory it runs in after any preceding `cd`.
+function* commandSegments(command: string, cwd: string): Generator<{ words: string[]; directory: string }> {
   const segments: string[][] = [[]];
   for (const token of tokenizeCommand(command)) {
     if (token === separator) segments.push([]);
     else if (typeof token === "string") segments.at(-1)!.push(token);
   }
   let directory = cwd;
-  let staged = false;
   for (const segment of segments) {
     const start = segment.findIndex((word) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(word) && word !== "sudo" && word !== "command");
     if (start === -1) continue;
     const words = segment.slice(start);
-    if (words[0] === "cd" && words[1]) {
-      directory = resolve(directory, words[1]);
-      continue;
-    }
+    if (words[0] === "cd" && words[1]) directory = resolve(directory, words[1]);
+    else yield { words, directory };
+  }
+}
+
+export function parseCommitInvocation(command: string, cwd: string): CommitInvocation | undefined {
+  let staged = false;
+  for (const { words, directory } of commandSegments(command, cwd)) {
     if (words[0] !== "git") continue;
     let repository = directory;
     let index = 1;
@@ -139,4 +145,33 @@ export function commitGuardViolations(input: { branch: string | undefined; stage
   for (const path of input.stagedPaths.filter(forbiddenStagedPath)) violations.push(`${path} must never be committed; unstage it`);
   for (const finding of findSensitiveContent(input.stagedDiff)) violations.push(`likely ${finding.kind} in the staged diff; inspect it locally and remove it`);
   return [...new Set(violations)];
+}
+
+// A body that `gh issue|pr create|edit|comment` would publish: inline text, or a file path ("-" is standard input).
+export type PublishBody = { text: string } | { file: string };
+
+// Best-effort parse of the issue and change-request bodies a Bash command publishes.
+// shortcut: inline bodies built by command substitution are checked as literal text; save them to a --body-file instead.
+export function parsePublishBodies(command: string, cwd: string): PublishBody[] {
+  const bodies: PublishBody[] = [];
+  for (const { words, directory } of commandSegments(command, cwd)) {
+    if (words[0] !== "gh" || !["issue", "pr"].includes(words[1]!) || !["create", "edit", "comment"].includes(words[2]!)) continue;
+    for (let index = 3; index < words.length; index++) {
+      const [name, inline] = words[index]!.split(/=(.*)/s, 2) as [string, string | undefined];
+      const value = inline ?? words[index + 1];
+      if (value === undefined || !["--body", "-b", "--body-file", "-F"].includes(name)) continue;
+      if (inline === undefined) index++;
+      if (name === "--body" || name === "-b") bodies.push({ text: value });
+      else bodies.push({ file: value === "-" ? value : resolve(directory, value) });
+    }
+  }
+  return bodies;
+}
+
+export function publishGuardViolations(label: string, body: string): string[] {
+  return [
+    ...markdownViolations(body).map(({ line, message }) => `${label}:${line}: ${message}`),
+    // The scanner reads added diff lines, so present every body line as added.
+    ...findSensitiveContent(body.replace(/^/gm, "+")).map((finding) => `likely ${finding.kind} in ${label}; remove it before publishing`),
+  ];
 }

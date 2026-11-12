@@ -52,4 +52,4 @@ When a skill says to publish to the issue tracker, create a GitHub issue. When i
 
 ## Markdown publication gate
 
-Review the exact markdown payload before sending it to GitHub or another external consumer. Save it to a temporary file and run `pnpm check:markdown -- path/to/payload.md`, or pipe generated content with `pnpm check:markdown -- --stdin`. Stop on any finding, correct the source, and rerun the check before `gh issue create`, `gh issue edit`, `gh issue comment`, or change-request publication. This check covers malformed headings, list markers, links, images, and unclosed fenced code blocks; it does not replace human review of meaning, links, or sensitive content.
+Pass issue and change-request bodies to `gh` with `--body-file`. In Claude Code the [Bash guard](skills-and-plugins.md#claude-code-settings) checks them before publishing; elsewhere, and for any other external consumer, run `pnpm check:markdown -- <file>` and `pnpm check:sensitive` first. Both checks catch structure and likely secrets or PII only; review meaning and links yourself.

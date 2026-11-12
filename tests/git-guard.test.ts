@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { commitGuardViolations, forbiddenStagedPath, parseCommitInvocation } from "../src/git-guard.js";
+import { commitGuardViolations, forbiddenStagedPath, parseCommitInvocation, parsePublishBodies, publishGuardViolations } from "../src/git-guard.js";
 
 const clean = { branch: "claude/1-change", stagedPaths: ["src/a.ts"], stagedDiff: "+const a = 1;\n", stagesChanges: false };
 
@@ -43,5 +43,23 @@ describe("git commit guard", () => {
     expect(commitGuardViolations({ ...clean, stagedPaths: [".env"] })).toEqual([".env must never be committed; unstage it"]);
     expect(commitGuardViolations({ ...clean, stagesChanges: true })[0]).toContain("separate command");
     expect(commitGuardViolations({ ...clean, stagedDiff: `+${["-----BEGIN OPENSSH", "PRIVATE KEY-----"].join(" ")}\n` })).toEqual(["likely private-key in the staged diff; inspect it locally and remove it"]);
+  });
+});
+
+describe("gh publication guard", () => {
+  it("finds inline and file bodies of issue and change-request publications", () => {
+    expect(parsePublishBodies("gh issue list --label bug", "/repo")).toEqual([]);
+    expect(parsePublishBodies("gh pr view 12 --comments", "/repo")).toEqual([]);
+    expect(parsePublishBodies("gh issue create --title T --body-file notes/body.md", "/repo")).toEqual([{ file: "/repo/notes/body.md" }]);
+    expect(parsePublishBodies("cd /work && gh pr create -F pr.md --title T", "/repo")).toEqual([{ file: "/work/pr.md" }]);
+    expect(parsePublishBodies("gh pr comment 3 --body-file=-", "/repo")).toEqual([{ file: "-" }]);
+    expect(parsePublishBodies("gh issue comment 5 -b 'Looks *good*'", "/repo")).toEqual([{ text: "Looks *good*" }]);
+    expect(parsePublishBodies("gh pr edit 7 --body='## Summary'", "/repo")).toEqual([{ text: "## Summary" }]);
+  });
+
+  it("reports markdown and sensitive-content findings with their source", () => {
+    expect(publishGuardViolations("body.md", "## Summary\n\nAll good.\n")).toEqual([]);
+    expect(publishGuardViolations("body.md", "```sh\nunclosed\n")[0]).toMatch(/^body\.md:\d+: /);
+    expect(publishGuardViolations("the inline body", `Contact ${["someone", "example.org"].join("@")}`)).toContain("likely email in the inline body; remove it before publishing");
   });
 });

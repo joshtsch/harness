@@ -30,6 +30,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm check:docs
+      - run: pnpm capabilities check
       - name: Check committed PR changes
         if: github.event_name == 'pull_request'
         env:

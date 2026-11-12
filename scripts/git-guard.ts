@@ -1,14 +1,35 @@
 #!/usr/bin/env tsx
-// Checks a Claude Code Bash tool call before it runs `git commit`. Exit 2 blocks the call.
+// Checks a Claude Code Bash tool call before it runs `git commit` or publishes an
+// issue or change-request body with `gh`. Exit 2 blocks the call.
 import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
-import { commitGuardViolations, parseCommitInvocation } from "../src/git-guard.js";
+import { commitGuardViolations, parseCommitInvocation, parsePublishBodies, publishGuardViolations } from "../src/git-guard.js";
 
 const exec = promisify(execFile);
 let input = "";
 for await (const chunk of process.stdin) input += chunk;
 const event = JSON.parse(input || "{}") as { cwd?: string; tool_input?: { command?: string } };
-const invocation = parseCommitInvocation(event.tool_input?.command ?? "", event.cwd ?? process.cwd());
+const command = event.tool_input?.command ?? "";
+const cwd = event.cwd ?? process.cwd();
+
+const published: string[] = [];
+for (const body of parsePublishBodies(command, cwd)) {
+  if ("text" in body) published.push(...publishGuardViolations("the inline body", body.text));
+  else if (body.file === "-") published.push("the body comes from standard input; save it to a file and pass --body-file <path>");
+  else {
+    // An unreadable file is left for gh to report.
+    const text = await readFile(body.file, "utf8").catch(() => undefined);
+    if (text !== undefined) published.push(...publishGuardViolations(body.file, text));
+  }
+}
+if (published.length) {
+  console.error("Harness publication guard blocked this gh call; fix the body source, then rerun:");
+  for (const violation of published) console.error(`- ${violation}`);
+  process.exit(2);
+}
+
+const invocation = parseCommitInvocation(command, cwd);
 if (!invocation) process.exit(0);
 
 const git = async (...args: string[]): Promise<string | undefined> => {
