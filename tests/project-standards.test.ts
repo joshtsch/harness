@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse, stringify } from "yaml";
-import { projectStandardsWorkflow, publishBootstrap, standardsCheckName, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
+import { missingStorybookWarning, projectStandardsWorkflow, publishBootstrap, standardsCheckName, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
 import type { ProjectDefinition } from "../src/project-config.js";
 import type { SetupCommandRunner } from "../src/session/project-setup.js";
 
@@ -44,6 +44,24 @@ describe("local standards", () => {
     for (const command of [{ ...check, command: "missing-fixture-check" }, { ...check, args: ["-e", "process.exit(3)"] }]) {
       await expect(validateLocalStandards({ project: { ...project, quality: { lint: command, format: check } }, path })).rejects.toThrow("required local check 1 failed");
     }
+  });
+  it("warns when a UI project has no Storybook and clears once Storybook is present", async () => {
+    const path = await repository();
+    await expect(validateLocalStandards({ project, path })).resolves.toMatchObject({ warnings: [], optionalFailures: 0 });
+    await writeFile(join(path, "package.json"), JSON.stringify({ dependencies: { next: "16.0.0" } }));
+    await expect(validateLocalStandards({ project, path, bootstrap: true })).resolves.toMatchObject({ warnings: [] });
+    await rm(join(path, "package.json"));
+    await mkdir(join(path, "packages/web"), { recursive: true });
+    await writeFile(join(path, "packages/web/package.json"), JSON.stringify({ dependencies: { next: "16.0.0" } }));
+    await expect(validateLocalStandards({ project, path })).resolves.toMatchObject({ warnings: [missingStorybookWarning], optionalFailures: 1 });
+    for (const manifest of [{ scripts: { storybook: "storybook dev" } }, { devDependencies: { "@storybook/nextjs-vite": "10.0.0" } }]) {
+      await writeFile(join(path, "packages/web/package.json"), JSON.stringify({ dependencies: { next: "16.0.0" }, ...manifest }));
+      await expect(validateLocalStandards({ project, path })).resolves.toMatchObject({ warnings: [] });
+    }
+    await writeFile(join(path, "packages/web/package.json"), JSON.stringify({ dependencies: { next: "16.0.0" } }));
+    await mkdir(join(path, "packages/web/.storybook"));
+    await writeFile(join(path, "packages/web/.storybook/main.ts"), "export default {};\n");
+    await expect(validateLocalStandards({ project, path })).resolves.toMatchObject({ warnings: [] });
   });
   it("reruns checks after source/config edits and rejects mutating format checks", async () => {
     const path = await repository();
