@@ -192,7 +192,9 @@ Tracked `.claude/settings.json` applies to Claude Code sessions started in the
 harness. Sessions started in `projects/` load the force-tracked
 `projects/.claude/settings.json` instead, which registers the same hooks through
 `$CLAUDE_PROJECT_DIR/../scripts/`. Keep the hook lists in both files in step.
-Personal overrides belong in ignored `.claude/settings.local.json`.
+Personal overrides belong in ignored `.claude/settings.local.json`, including
+the deny rules and hooks that enforce a personal preference. They bind only
+that user's Claude Code sessions in the harness.
 
 - **Deny rules** block Claude's file tools from reading or editing local
   environment files (`.env`, `.env.local`, `.env.*.local`, `.env.production`)

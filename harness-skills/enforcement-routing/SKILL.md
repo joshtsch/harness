@@ -27,7 +27,7 @@ Anything these levels leave open falls to written guidance, which only informs a
 
 1. **Bound the rule.** Split composite guidance into atomic rules. Restate each as a predicate a machine could check, such as "no commit on `main`". If no predicate exists, the rule is judgment: skip to step 5.
 2. **Find the harm point.** Name the action where a violation does damage (tool call, commit, push, or merge) and whether the damage is reversible. Name what must happen if the rule requires an action rather than forbidding one.
-3. **Set the floor.** Choose the earliest level that sees the violation before its harm point. Irreversible harm before push needs level 2 or 3. Harm at push or merge needs level 1. A required action needs level 1, 3 (end-of-session hook), or 4; level 2 cannot require anything.
+3. **Set the floor.** Choose the earliest level that sees the violation before its harm point. Irreversible harm before push needs level 2 or 3. Harm at push or merge needs level 1. A required action needs level 1, 3 (end-of-session hook), or 4; level 2 cannot require anything. A personal preference binds one user, so it floors at level 2 or 3 in [personal settings](../../docs/agents/skills-and-plugins.md#claude-code-settings), never at level 1 or 4.
 4. **Add backstops.** Each mechanism is code to maintain, so add a backstop only for a gap that is likely to be hit and whose harm is irreversible or costly. Reversible harm gets the floor and at most one backstop; name the backstops you skipped in one line. Each backstop covers a named gap of the floor:
    - A provider-specific floor (levels 2–3) gets a level 1 or 4 backstop when the rule also binds people or other providers.
    - A level 4 floor gets deny rules for `--no-verify` on commit and push.
