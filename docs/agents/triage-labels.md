@@ -6,7 +6,8 @@ through `needs-triage`. Triage adds exactly one issue-type label (`bug` or
 scope and verification are complete. An epic uses `epic` and the
 `ready-for-planning` state; deliverable issues use `ready-for-agent` or
 `ready-for-human`. `pnpm check:triage` enforces label consistency and checks
-that a planning-ready epic has a child issue. It uses GitHub sub-issues when the
+that a planning-ready epic has a child issue and that every `ready-for-agent`
+issue has Gherkin acceptance criteria. It uses GitHub sub-issues when the
 API is available; otherwise, add issue references as task-list items in the epic
 body (`- [ ] #123`).
 
@@ -15,7 +16,7 @@ body (`- [ ] #123`).
 | `bug` | Existing behavior fails or regresses. | Reproducible defect. |
 | `enhancement` | New behavior or capability requested. | Feature or improvement. |
 | `needs-triage` | Maintainer evaluation still required. | Unreviewed or ambiguous issue. |
-| `ready-for-agent` | Fully specified for autonomous implementation. | Acceptance criteria, scope, and verification path are complete. |
+| `ready-for-agent` | Fully specified for autonomous implementation. | Gherkin acceptance criteria, scope, and verification path are complete. |
 | `ready-for-human` | Requires human implementation or decision. | Needs unavailable access, judgment, or coordination. |
 | `ready-for-planning` | Epic is ready to plan and track. | The only readiness state for epics; requires `epic` and at least one child issue. |
 | `epic` | Parent issue for a larger outcome. | Group related deliverable issues using GitHub sub-issues. |
@@ -30,8 +31,14 @@ or ambiguous issues; it cannot coexist with any readiness label.
 
 Write epics around an outcome, why it matters, acceptance criteria, scope and
 non-goals, and known dependencies or risks. Write deliverable issues around one
-bounded result, its acceptance criteria, and how to verify it. These details
-inform triage; the automated check enforces labels and parent-child structure.
+bounded result, its acceptance criteria, and how to verify it. A
+`ready-for-agent` issue states its acceptance criteria in Gherkin: at least one
+`Scenario:` (or `Scenario Outline:`) with `Given`, `When`, and `Then` steps,
+each step starting its own line, plain or as a bullet, numbered, or task-list
+item (a fenced `gherkin` block works). Agents do not
+pick up deliverables without them; return the issue to `needs-triage` instead.
+The automated check enforces labels, parent-child structure, and the Gherkin
+scenario's presence; triage still judges its quality.
 
 Use GitHub Projects to track initiatives that span multiple epics; a Project is
 a planning view, not an epic issue. Use milestones for releases or date-based

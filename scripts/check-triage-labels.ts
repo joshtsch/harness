@@ -38,6 +38,7 @@ async function run(): Promise<void> {
       number: issue.number,
       title: issue.title,
       labels,
+      body: issue.body,
       ...(subIssueCounts.has(issue.number) ? { subIssueCount: subIssueCounts.get(issue.number) } : {}),
     }).map((violation) => `#${issue.number} ${issue.title}: ${violation}`);
   });

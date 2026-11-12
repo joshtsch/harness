@@ -75,7 +75,8 @@ Separate epic planning readiness from deliverable implementation readiness.
 A candidate epic must be open and planning-ready under repository policy, with
 at least one eligible descendant. Deliverables must be open, ready for autonomous
 implementation, scoped, and verifiable with available access. For canonical
-harness labels this means `ready-for-agent` with valid type/readiness labels;
+harness labels this means `ready-for-agent` with valid type/readiness labels
+and Gherkin acceptance criteria (`Scenario` with `Given`/`When`/`Then`);
 exclude `needs-triage`, `ready-for-human`, epics, blocked or deferred work, and
 items already being implemented. Confirm actual status through linked work;
 an assignee alone does not prove active implementation.
