@@ -1,13 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { resolveIssue } from "../src/issue-tracker.js";
 
+const gherkin = "Scenario: setup\nGiven a project\nWhen setup runs\nThen it passes";
+
 describe("resolveIssue", () => {
   it("resolves a GitHub issue without storing its body", async () => {
-    const run = vi.fn().mockResolvedValue({ code: 0, stdout: '{"number":11,"title":"Validate setup","labels":[]}', stderr: "" });
+    const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "Validate setup", labels: [], body: gherkin }), stderr: "" });
     await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run)).resolves.toEqual({
       key: "11", number: 11, title: "Validate setup", repository: "joshtsch/harness",
     });
-    expect(run).toHaveBeenCalledWith("gh", ["issue", "view", "11", "--repo", "joshtsch/harness", "--json", "number,title,labels"]);
+    expect(run).toHaveBeenCalledWith("gh", ["issue", "view", "11", "--repo", "joshtsch/harness", "--json", "number,title,labels,body"]);
   });
 
   it("rejects planning epics as implementation session issues", async () => {
@@ -19,6 +21,14 @@ describe("resolveIssue", () => {
       });
       await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run))
         .rejects.toThrow("planning epic; start the session from a deliverable sub-issue");
+    }
+  });
+
+  it("rejects issues without Gherkin acceptance criteria and asks the agent to offer them", async () => {
+    for (const body of [undefined, "", "Acceptance: it works"]) {
+      const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "Vague", labels: [{ name: "ready-for-human" }], body }), stderr: "" });
+      await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run))
+        .rejects.toThrow("issue 11 has no Gherkin acceptance criteria. Before starting, offer the user");
     }
   });
 
