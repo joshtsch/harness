@@ -8,7 +8,13 @@ export interface IssueLabels {
   number: number;
   title: string;
   labels: readonly string[];
+  body?: string;
   subIssueCount?: number;
+}
+
+export function hasGherkinAcceptanceCriteria(body: string): boolean {
+  const step = (keyword: string) => new RegExp(`^\\s*(?:[-*]\\s+)?(?:\\*\\*)?${keyword}(?!\\w)`, "im").test(body);
+  return step("Scenario(?: Outline)?:") && step("Given") && step("When") && step("Then");
 }
 
 export function countTaskListIssueReferences(body: string, parentIssueNumber: number): number {
@@ -55,6 +61,9 @@ export function triageViolations(issue: IssueLabels): string[] {
     violations.push("epic cannot be ready-for-agent");
   } else if (isEpic && readiness.length > 0 && !issue.labels.includes(planningReadinessLabel)) {
     violations.push("epic must use ready-for-planning instead of a deliverable readiness label");
+  }
+  if (issue.labels.includes("ready-for-agent") && !isEpic && !hasGherkinAcceptanceCriteria(issue.body ?? "")) {
+    violations.push("ready-for-agent issue must have Gherkin acceptance criteria");
   }
   if (isEpic && readiness.length > 0 && (issue.subIssueCount ?? 0) < 1) {
     violations.push("ready epic must have at least one sub-issue");

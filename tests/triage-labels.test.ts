@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { countTaskListIssueReferences, resolveChildIssueCount, triageViolations } from "../src/triage-labels.js";
+import { countTaskListIssueReferences, hasGherkinAcceptanceCriteria, resolveChildIssueCount, triageViolations } from "../src/triage-labels.js";
+
+const gherkin = "## Acceptance criteria\n\n```gherkin\nScenario: Works\n  Given a ready issue\n  When an agent picks it up\n  Then it can verify the result\n```";
 
 describe("triage labels", () => {
   it("counts unique issue references in fallback task lists", () => {
@@ -31,7 +33,20 @@ describe("triage labels", () => {
   });
 
   it("accepts a typed ready issue", () => {
-    expect(triageViolations({ number: 1, title: "Ready", labels: ["enhancement", "ready-for-agent"] })).toEqual([]);
+    expect(triageViolations({ number: 1, title: "Ready", labels: ["enhancement", "ready-for-agent"], body: gherkin })).toEqual([]);
+  });
+
+  it("requires Gherkin acceptance criteria for ready-for-agent issues", () => {
+    expect(triageViolations({ number: 1, title: "Ready", labels: ["enhancement", "ready-for-agent"], body: "- [ ] It works" }))
+      .toEqual(["ready-for-agent issue must have Gherkin acceptance criteria"]);
+    expect(triageViolations({ number: 2, title: "Human", labels: ["enhancement", "ready-for-human"] })).toEqual([]);
+  });
+
+  it("recognizes Gherkin scenarios in fenced, bulleted, or bold form", () => {
+    expect(hasGherkinAcceptanceCriteria(gherkin)).toBe(true);
+    expect(hasGherkinAcceptanceCriteria("**Scenario Outline:** x\n- **Given** a\n- **When** b\n- **Then** c")).toBe(true);
+    expect(hasGherkinAcceptanceCriteria("Scenario: x\nGiven a\nThen c")).toBe(false);
+    expect(hasGherkinAcceptanceCriteria("Given that we want it, then do it when ready")).toBe(false);
   });
 
   it("accepts an epic that is ready for planning and has a child issue", () => {
