@@ -33,7 +33,8 @@ A project has Storybook when any `package.json` has a `storybook` script or a
 project has a user interface when any `package.json` depends on `react`,
 `react-native`, `next`, `vue` or `svelte`. `pnpm standards local` applies both
 rules and warns, as an optional failure, when a project has a user interface
-but no Storybook.
+but no Storybook. `pnpm standards bootstrap` skips this check, because Storybook
+follows the first UI rather than the scaffold.
 
 When a project has Storybook, a change that adds or changes a UI element adds or
 updates stories that cover it and each of its meaningful states, as defined in

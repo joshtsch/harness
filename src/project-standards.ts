@@ -142,7 +142,7 @@ export async function validateLocalStandards(options: StandardsOptions): Promise
     }
   }
   if (await snapshot(options) !== before) throw new Error("checks changed repository content; use non-mutating checks and validate again");
-  const warnings = await storybookWarnings(options);
+  const warnings = options.bootstrap ? [] : await storybookWarnings(options); // Storybook follows the first UI, not the scaffold.
   return { status: "locally-validated", fingerprint: before, optionalFailures: optionalFailures + warnings.length, checks: commands.length, warnings };
 }
 

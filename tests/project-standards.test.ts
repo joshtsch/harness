@@ -48,6 +48,9 @@ describe("local standards", () => {
   it("warns when a UI project has no Storybook and clears once Storybook is present", async () => {
     const path = await repository();
     await expect(validateLocalStandards({ project, path })).resolves.toMatchObject({ warnings: [], optionalFailures: 0 });
+    await writeFile(join(path, "package.json"), JSON.stringify({ dependencies: { next: "16.0.0" } }));
+    await expect(validateLocalStandards({ project, path, bootstrap: true })).resolves.toMatchObject({ warnings: [] });
+    await rm(join(path, "package.json"));
     await mkdir(join(path, "packages/web"), { recursive: true });
     await writeFile(join(path, "packages/web/package.json"), JSON.stringify({ dependencies: { next: "16.0.0" } }));
     await expect(validateLocalStandards({ project, path })).resolves.toMatchObject({ warnings: [missingStorybookWarning], optionalFailures: 1 });
