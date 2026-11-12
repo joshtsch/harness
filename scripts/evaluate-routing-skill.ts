@@ -100,6 +100,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const [skill, command, argument] = process.argv.slice(2).filter((value) => value !== "--");
   try {
     if (!(skill in skills)) throw new Error(`Unknown routing skill: ${skill}`);
+    if (argument && command === "prepare" && basename(resolve(argument)) !== skill) throw new Error(`Select the ${skill} skill directory`);
     if (command === "prepare") console.log(await prepareRoutingEvaluation(argument ?? join(repository, "harness-skills", skill)));
     else if (command === "check" && argument) {
       const result = await checkRoutingEvaluation(resolve(argument));

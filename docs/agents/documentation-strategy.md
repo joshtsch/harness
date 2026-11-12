@@ -90,5 +90,5 @@ strategy and reports misplaced, duplicated, or missing documentation.
 
 When a hook, CLI check, or CI job enforces a rule, keep one line stating the
 rule and link to the enforcement. The block message, not the documentation,
-explains how to recover. Keep fuller guidance only where enforcement has gaps
+explains how to recover. Use the [`enforcement-routing` skill](../../harness-skills/enforcement-routing/SKILL.md) to choose the mechanism. Keep fuller guidance only where enforcement has gaps
 or covers some providers but not others, such as Claude Code-only hooks.

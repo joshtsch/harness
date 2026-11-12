@@ -16,7 +16,7 @@ For a memory destination, a write request authorizes only preparation until the
 2. **Set scope and owner.** Classify it as harness-wide, cross-project, project-specific, user-specific, session-only, or external. Identify the repository or person that owns changes to it.
 3. **Inspect the relevant sources.** Read `CONTEXT.md` for the seven context layers and `docs/agents/documentation-strategy.md` for the authoritative-surface map. Inspect only the likely destination and its nearest index or entry point. Search for an existing source, competing copy, or conflict before recommending a new one. If a configured repository or source cannot be read, mark inspection blocked and any placement provisional; do not infer its contents or claim it was reviewed. State what setup or access is needed before finalizing the placement.
 4. **Choose the meaning layer.** Use the context layer that explains how the knowledge should shape work: policy, domain, workflow, mode, skill, session, or memory. For composite items, make one recommendation per atomic item.
-5. **Choose the authoritative carrier.** Apply the documentation-strategy map. For a new vault, knowledge space, or knowledge source, use [vault destination selection](../../docs/agents/harness-memory.md#vault-destination-selection) before provider-specific setup: honor an explicit home, otherwise present Notion and a repository with a workflow-based recommendation. Use the smallest fitting source of truth, then identify only the links, indexes, or enforcement that make it reachable and maintained.
+5. **Choose the authoritative carrier.** Apply the documentation-strategy map. For a new vault, knowledge space, or knowledge source, use [vault destination selection](../../docs/agents/harness-memory.md#vault-destination-selection) before provider-specific setup: honor an explicit home, otherwise present Notion and a repository with a workflow-based recommendation. Use the smallest fitting source of truth, then identify only the links or indexes that make it reachable and maintained.
 6. **Choose activation.** State how the agent encounters the source: always-loaded instructions, a focused pointer, a routed or invoked skill, project/session setup, a query, a hook, or an explicit tool/script call. Confirm the store and retrieval path exist; an ADR or planned feature is not an available carrier. For a knowledge repository, follow [repository access](../../docs/agents/harness-memory.md#knowledge-repository-access): identify its registered owner, verified checkout or missing setup, applicable guide, index, and revision. If storage or activation is missing, state the gap and required setup. Keep branch-specific detail behind a pointer. For a rule that a hook, permission rule, CI check, or script could enforce, list it as a handoff to [`enforcement-routing`](../enforcement-routing/SKILL.md), which chooses the mechanism.
 7. **Check boundaries.** Flag privacy, source-of-truth, duplication, conflict, stale-cache, discoverability, and ownership risks. Memory is a suggestion store, not policy; it cannot promote itself. Cross-project patterns require review before they become shared guidance.
 8. **Return a plan.** Do not make the edits as part of routing.
@@ -30,7 +30,7 @@ For a memory destination, a write request authorizes only preparation until the
 - Use tracked `harness-skills/` for harness-coupled skills. Use the shared skills repository for skills that work unchanged outside the harness.
 - Keep session state and memory scoped to their intended lifetime and audience. Neither may override policy; memory cannot promote itself. Cross-project patterns need review before becoming shared guidance.
 - Distinguish recommending a suitable home from claiming operational memory. When a scoped store or retrieval path is unavailable, report the setup gap and that reliable retention/retrieval is not established. Do not use an ADR as if it were an active memory store or move a personal preference into shared policy as a workaround.
-- Keep one authoritative source. Add only the links, indexes, or enforcement needed for discovery and maintenance.
+- Keep one authoritative source. Add only the links or indexes needed for discovery and maintenance; hand enforcement to `enforcement-routing`.
 - General routing remains independent of vault operations. For a selected vault,
   return its provider, authoritative home, owner, entry points, and available
   capabilities or setup blockers; the calling agent can then use
@@ -42,7 +42,7 @@ For a memory destination, a write request authorizes only preparation until the
 
 Return a concise table with one row per atomic item and these fields:
 
-| Item | Owner and scope | Context layer | Authoritative source | Activation path | Required links or enforcement |
+| Item | Owner and scope | Context layer | Authoritative source | Activation path | Required links; enforcement handoff |
 | --- | --- | --- | --- | --- | --- |
 
 Then list any conflict, duplication, privacy concern, or missing information that affects the recommendation. If the source or owner cannot be determined from repository evidence, label the uncertainty and ask only the question that blocks a reliable placement.

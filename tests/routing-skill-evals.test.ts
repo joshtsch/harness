@@ -18,7 +18,7 @@ const table = (header: string, rows: number) => [
   ...Array.from({ length: rows }, (_, index) => `|${` item ${index} |`.repeat(header.split("|").length - 2)}`),
 ].join("\n");
 const enforcementHeader = "| Rule | Harm point | Floor | Backstops and the gap each covers | Block message | Gaps for `knowledge-routing` |";
-const knowledgeHeader = "| Item | Owner and scope | Context layer | Authoritative source | Activation path | Required links or enforcement |";
+const knowledgeHeader = "| Item | Owner and scope | Context layer | Authoritative source | Activation path | Required links; enforcement handoff |";
 
 describe("routing skill behavioral evaluation", () => {
   it("counts report rows only under the header with every report column", () => {
