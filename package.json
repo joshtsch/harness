@@ -16,6 +16,7 @@
     "evaluate:code-graph": "node --import tsx scripts/evaluate-code-graph.ts",
     "evaluate:enforcement-routing": "node --import tsx scripts/evaluate-routing-skill.ts enforcement-routing",
     "evaluate:knowledge-routing": "node --import tsx scripts/evaluate-routing-skill.ts knowledge-routing",
+    "evaluate:interview": "node --import tsx scripts/evaluate-interview.ts",
     "evaluate:harness-memory": "node --import tsx scripts/evaluate-harness-memory.ts",
     "clone": "node --import tsx scripts/clone-project.ts",
     "hcp:projects": "node --import tsx scripts/hcp-projects.ts",

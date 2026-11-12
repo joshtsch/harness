@@ -1,0 +1,74 @@
+{
+  "base": {
+    ".gitignore": "/docs/.scratch/\nnode_modules/\n",
+    "AGENTS.md": "# Ledger API\n\nSynthetic service for evaluation. Public HTTP API for small-business bookkeeping.\n\n- Commit on feature branches.\n",
+    "GLOSSARY.md": "# Ledger\n\nBookkeeping API for small businesses.\n\n## Language\n\n**Account**:\nA chart-of-accounts entry that holds postings.\n_Avoid_: Ledger line\n\n**Tenant**:\nA business that owns accounts and API keys.\n_Avoid_: Customer, organization\n",
+    "package.json": "{\n  \"name\": \"ledger-api\",\n  \"private\": true,\n  \"scripts\": { \"test\": \"vitest run\", \"start\": \"node src/server.js\" }\n}\n",
+    "src/server.js": "// Express server. Routes live in src/routes. Authenticates each request by tenant API key.\n",
+    "deploy/fly.toml": "app = \"ledger-api\"\nprimary_region = \"fra\"\n[[services]]\n  internal_port = 8080\n  [services.concurrency]\n    hard_limit = 50\n# Runs 3 machines; no shared cache is provisioned.\n"
+  },
+  "cases": [
+    {
+      "id": "multi-decision",
+      "task": "User request: \"I want to add rate limiting to the public API. Grill me on it.\"",
+      "tree": true,
+      "minOpen": 3,
+      "rubric": [
+        "Asks exactly one question, from the frontier (a decision with no unsettled prerequisite), with a recommendation worded so yes accepts it.",
+        "The tree file lists several linked decisions (for example limit key, limits, storage, over-limit response) with dependents nested under their parents.",
+        "Does not ask the user for facts the repository answers, such as the deploy target or machine count.",
+        "Uses the glossary's term Tenant, not customer or organization."
+      ]
+    },
+    {
+      "id": "single-decision",
+      "task": "User request: \"Add a `lint` script to package.json.\" Only one thing is undecided: whether to use ESLint or Biome; nothing else depends on it.",
+      "tree": false,
+      "rubric": [
+        "Asks the single question directly without starting a full interview or creating a tree file.",
+        "Still offers a recommendation."
+      ]
+    },
+    {
+      "id": "fact-lookup",
+      "task": "User request: \"Triage this: we should cache rate-limit counters somewhere shared. Figure out what we need to decide.\"",
+      "tree": true,
+      "minOpen": 2,
+      "rubric": [
+        "Reads `deploy/fly.toml` instead of asking how many machines run or whether a shared cache exists, and records that as a settled fact or prerequisite in the tree.",
+        "The one question asked is a decision for the user (for example which shared store), not a fact."
+      ]
+    },
+    {
+      "id": "resume-tree",
+      "task": "User request: \"Let's continue the rate-limiting interview.\"",
+      "tree": true,
+      "minOpen": 1,
+      "keep": [
+        "- [x] **Limit key**"
+      ],
+      "files": {
+        "docs/.scratch/rate-limiting-decision-tree.md": "# Rate limiting\n\nGoal: Protect the public API from abusive clients.\n\n- [x] **Limit key**: per Tenant API key. _Why_: tenants share IPs behind proxies\n  - [x] **Anonymous traffic**: rejected before limiting. _Why_: every route requires a key\n- [ ] **Limits per tier**\n- [ ] **Counter storage**\n  - [ ] **Failure mode when storage is down**\n- [ ] **Over-limit response**\n\n## Changed\n"
+      },
+      "rubric": [
+        "Resumes the existing tree file instead of creating a second one or re-asking settled decisions.",
+        "Asks one open frontier decision (limits, storage, or over-limit response), not the failure mode, which waits on storage."
+      ]
+    },
+    {
+      "id": "overturned-decision",
+      "task": "Conversation so far: you are interviewing the user on rate limiting using the existing tree file. Your last question was about counter storage. The user's latest message: \"Actually, scrap per-key limits. Limit per IP address instead, we want to cover unauthenticated health checks too.\"",
+      "tree": true,
+      "minOpen": 2,
+      "changed": true,
+      "files": {
+        "docs/.scratch/rate-limiting-decision-tree.md": "# Rate limiting\n\nGoal: Protect the public API from abusive clients.\n\n- [x] **Limit key**: per Tenant API key. _Why_: tenants share IPs behind proxies\n  - [x] **Anonymous traffic**: rejected before limiting. _Why_: every route requires a key\n- [x] **Limits per tier**: 600/min standard, 6000/min premium. _Why_: matches pricing tiers\n- [~] **Counter storage**\n  - [ ] **Failure mode when storage is down**\n- [ ] **Over-limit response**\n\n## Changed\n"
+      },
+      "rubric": [
+        "Logs the limit-key change under Changed with old answer, new answer, and reason.",
+        "Reopens decisions that hung off the old key (anonymous traffic and per-tier limits, which were per tenant) instead of keeping them settled.",
+        "Raises the conflict with the earlier reason (tenants share IPs behind proxies) when choosing the next question."
+      ]
+    }
+  ]
+}
