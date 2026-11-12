@@ -1,14 +1,25 @@
 #!/usr/bin/env tsx
-// Checks a Claude Code Bash tool call before it runs `git commit`. Exit 2 blocks the call.
+// Checks a Claude Code Bash tool call before it runs `git commit` or publishes an
+// issue or change-request body with `gh`. Exit 2 blocks the call.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { commitGuardViolations, parseCommitInvocation } from "../src/git-guard.js";
+import { commitGuardViolations, parseCommitInvocation, parsePublishBodies, publishBodyViolations } from "../src/git-guard.js";
 
 const exec = promisify(execFile);
 let input = "";
 for await (const chunk of process.stdin) input += chunk;
 const event = JSON.parse(input || "{}") as { cwd?: string; tool_input?: { command?: string } };
-const invocation = parseCommitInvocation(event.tool_input?.command ?? "", event.cwd ?? process.cwd());
+const command = event.tool_input?.command ?? "";
+const cwd = event.cwd ?? process.cwd();
+
+const published = (await Promise.all(parsePublishBodies(command, cwd).map(publishBodyViolations))).flat();
+if (published.length) {
+  console.error("Harness publication guard blocked this gh call; fix the body source, then rerun:");
+  for (const violation of published) console.error(`- ${violation}`);
+  process.exit(2);
+}
+
+const invocation = parseCommitInvocation(command, cwd);
 if (!invocation) process.exit(0);
 
 const git = async (...args: string[]): Promise<string | undefined> => {

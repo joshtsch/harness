@@ -10,7 +10,7 @@ and the Claude Code project settings. General tool intake lives in
 `agent-policy.yml` assigns each locked project skill to one capability, names its
 canonical route, declares companions and wrapper dependencies, and records Codex,
 Gemini, and Claude Code support.
-Run `pnpm capabilities check` after changing the lock or policy. To select a
+CI runs `pnpm capabilities check`; run it locally after changing the lock or policy. To select a
 project skill, run `pnpm capabilities route <provider> <capability>`; add
 companions by capability name. A degraded route needs `--allow-degraded` after
 reviewing its limitations. `pnpm init:harness` checks that the policy covers
@@ -203,7 +203,10 @@ Personal overrides belong in ignored `.claude/settings.local.json`.
   on `main` or `master`, commits of `projects.local.yml` or environment files
   other than `.env.example`, and staged diffs the sensitive-content scan flags.
   Stage in a separate command, then commit without paths or `-a`/`-i`/`-o`.
-  Pushes are not guarded; branch protection covers `main`.
+  Pushes are not guarded; branch protection covers `main`. The same hook checks
+  the body of `gh issue` and `gh pr` `create`, `edit`, and `comment` calls
+  (inline `--body` or `--body-file`) with the markdown publication check and the
+  sensitive-content scan; a body from standard input is blocked.
 - **Default-clone guard** (`scripts/claude-hooks/default-clone-guard.mjs`, Edit,
   Write, NotebookEdit, and Bash) blocks writes inside `projects/<project>/` for
   configured projects and points to `pnpm worktree`. For Bash it sees only
