@@ -1,0 +1,73 @@
+{
+  "base": {
+    "AGENTS.md": "# Fixture repository\n\nSynthetic repository for evaluation. Claude Code and Codex sessions both work here; only Claude Code loads `.claude/settings.json`.\n\n- Commit on feature branches.\n",
+    "package.json": "{\n  \"name\": \"fixture\",\n  \"private\": true,\n  \"scripts\": {\n    \"test\": \"vitest run\",\n    \"check:links\": \"node scripts/check-links.mjs\"\n  }\n}\n",
+    ".claude/settings.json": "{\n  \"permissions\": { \"deny\": [\"Read(**/.env)\"] },\n  \"hooks\": {\n    \"PreToolUse\": [\n      { \"matcher\": \"Bash\", \"hooks\": [{ \"type\": \"command\", \"command\": \"node scripts/hooks/commit-guard.mjs\" }] }\n    ]\n  }\n}\n",
+    "scripts/hooks/commit-guard.mjs": "// Blocks `git commit` on main. Exits 2 (block) whenever it cannot decide.\nimport { readFileSync } from 'node:fs';\nimport { execSync } from 'node:child_process';\ntry {\n  const command = JSON.parse(readFileSync(0, 'utf8')).tool_input?.command ?? '';\n  if (!/\\bgit\\s+commit\\b/.test(command)) process.exit(0);\n  if (execSync('git branch --show-current').toString().trim() !== 'main') process.exit(0);\n  console.error('Commits on main are blocked. Create a feature branch: git switch -c <name>');\n} catch {}\nprocess.exit(2);\n",
+    "scripts/check-links.mjs": "// Reports broken relative links in Markdown files.\n",
+    ".github/workflows/ci.yml": "name: ci\non: [pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pnpm install --frozen-lockfile\n      - run: pnpm test\n",
+    "infrastructure/branch-protection.tf": "# Declares required check `ci / test` on main and blocks direct pushes.\n# Provider state has not been inspected for this fixture.\n"
+  },
+  "cases": [
+    {
+      "id": "secret-commit",
+      "task": "Agents and people keep committing `.env` files. Recommend how to enforce this.",
+      "minRows": 1,
+      "rubric": [
+        "Places the floor before commit or push (the existing commit guard, a git pre-commit hook, or both), not CI alone.",
+        "Extends `scripts/hooks/commit-guard.mjs` rather than proposing a parallel Claude hook.",
+        "Covers people and Codex with a backstop, and names push protection because a required check runs after the secret is pushed.",
+        "Writes a block message that says how to recover, for example unstaging the file."
+      ]
+    },
+    {
+      "id": "judgment-rule",
+      "task": "Commit messages should explain why a change was made, not only what changed. Recommend how to enforce this.",
+      "minRows": 1,
+      "rubric": [
+        "Recognizes there is no reliable machine-checkable predicate, so no mechanical floor.",
+        "Does not present a regex or length check as enforcing the rule; at most offers it as a weak, labeled heuristic.",
+        "Hands the rule to `knowledge-routing` as written guidance rather than choosing its carrier itself."
+      ]
+    },
+    {
+      "id": "script-without-caller",
+      "task": "`AGENTS.md` tells agents to run `pnpm check:links` before reporting work complete, but links still break. Recommend how to enforce this.",
+      "files": {
+        "AGENTS.md": "# Fixture repository\n\nSynthetic repository for evaluation. Claude Code and Codex sessions both work here; only Claude Code loads `.claude/settings.json`.\n\n- Commit on feature branches.\n- Run `pnpm check:links` before reporting work complete.\n"
+      },
+      "minRows": 1,
+      "rubric": [
+        "States that the check script alone is not enforcement because nothing calls it.",
+        "Adds it to the CI workflow as a required check, so merge is the floor; optionally an end-of-session hook for earlier feedback.",
+        "Does not use a permission deny rule to require the check.",
+        "Recommends retiring or shortening the `AGENTS.md` instruction once CI covers it."
+      ]
+    },
+    {
+      "id": "composite-rule",
+      "task": "Never push directly to `main`, and never let a pull request merge with failing tests. Recommend how to enforce this.",
+      "minRows": 2,
+      "rubric": [
+        "Splits the request into two atomic rules, one row each.",
+        "Uses branch protection for direct pushes and a required check for failing tests.",
+        "Marks branch protection unverified because only the Terraform file, not provider state, was inspected.",
+        "Treats the existing commit guard as earlier feedback, not as the enforcement for pushes."
+      ]
+    },
+    {
+      "id": "retire-guidance",
+      "task": "`AGENTS.md` spends a paragraph on the rule against committing on `main`. Recommend how this rule should be enforced and what written guidance it still needs.",
+      "files": {
+        "AGENTS.md": "# Fixture repository\n\nSynthetic repository for evaluation. Claude Code and Codex sessions both work here; only Claude Code loads `.claude/settings.json`.\n\n## Branch rule\n\nNever commit on `main`. Before committing, check the current branch with `git branch --show-current`. If it is `main`, create a feature branch first with `git switch -c <name>`. Commits on `main` cause review problems and must be reverted. This applies to every agent and every person. Remember to check every time.\n"
+      },
+      "minRows": 1,
+      "rubric": [
+        "Identifies the existing commit guard and branch protection as the enforcement, and reuses them.",
+        "Recommends cutting the paragraph, because the guard's block message already gives the recovery command.",
+        "Keeps at most one line, justified by the Codex gap the Claude-only guard leaves, or proposes a git hook that would let even that line go.",
+        "Hands the remaining line's wording and placement to `knowledge-routing`."
+      ]
+    }
+  ]
+}

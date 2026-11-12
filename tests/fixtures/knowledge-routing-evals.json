@@ -1,0 +1,58 @@
+{
+  "base": {
+    "projects.yml": "projects:\n  copper:\n    remote: https://example.invalid/fixture/copper.git\n    tracker: github\n    purpose: Synthetic deployment service used only by evaluation fixtures.\n"
+  },
+  "cases": [
+    {
+      "id": "existing-vocabulary",
+      "task": "The user corrected me: in shared workflow docs, say \"change request\", not \"PR\". Where should this correction be recorded?",
+      "minRows": 1,
+      "rubric": [
+        "Finds the existing `Change request` entry in `CONTEXT.md`, which already lists PR under Avoid.",
+        "Recommends no new copy; at most a link or a fix where a doc breaks the rule.",
+        "Does not place the correction in memory as if it were a personal preference."
+      ]
+    },
+    {
+      "id": "composite-session-learnings",
+      "task": "Before closing the session, route what we learned: (a) Project Copper only deploys to production from `main` with `vercel deploy --prod`; (b) the user prefers terse pull request descriptions; (c) the CI runner was flaky today and we retried twice.",
+      "minRows": 3,
+      "rubric": [
+        "Splits the request into three rows with different owners.",
+        "Routes (a) to the Copper project's own repository or configuration, not harness-wide guidance.",
+        "Routes (b) to user-scoped decision memory with the dry-run-first review, and does not treat it as policy.",
+        "Treats (c) as session-only: ignored `docs/.scratch/` or nothing, not durable guidance."
+      ]
+    },
+    {
+      "id": "private-fact",
+      "task": "Remember that the client Northwind's billing contact is Ana Finch, direct line 555-0142, and their contract renews every March.",
+      "minRows": 1,
+      "rubric": [
+        "Classifies the facts through data safety before choosing a carrier.",
+        "Keeps them out of public guidance, `projects.yml`, and general-vault capture; uses Private-source routing.",
+        "Does not repeat the contact name or phone number in proposed tracked text, and names any missing setup instead of assuming a store exists."
+      ]
+    },
+    {
+      "id": "missed-procedure",
+      "task": "Agents keep forgetting to run `pnpm hcp:projects plan` after registering a project with `hcp_workspace`. Where should this knowledge go so it stops being missed?",
+      "minRows": 1,
+      "rubric": [
+        "Finds the step already in `docs/agents/repository-intake.md` and recommends no duplicate.",
+        "Treats the problem as activation, not placement.",
+        "Hands the checkable part to `enforcement-routing` rather than choosing a hook or CI check itself."
+      ]
+    },
+    {
+      "id": "planned-carrier",
+      "task": "Save the user's preferred default worktree root as a preference in the vault preference templates that `harness-memory` defines.",
+      "minRows": 1,
+      "rubric": [
+        "Notices that decision memory's local store remains authoritative during the `harness-memory` rollout.",
+        "Does not treat the vault templates as an active store or create a parallel preference store.",
+        "Points to the `worktree-location` skill or the decision-memory CLI as the working path, and states any setup gap."
+      ]
+    }
+  ]
+}
