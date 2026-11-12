@@ -26,6 +26,7 @@ skills:
   impeccable: { capability: ui-design, state: canonical, codex: supported, gemini: supported, claude: supported }
   harness-memory: { capability: harness-memory, state: canonical, requires: [knowledge-routing], codex: supported, gemini: supported, claude: supported }
   initialize-llm-wiki: { capability: harness-memory, state: retired, codex: unavailable, gemini: unavailable, claude: unavailable }
+  enforcement-routing: { capability: enforcement-routing, state: canonical, codex: supported, gemini: supported, claude: supported }
   knowledge-routing: { capability: knowledge-routing, state: canonical, codex: supported, gemini: supported, claude: supported }
   investigate-first: { capability: investigate-first, state: canonical, codex: supported, gemini: supported, claude: supported }
   lean-build: { capability: lean-build, state: canonical, codex: supported, gemini: supported, claude: supported }
