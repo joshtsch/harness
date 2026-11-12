@@ -11,7 +11,7 @@ interface Manifest { version: 1; cases: { scenario: Scenario; before: Snapshot }
 
 const repository = resolve(import.meta.dirname, "..");
 // The interview may only write its tree file and the domain docs domain-modeling owns.
-const writable = /^(docs\/\.scratch|docs\/adr|GLOSSARY\.md$|GLOSSARY-MAP\.md$)/;
+const writable = /^(docs\/(\.scratch|adr)\/|GLOSSARY\.md$|GLOSSARY-MAP\.md$)/;
 const treeFile = /^docs\/\.scratch\/[^/]+-decision-tree\.md$/;
 
 export async function prepareInterviewEvaluation(skillDirectory: string, domainModelingDirectory: string): Promise<string> {

@@ -23,7 +23,7 @@ skills:
   domain-modeling: { capability: domain-modeling, state: canonical, codex: supported, gemini: supported, claude: supported }
   grill-with-docs: { capability: interview, state: available, requires: [grilling, domain-modeling], codex: supported, gemini: degraded, claude: supported }
   interview: { capability: interview, state: canonical, requires: [domain-modeling], codex: supported, gemini: supported, claude: supported }
-  grilling: { capability: grilling, state: canonical, codex: supported, gemini: supported, claude: supported }
+  grilling: { capability: interview, state: available, codex: supported, gemini: supported, claude: supported }
   impeccable: { capability: ui-design, state: canonical, codex: supported, gemini: supported, claude: supported }
   harness-memory: { capability: harness-memory, state: canonical, requires: [knowledge-routing], codex: supported, gemini: supported, claude: supported }
   initialize-llm-wiki: { capability: harness-memory, state: retired, codex: unavailable, gemini: unavailable, claude: unavailable }
