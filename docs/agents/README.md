@@ -24,6 +24,7 @@ Attio and Granola workflows default to their public APIs; see [API access and fa
 | Agent role routing | [agent-roles.md](agent-roles.md) |
 | Documentation strategy | [documentation-strategy.md](documentation-strategy.md) |
 | Durable knowledge placement | [`knowledge-routing` skill](../../harness-skills/knowledge-routing/SKILL.md) and [documentation-strategy.md](documentation-strategy.md) |
+| Design interviews and decisions only the user can make | [`interview` skill](../../harness-skills/interview/SKILL.md) and [routing](agent-roles.md#interview-routing) |
 | Rule enforcement levels | [`enforcement-routing` skill](../../harness-skills/enforcement-routing/SKILL.md) |
 | Harness and cross-project wiki lookup | [documentation strategy](documentation-strategy.md#recording-and-retrieval) |
 | Notion knowledge, authorized source sets, and Private retrieval activation | [knowledge-providers.md](knowledge-providers.md) |

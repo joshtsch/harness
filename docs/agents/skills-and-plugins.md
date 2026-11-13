@@ -83,8 +83,7 @@ scope must remain explicit:
   and migrated deliberately.
 - The current `joshtsch/skills` entries `scope-router` and `save` depend on
   harness policy or workflows; migrate them to `harness-skills/` in a separate
-  inventory change. The upstream `grill-with-docs` skill is the canonical design
-  interview that records domain docs.
+  inventory change.
   `agent-system-audit` is the broadly reusable entry in that source set.
 - `mattpocock/skills` is an approved external skill source, not a native Codex
   plugin. Install selected skills project-locally with `pnpm dlx skills`; keep it
@@ -141,8 +140,8 @@ pnpm link:skill <skill-name> <path-to-skill-directory>
 The command refuses to replace an existing skill directory or link. Remove the local
 link manually before relinking a skill.
 
-Behavioral evaluations exist for `harness-memory`, `knowledge-routing`, and
-`enforcement-routing` (`pnpm evaluate:<skill> prepare` and `check`). All follow
+Behavioral evaluations exist for `harness-memory`, `knowledge-routing`,
+`enforcement-routing`, and `interview` (`pnpm evaluate:<skill> prepare` and `check`). All follow
 the [harness-memory evaluation procedure](harness-memory.md#behavioral-evaluation):
 independent agents run each `runs/<case>/prompt.md`, `check` covers only
 file and report-shape invariants, and each response still needs review against
@@ -150,6 +149,10 @@ its case rubric. The two routing skills share `scripts/evaluate-routing-skill.ts
 each case leaves its workspace unchanged (a synthetic repository, or a harness
 snapshot for `knowledge-routing`) and must split the request into at least the
 expected number of report rows.
+`interview` uses `scripts/evaluate-interview.ts`: each case must ask exactly one
+question, keep its decision tree in one `docs/.scratch/` file (none for a single
+decision), and change nothing outside scratch and domain docs. `prepare` takes
+the `domain-modeling` directory as an optional second argument.
 
 ## Impeccable installation
 
