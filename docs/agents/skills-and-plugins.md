@@ -151,7 +151,8 @@ snapshot for `knowledge-routing`) and must split the request into at least the
 expected number of report rows.
 `interview` uses `scripts/evaluate-interview.ts`: each case must ask exactly one
 question, keep its decision tree in one `docs/.scratch/` file (none for a single
-decision), and change nothing outside scratch and domain docs. `prepare` takes
+decision), and change nothing outside scratch and domain docs. Cases record the
+skill's text-format fallback, so `check` does not cover interactive question tools. `prepare` takes
 the `domain-modeling` directory as an optional second argument.
 
 ## Impeccable installation

@@ -34,7 +34,11 @@ Goal: <one sentence>
 
 ## Asking
 
-Ask **one question per message**. Pick it from the **frontier**: decisions whose prerequisites are all settled. Among those, ask first the one that unblocks the most of the tree. Format:
+Ask **one question per message**. Pick it from the **frontier**: decisions whose prerequisites are all settled. Among those, ask first the one that unblocks the most of the tree. `<n>` counts every unsettled decision in the tree.
+
+When the host has an interactive question tool (Claude Code: `AskUserQuestion`; Codex: `request_user_input_async`), ask through it so the user can click an answer or type their own. Put the title and `(<n> open after this)` in the question text, offer the choices the tool allows (Claude Code: 2–4; Codex: 1–3), and list your recommendation first with "(Recommended)" in its label. Give each option a short description of its trade-off. Do not add an "Other" option; free text is always available.
+
+Otherwise, use this format:
 
 ```
 ❓ **<question title>** (<n> open after this)
@@ -44,7 +48,7 @@ Ask **one question per message**. Pick it from the **frontier**: decisions whose
 ➡️ <your recommended answer>
 ```
 
-`<n>` counts every unsettled decision in the tree. Word the question so "yes" accepts your recommendation. Then wait for the answer.
+Word the question so "yes" accepts your recommendation. Then wait for the answer.
 
 ## Facts vs decisions
 
