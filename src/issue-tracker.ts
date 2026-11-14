@@ -1,5 +1,5 @@
 import type { IssueTracker } from "./project-config.js";
-import { epicLabel, hasGherkinAcceptanceCriteria, planningReadinessLabel, triageViolations } from "./triage-labels.js";
+import { epicLabel, hasGherkinAcceptanceCriteria, intakeLabel, planningReadinessLabel, triageViolations } from "./triage-labels.js";
 
 export interface ResolvedIssue {
   key: string;
@@ -30,10 +30,12 @@ export async function resolveIssue(tracker: IssueTracker, key: string, run: Issu
   if (labels.includes(epicLabel) || labels.includes(planningReadinessLabel)) {
     throw new Error(`issue ${key} is a planning epic; start the session from a deliverable sub-issue`);
   }
-  if (!hasGherkinAcceptanceCriteria(typeof parsed.body === "string" ? parsed.body : "")) {
+  const body = typeof parsed.body === "string" ? parsed.body : "";
+  if (!hasGherkinAcceptanceCriteria(body)) {
     throw new Error(`issue ${key} has no Gherkin acceptance criteria. Before starting, offer the user a Scenario with Given/When/Then steps for this issue, add it to the issue once they agree, then rerun setup.`);
   }
-  const violations = triageViolations({ number: parsed.number, title: parsed.title, labels, body: parsed.body as string });
+  const violations = triageViolations({ number: parsed.number, title: parsed.title, labels, body });
+  if (labels.includes(intakeLabel)) violations.push("needs-triage issue is not ready to start");
   if (violations.length > 0) {
     throw new Error(`issue ${key} fails triage: ${violations.join("; ")}. Fix its labels per docs/agents/triage-labels.md, then rerun setup.`);
   }

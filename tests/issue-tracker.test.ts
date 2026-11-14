@@ -33,7 +33,7 @@ describe("resolveIssue", () => {
   });
 
   it("rejects issues that fail triage label rules", async () => {
-    for (const labels of [[], [{ name: "ready-for-agent" }], [{ name: "bug" }, { name: "needs-triage" }, { name: "ready-for-agent" }]]) {
+    for (const labels of [[], [{ name: "ready-for-agent" }], [{ name: "bug" }, { name: "needs-triage" }, { name: "ready-for-agent" }], [{ name: "needs-triage" }]]) {
       const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "Untyped", labels, body: gherkin }), stderr: "" });
       await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run))
         .rejects.toThrow(/issue 11 fails triage: .*docs\/agents\/triage-labels\.md/);

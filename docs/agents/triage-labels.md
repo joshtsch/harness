@@ -1,7 +1,8 @@
 # Triage labels
 
 Use canonical labels for issue type and workflow state. A new issue enters
-through `needs-triage` unless [the user approved it](#shaping-tracker-work). Triage adds exactly one issue-type label (`bug` or
+through `needs-triage` unless [the user approved it](#shaping-tracker-work).
+Triage adds exactly one issue-type label (`bug` or
 `enhancement`) and replaces `needs-triage` with exactly one readiness label when
 scope and verification are complete. An epic uses `epic` and the
 `ready-for-planning` state; deliverable issues use `ready-for-agent` or
@@ -53,8 +54,8 @@ Read this section before creating or filing tracker issues.
 Tracker work has three levels, linked as GitHub sub-issues:
 
 - **Epic:** high-level planning for non-technical stakeholders, written in
-  plain language without implementation detail. Its children are tasks; a nested epic is allowed for a stakeholder
-  sub-outcome, and
+  plain language without implementation detail. Its children are tasks; a
+  nested epic is allowed for a stakeholder sub-outcome, and
   [backlog selection](../../harness-skills/backlog-select/SKILL.md) follows it.
 - **Task:** technical planning for one deliverable: approach, interfaces,
   acceptance criteria, and verification. Every new task is a sub-issue of an
@@ -77,10 +78,12 @@ before this rule may stay standalone until they are next triaged. A
 direction or design decision that gates the build is a task under the epic,
 usually `ready-for-human`, not a standalone issue beside it.
 
-Entry: an issue whose scope and acceptance criteria the user approved in chat may skip `needs-triage` and be filed ready, with its type
-label, readiness label, and Gherkin criteria. File anything else, including
-issues an agent proposes without that approval, as `needs-triage`. Session setup
-and `pnpm worktree` reject an issue that fails these label rules.
+Entry: an issue whose scope and acceptance criteria the user approved in chat
+may skip `needs-triage` and be filed ready, with its type label, readiness
+label, and Gherkin criteria. File anything else, including issues an agent
+proposes without that approval, as `needs-triage`. Session setup and
+`pnpm worktree` reject a `needs-triage` issue or one that fails these label
+rules.
 
 ## Priority and rank
 
