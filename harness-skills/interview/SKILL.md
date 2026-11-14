@@ -44,7 +44,11 @@ Ask **one question per message**. Pick it from the **frontier**: decisions whose
 ➡️ <your recommended answer>
 ```
 
-`<n>` counts every unsettled decision in the tree. Word the question so "yes" accepts your recommendation. Then wait for the answer.
+`<n>` counts every unsettled decision in the tree. Word the question so "yes" accepts your recommendation.
+
+When the host has an interactive question tool (Claude Code: `AskUserQuestion`; Codex: `request_user_input_async`), also call it after the full message so the user can click an answer or type their own. Ask the same question, offer the message's choices (Claude Code: 2–4; Codex: 1–3; if there are more, offer the strongest and leave the rest to free text), and list your recommendation first with "(Recommended)" in its label. Keep free text available: Claude Code always offers it, so do not add an "Other" option there.
+
+Then wait for the answer.
 
 ## Facts vs decisions
 
