@@ -31,7 +31,7 @@ export async function prepareInterviewEvaluation(skillDirectory: string, domainM
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, contents);
     }
-    const prompt = `Use $interview at ${join(root, "skills/interview/SKILL.md")}; its domain-modeling skill is at ${join(root, "skills/domain-modeling/SKILL.md")}.\n\nRepository root (a feature worktree, not a default clone; treat it as the harness root): ${workspace}\n\n${scenario.task}\n\nThis is a disposable synthetic fixture. Write files only where the skills direct, inside the repository root. Record the exact message you would send the user next in ${join(run, "response.md")}, then stop: do not answer your own questions or call user-input tools. No interactive question tool is available here, so use the skill's text format. Do not inspect the evaluation manifest or other cases. No external actions.\n`;
+    const prompt = `Use $interview at ${join(root, "skills/interview/SKILL.md")}; its domain-modeling skill is at ${join(root, "skills/domain-modeling/SKILL.md")}.\n\nRepository root (a feature worktree, not a default clone; treat it as the harness root): ${workspace}\n\n${scenario.task}\n\nThis is a disposable synthetic fixture. Write files only where the skills direct, inside the repository root. Record the exact message you would send the user next in ${join(run, "response.md")}, then stop: do not answer your own questions or call user-input tools. No interactive question tool is available here; record only the message text. Do not inspect the evaluation manifest or other cases. No external actions.\n`;
     await writeFile(join(run, "prompt.md"), prompt);
     cases.push({ scenario, before: await snapshot(workspace) });
   }
