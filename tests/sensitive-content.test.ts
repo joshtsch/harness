@@ -41,7 +41,13 @@ describe("findSensitiveContent", () => {
     const findings = findSensitiveContent([
       `+  caniuse-lite@${version}:`,
       `+    version: ${version}`,
+      `+${version}`,
       `+<svg viewBox="${["0", "0", "200", "120"].join(" ")}">`,
+      `+<svg viewBox="${["0", "0", "1024", "1024"].join(" ")}">`,
+      `+<svg viewbox = '${["0", "0", "1200", "1200"].join(" ")}'>`,
+      `+<svg viewBox={"${["0", "0", "1024", "1024"].join(" ")}"} />`,
+      `+const icon = { viewBox: "${["0", "0", "1024", "1024"].join(" ")}" };`,
+      `+${JSON.stringify(`<svg viewBox="${["0", "0", "1024", "1024"].join(" ")}">`)}`,
     ].join("\n"));
 
     expect(findings).toEqual([]);
@@ -54,6 +60,7 @@ describe("findSensitiveContent", () => {
       ["415", "555", "0172"].join("."),
       ["+44", "20", "7946", "0958"].join(" "),
       ["415", "555", "0172"].join(""),
+      ["030", "12345678"].join("."),
     ];
     const findings = findSensitiveContent(phones.map((phone) => `+call ${phone}.`).join("\n"));
 
