@@ -44,18 +44,19 @@ Worktree: <path>, branch <branch>, base <base>.
 Done: <the project's quality gates>, Storybook stories for every UI element added or changed, docs updated.
 Parallel work: <other sessions and issues, or "none">. Stay within <file and package boundaries>.
 Stop and ask me on any decision the issue leaves unsettled; record settled decisions on the issue or PR.
-Commit, then propose $paired-review against the local branch. Open the PR only after a clean review. Never merge.
+Commit, then report to me that the work is ready for review; I start your $paired-review session and send you its id. Open the PR only after a clean review. Never merge.
 ```
 
 ## 2. Review
 
-When the implementation session reports committed work, ask the user whether to
-start its review. On yes, unless that session already started a reviewer from its
-own card:
+When the implementation session reports committed work ready for review, start
+its review session right away, without asking the user. Skip this section if that
+session already started a reviewer.
 
-1. Start a separate review session in the same worktree (`use_worktree: false`,
-   read-only work) with the [paired-review](../paired-review/SKILL.md) review
-   prompt, sending findings to the implementation session's `local_…` id.
+1. Check the commit with `git log`, then start a separate review session in the
+   same worktree (`initiation: "user_asked"`, `use_worktree: false`, read-only
+   work) with the [paired-review](../paired-review/SKILL.md) review prompt,
+   sending findings to the implementation session's `local_…` id.
 2. Message the implementation session the reviewer's id, so it dismisses its own
    review card and sends re-review requests there.
 
