@@ -70,14 +70,14 @@ Tasks and subtasks are deliverable issues: `bug` or `enhancement`, and
 `ready-for-agent` or `ready-for-human`. Only epics use `epic` and
 `ready-for-planning`.
 
-Sizing rule: before filing a task, search the open epics and fit the task
-under an existing one whenever its outcome covers the work. File a new epic,
-even for a one-task request, only when none fits, and say which epics you
-ruled out. Add one task per pull request the request
-needs, all linked before any implementation session starts. Issues filed
-before this rule may stay standalone until they are next triaged. A
-direction or design decision that gates the build is a task under the epic,
-usually `ready-for-human`, not a standalone issue beside it.
+Sizing rule: before filing a task, search the open epics and fit the task under
+an existing one whenever its outcome covers the work. File a new epic, even for
+a one-task request, only when none fits, and list the epics you ruled out in
+the new epic's body. Add one task per pull request the request needs, all
+linked before any implementation session starts. Issues filed before this rule
+may stay standalone until they are next triaged. A direction or design decision
+that gates the build is a task under the epic, usually `ready-for-human`, not a
+standalone issue beside it.
 
 Entry: an issue whose scope and acceptance criteria the user approved in chat
 may skip `needs-triage` and be filed ready, with its type label, readiness
