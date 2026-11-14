@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { parse } from "dotenv";
 import type { ProjectDefinition } from "../project-config.js";
@@ -58,10 +58,13 @@ export async function copyProjectEnvFiles(project: ProjectDefinition, options: E
 
     const target = join(options.worktreePath, destination);
     await mkdir(dirname(target), { recursive: true });
-    if (options.overwrite) await rm(target, { force: true });
+    // Overwrites go through a temp file so a failed write never loses the existing destination.
+    const written = options.overwrite ? `${target}.harness-${process.pid}.tmp` : target;
     try {
-      await writeFile(target, content, { mode: 0o600, flag: "wx" });
+      await writeFile(written, content, { mode: 0o600, flag: "wx" });
+      if (written !== target) await rename(written, target);
     } catch (error) {
+      if (written !== target) await rm(written, { force: true });
       if (errorCode(error) !== "EEXIST") throw new Error(`${project.name} env file destination ${destination} could not be written`);
       outcomes.push({ destination, status: "skipped", reason: "destination exists; pass --overwrite-env-files to replace it" });
       continue;
