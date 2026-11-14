@@ -3,7 +3,8 @@ import { parseSessionArgs } from "../index.js";
 
 describe("parseSessionArgs", () => {
   it("parses issue-bound sessions", () => {
-    expect(parseSessionArgs(["--goal", "Prove session setup", "example-project", "11"])).toEqual({ projectList: "example-project", issueKey: "11", goal: "Prove session setup" });
+    expect(parseSessionArgs(["--goal", "Prove session setup", "example-project", "11"])).toEqual({ projectList: "example-project", issueKey: "11", goal: "Prove session setup", overwriteEnvFiles: false });
+    expect(parseSessionArgs(["--overwrite-env-files", "--goal", "Prove session setup", "example-project", "11"]).overwriteEnvFiles).toBe(true);
   });
 
   it("requires a real issue number", () => {

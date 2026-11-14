@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import { parse } from "yaml";
 import { parseToolMappings, type BusinessLine, type ToolMapping } from "./context/index.js";
 
@@ -27,6 +27,12 @@ export interface ProjectQualityChecks {
   format: WorkflowCommand;
 }
 
+export interface ProjectEnvFile {
+  source: string;
+  destination: string;
+  variables?: string[];
+}
+
 export interface ProjectWiki {
   description: string;
   topics: string[];
@@ -51,6 +57,7 @@ export interface ProjectDefinition {
   businessLines?: string[];
   toolMappings?: Record<string, ToolMapping>;
   quality?: ProjectQualityChecks;
+  envFiles?: ProjectEnvFile[];
   verification: WorkflowCommand[];
   workflows: WorkflowCommand[];
 }
@@ -77,6 +84,7 @@ interface RawProject {
   business_lines?: unknown;
   tool_mappings?: unknown;
   quality?: unknown;
+  env_files?: unknown;
   verification?: unknown;
   workflows?: unknown;
 }
@@ -93,7 +101,7 @@ export interface LoadProjectsConfigOptions {
   environment?: Record<string, string | undefined>;
 }
 
-const rawProjectFields = new Set(["purpose", "topics", "excludes", "remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "verification", "workflows"]);
+const rawProjectFields = new Set(["purpose", "topics", "excludes", "remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "env_files", "verification", "workflows"]);
 const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "quality", "verification", "workflows"]);
 const businessLineFields = new Set(["display_name", "tool_mappings"]);
 const issueTrackerFields = new Set(["type", "repository"]);
@@ -101,6 +109,7 @@ const crmFields = new Set(["type"]);
 const wikiFields = new Set(["description", "topics", "pages", "raw", "templates"]);
 const workflowCommandFields = new Set(["command", "args", "required"]);
 const qualityFields = new Set(["lint", "format"]);
+const envFileFields = new Set(["source", "destination", "variables"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -211,6 +220,29 @@ function parseQuality(value: unknown, label: string): ProjectQualityChecks | und
   return { lint: parseCheck("lint"), format: parseCheck("format") };
 }
 
+function relativePath(value: unknown, label: string): string {
+  const path = requiredString(value, label);
+  if (isAbsolute(path) || path.split(/[\\/]/).includes("..")) throw new Error(`${label} must be a relative path inside its checkout`);
+  return path;
+}
+
+function parseEnvFiles(value: unknown, label: string): ProjectEnvFile[] {
+  if (!Array.isArray(value)) throw new Error(`${label} must be a list`);
+  const envFiles = value.map((entry, index): ProjectEnvFile => {
+    assertKnownFields(entry, envFileFields, `${label}[${index}]`);
+    const variables = entry.variables === undefined ? undefined : parseStringList(entry.variables, `${label}[${index}].variables`);
+    if (variables?.length === 0) throw new Error(`${label}[${index}].variables must not be empty`);
+    if (variables?.some((name) => !/^[A-Za-z_][A-Za-z0-9_]*$/.test(name))) throw new Error(`${label}[${index}].variables must be environment variable names`);
+    return {
+      source: relativePath(entry.source, `${label}[${index}].source`),
+      destination: relativePath(entry.destination, `${label}[${index}].destination`),
+      ...(variables ? { variables } : {}),
+    };
+  });
+  if (new Set(envFiles.map(({ destination }) => destination)).size !== envFiles.length) throw new Error(`${label} must not repeat a destination`);
+  return envFiles;
+}
+
 export async function loadProjectsConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<Record<string, ProjectDefinition>> {
   const resolveEnvironment = options.resolveEnvironment ?? true;
   const environment = options.environment ?? process.env;
@@ -269,6 +301,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
         }),
         toolMappings: parseToolMappings(definition.tool_mappings, `projects.${name}.tool_mappings`, resolveEnvironment, environment),
         quality: parseQuality(definition.quality ?? defaults.quality, `projects.${name}.quality`),
+        ...(definition.env_files === undefined ? {} : { envFiles: parseEnvFiles(definition.env_files, `projects.${name}.env_files`) }),
         verification: parseCommands(definition.verification ?? defaults.verification, `projects.${name}.verification`, true),
         workflows: parseCommands(definition.workflows ?? defaults.workflows, `projects.${name}.workflows`, false),
       } satisfies ProjectDefinition];

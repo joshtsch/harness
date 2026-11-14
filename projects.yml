@@ -5,4 +5,10 @@ defaults:
     type: github
 
 # Add installation-specific projects to ignored projects.local.yml.
+# A project may copy gitignored env files from its main clone into each new
+# worktree (see docs/agents/project-configuration.md#worktree-env-files):
+#   env_files:
+#     - source: .env
+#       destination: supabase/.env
+#       variables: [SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID, SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET]
 projects: {}

@@ -28,6 +28,7 @@ Each project entry should identify:
 - the project-owned `scripts/setup.sh`;
 - required project-specific lint and format checks (`quality.lint` and
   `quality.format`);
+- optional `env_files` to copy into new worktrees (see [worktree env files](#worktree-env-files));
 - verification and other optional workflow commands.
 
 `hcp_workspace` is an optional, unique HCP workspace name. Set it only for a
@@ -168,6 +169,39 @@ harness requires rerunning creation/setup to refresh this pointer.
 See [existing worktrees](session-lifecycle.md#existing-worktrees) for preservation,
 discovery, migration, and rollback. Listing and pruning commands are tracked in
 issue #14; they must use this resolver when implemented.
+
+## Worktree env files
+
+A project whose local stack needs gitignored configuration, such as OAuth
+client settings, lists it under `env_files`. Both `pnpm worktree` and
+`pnpm setup:session` copy each entry from the project's main clone into a new
+worktree after creating it and before the project's `worktree` setup phase:
+
+```yaml
+env_files:
+  - source: .env              # relative to the main clone
+    destination: supabase/.env  # relative to the worktree
+    variables:                # optional; omit to copy the whole file
+      - SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
+      - SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET
+```
+
+Paths must be relative and stay inside their checkout; destinations must be
+unique. `variables` writes only those names, one single-quoted `NAME='value'`
+line each. Values containing a single quote or line break are refused.
+`env_files` is project-specific and cannot be set in defaults.
+
+The copy is the user's tooling acting on the user's files; agent read and edit
+deny rules for `.env` files stay in place. It never prints, logs, or records a
+value. Each entry reports `copied` or `skipped` with a reason in the command
+output, the `env-files` setup event, and the project's `envFiles` state in the
+session manifest:
+
+- A destination Git does not ignore in the worktree fails setup before writing.
+- A missing source file or missing named variable is `skipped`; setup continues.
+- An existing destination is kept and reported `skipped`. Pass
+  `--overwrite-env-files` to replace it.
+- Written files have mode `0600`.
 
 ## Project setup contract
 

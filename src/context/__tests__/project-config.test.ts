@@ -84,6 +84,41 @@ describe("loadProjectsConfig", () => {
     });
   });
 
+  it("parses env files from the local overlay and rejects unsafe entries", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "harness-config-"));
+    temporaryDirectories.push(directory);
+    const configPath = join(directory, "projects.yml");
+    const localPath = join(directory, "projects.local.yml");
+    await writeFile(configPath, [
+      "defaults:",
+      "  default_branch: main",
+      "  setup_script: scripts/setup.sh",
+      "  issue_tracker:",
+      "    type: github",
+      "projects:",
+      "  example-project:",
+      "    remote: git@github.com:joshtsch/example-project.git",
+    ].join("\n"));
+    const withEnvFiles = (...entry: string[]) => writeFile(localPath, ["projects:", "  example-project:", "    env_files:", ...entry].join("\n"));
+
+    await withEnvFiles("      - source: .env", "        destination: supabase/.env", "        variables: [GOOGLE_CLIENT_ID]", "      - source: .env.local", "        destination: .env.local");
+    expect((await loadProjectsConfig(configPath))["example-project"]!.envFiles).toEqual([
+      { source: ".env", destination: "supabase/.env", variables: ["GOOGLE_CLIENT_ID"] },
+      { source: ".env.local", destination: ".env.local" },
+    ]);
+
+    await withEnvFiles("      - source: .env", "        destination: ../other/.env");
+    await expect(loadProjectsConfig(configPath)).rejects.toThrow("projects.example-project.env_files[0].destination must be a relative path inside its checkout");
+    await withEnvFiles("      - source: /etc/.env", "        destination: .env");
+    await expect(loadProjectsConfig(configPath)).rejects.toThrow("env_files[0].source must be a relative path");
+    await withEnvFiles("      - source: .env", "        destination: .env", "        variables: [not-a-name]");
+    await expect(loadProjectsConfig(configPath)).rejects.toThrow("env_files[0].variables must be environment variable names");
+    await withEnvFiles("      - source: .env", "        destination: .env", "      - source: .env.local", "        destination: .env");
+    await expect(loadProjectsConfig(configPath)).rejects.toThrow("env_files must not repeat a destination");
+    await withEnvFiles("      - source: .env", "        target: .env");
+    await expect(loadProjectsConfig(configPath)).rejects.toThrow("env_files[0].target is not supported");
+  });
+
   it("rejects optional quality checks", async () => {
     const directory = await mkdtemp(join(tmpdir(), "harness-config-"));
     temporaryDirectories.push(directory);
