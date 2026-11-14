@@ -11,9 +11,10 @@ Harness changes are developed on feature branches, never directly on `main`.
 4. Create a feature branch using the repository's provider prefix, `codex/` through Codex or `claude/` through Claude Code, and include the issue number when the provider supports it.
 5. Implement the change and run the [completion checks](session-completion.md#3-verify-and-review).
 6. Run `code-review` against `main`. The review must cover both documented standards and the originating GitHub issue or specification.
-7. Resolve or explicitly accept review findings.
-8. Commit on the feature branch and run the [paired review loop](session-completion.md#5a-run-the-paired-review-loop) against the local branch until the review session reports no unresolved findings, or the user declines it.
-9. Open a GitHub merge request (shown as a pull request by GitHub) that links the issue and includes verification results and the paired review outcome.
+7. Review the diff with the [`knowledge-routing`](../../harness-skills/knowledge-routing/SKILL.md) skill (is each fact or rule in its authoritative source?) and the [`enforcement-routing`](../../harness-skills/enforcement-routing/SKILL.md) skill (is each new or changed rule enforced at the right level?).
+8. Resolve or explicitly accept review findings.
+9. Commit on the feature branch and run the [paired review loop](session-completion.md#5a-run-the-paired-review-loop) against the local branch until the review session reports no unresolved findings, or the user declines it.
+10. Open a GitHub merge request (shown as a pull request by GitHub) that links the issue and includes verification results, the routing review outcomes, and the paired review outcome.
 
 If an issue tracker outage prevents issue creation, record a redacted outage handoff under `docs/.scratch/` with the intended title, attempted operation, timestamp, and exact blocker. Mark the branch provisional; do not push or open a merge request until the issue is created and linked. A local commit is allowed only when the user explicitly authorizes a provisional commit, and it must not be presented as review-ready.
 

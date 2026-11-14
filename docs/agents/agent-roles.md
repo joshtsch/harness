@@ -16,7 +16,7 @@ Use one role for each kind of work:
   verification.
 - **`/code-review`** determines whether the branch is ready for review. It runs the
   two-axis standards/spec review and creates the GitHub change request after the
-  readiness gate passes.
+  readiness gates in [contributing](contributing.md) pass.
 
 ## UI design routing
 
