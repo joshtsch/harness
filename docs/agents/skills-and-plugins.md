@@ -57,6 +57,8 @@ scope must remain explicit:
   initialization links them into `.agents/skills/` and checks them alongside the
   external skill inventory. Add each skill to `capabilities.yml` and
   `agent-policy.yml`; do not add it to `skills-lock.json`.
+- `orchestrator` is Claude Code only. `.codex/config.toml` disables it with a
+  name-based `[[skills.config]]` entry, and `.gemini/settings.json` excludes it.
 - `harness-memory` is the canonical vault workflow and depends one way on
   `knowledge-routing`. The old `initialize-llm-wiki` entry is retired in capability
   policy but retained in the external installation inventory. Its project-local

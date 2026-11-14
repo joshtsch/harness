@@ -363,6 +363,10 @@ _Avoid_: Author session
 A session paired with one implementation session that reviews its branch, before and after the change request opens, and sends findings back to it until none remain unresolved. It is a separate session, not the review mode of the implementation session.
 _Avoid_: Reviewer agent, code-review run
 
+**Orchestrator session**:
+A session that coordinates one project's implementation and review sessions: it starts them, relays their questions to the user, previews their work, and merges and archives on the user's say-so. It writes no project code.
+_Avoid_: Supervisor, parent session (which names only the session-start relationship)
+
 **Skill**:
 A bounded procedure for performing a specific task within the active policy, workflow, and mode.
 _Avoid_: Rule, mode

@@ -8,6 +8,7 @@
 /.agents/skills/
 /.claude/skills/
 /.claude/settings.local.json
+/.claude/launch.json
 .DS_Store
 .pnpm-store/
 .terraform/
