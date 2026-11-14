@@ -11,6 +11,10 @@ const tokenPattern = /\bsb_secret_[A-Za-z0-9_-]{16,}\b|\b(?:ghp|github_pat|xox[b
 const emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 // ISO dates (YYYY-MM-DD) are not phone numbers.
 const phonePattern = /(?<![\w-])(?!\d{4}-\d{2}-\d{2}(?!\d))(?:\+?\d[\d .()-]{8,}\d)(?![\w-])/g;
+// Versions of 3+ dot-only segments, one of 5+ digits (caniuse-lite lockfile versions), are not phone numbers.
+const dottedVersionPattern = /^\+?(?=[\d.]*\d{5})\d+(?:\.\d+){2,}$/;
+// SVG viewBox values (attribute, JSX, or object form, possibly JSON-escaped) are not phone numbers.
+const viewBoxPattern = /viewBox\s*[=:]\s*\{?\\?["'][^"'\\]*/gi;
 
 function addedLines(diff: string): string[] {
   return diff.split("\n").filter((line) => line.startsWith("+") && !line.startsWith("+++"));
@@ -27,7 +31,9 @@ export function findSensitiveContent(diff: string): SensitiveContentFinding[] {
     for (const email of line.matchAll(emailPattern)) {
       if (email[0].toLowerCase() !== "git@github.com") findings.push({ kind: "email", match: email[0] });
     }
-    for (const phone of line.matchAll(phonePattern)) findings.push({ kind: "phone", match: phone[0] });
+    for (const phone of line.replace(viewBoxPattern, "").matchAll(phonePattern)) {
+      if (!dottedVersionPattern.test(phone[0])) findings.push({ kind: "phone", match: phone[0] });
+    }
   }
   return findings;
 }
