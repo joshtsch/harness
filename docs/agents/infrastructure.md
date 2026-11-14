@@ -80,6 +80,16 @@ The control plane manages those sensitive `tfe_variable` resources and persists
 their complete input inventory for subsequent runs. Application resources remain
 in the owning repository's workspace.
 
+## Static hosting default
+
+Deploy static sites and single-page apps with no server runtime to Cloudflare
+Pages, managed through the Terraform Cloudflare provider after the coverage
+gate. Gate pre-launch and internal deployments with a Cloudflare Access
+application that covers both the custom domain and the project's
+`*.<project>.pages.dev` hostnames, so preview URLs are not left public. Choose
+another host only when a project needs a capability Pages lacks, and record the
+reason in the project's issue. User-confirmed on 14 November 2026.
+
 ## Unsupported operations and recovery
 
 A fallback may be needed when no maintained provider covers an operation,
