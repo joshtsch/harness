@@ -85,10 +85,11 @@ in the owning repository's workspace.
 Deploy static sites and single-page apps with no server runtime to Cloudflare
 Pages, managed through the Terraform Cloudflare provider after the coverage
 gate. Gate pre-launch and internal deployments with a Cloudflare Access
-application that covers both the custom domain and the project's
-`*.<project>.pages.dev` hostnames, so preview URLs are not left public. Choose
-another host only when a project needs a capability Pages lacks, and record the
-reason in the project's issue. User-confirmed on 14 November 2026.
+application that covers the custom domain, `<project>.pages.dev`, and
+`*.<project>.pages.dev`, so neither the production nor the preview Pages URLs
+are left public; the Pages project's own access toggle covers previews only.
+Choose another host only when a project needs a capability Pages lacks, and
+record the reason in the project's issue. User-confirmed on 14 November 2026.
 
 ## Unsupported operations and recovery
 
