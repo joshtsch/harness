@@ -9,8 +9,10 @@ const credentialPattern = /(?:api[_-]?key|service[_-]?role[_-]?key|service[_-]?k
 const privateKeyPattern = /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/;
 const tokenPattern = /\bsb_secret_[A-Za-z0-9_-]{16,}\b|\b(?:ghp|github_pat|xox[baprs])-[_A-Za-z0-9-]{10,}\b|\bAKIA[0-9A-Z]{16}\b|\bsk-[A-Za-z0-9]{20,}\b|\beyJ[A-Za-z0-9_-]{5,}\.eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\b/;
 const emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
-// ISO dates (YYYY-MM-DD) are not phone numbers.
-const phonePattern = /(?<![\w-])(?!\d{4}-\d{2}-\d{2}(?!\d))(?:\+?\d[\d .()-]{8,}\d)(?![\w-])/g;
+// ISO dates (YYYY-MM-DD) and SVG viewBox values are not phone numbers.
+const phonePattern = /(?<![\w-])(?<!viewBox=["'])(?!\d{4}-\d{2}-\d{2}(?!\d))(?:\+?\d[\d .()-]{8,}\d)(?![\w-])/g;
+// Dot-only versions with a 5+ digit segment (caniuse-lite lockfile versions) are not phone numbers; dotted phones with short segments still are.
+const dottedVersionPattern = /^(?=[\d.]*\d{5})\d+(?:\.\d+)+$/;
 
 function addedLines(diff: string): string[] {
   return diff.split("\n").filter((line) => line.startsWith("+") && !line.startsWith("+++"));
@@ -27,7 +29,9 @@ export function findSensitiveContent(diff: string): SensitiveContentFinding[] {
     for (const email of line.matchAll(emailPattern)) {
       if (email[0].toLowerCase() !== "git@github.com") findings.push({ kind: "email", match: email[0] });
     }
-    for (const phone of line.matchAll(phonePattern)) findings.push({ kind: "phone", match: phone[0] });
+    for (const phone of line.matchAll(phonePattern)) {
+      if (!dottedVersionPattern.test(phone[0])) findings.push({ kind: "phone", match: phone[0] });
+    }
   }
   return findings;
 }
