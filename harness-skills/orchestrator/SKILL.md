@@ -30,7 +30,10 @@ or `gh pr checks`.
      `HARNESS_AGENT_PROVIDER=claude` because the default Codex provider may be
      missing.
    - Stacked on an unmerged branch: `pnpm worktree --refresh --base <branch> <project> <issue> "<title>"`,
-     since `setup:session` has no `--base`.
+     since `setup:session` has no `--base`. This path writes no session
+     `AGENTS.md` and runs no issue checks: confirm yourself that the issue is
+     not an epic and has Gherkin, and point the brief at the harness and
+     worktree `AGENTS.md` files instead.
 3. Start the implementation session: `start_session` with `initiation: "user_asked"`,
    `context: "fresh"`, `cwd` = the worktree, `use_worktree: false`,
    `wake_when_done: true`, and a `background` naming the project, the parallel
@@ -39,7 +42,7 @@ or `gh pr checks`.
 
 ```text
 You are the implementation session for <issue link> in <project>.
-Read <path to the generated session AGENTS.md> with the harness and project instructions.
+Read <the generated session AGENTS.md, or for stacked work the harness and worktree AGENTS.md> with the harness and project instructions.
 Worktree: <path>, branch <branch>, base <base>.
 Done: <the project's quality gates>, Storybook stories for every UI element added or changed, docs updated.
 Parallel work: <other sessions and issues, or "none">. Stay within <file and package boundaries>.
@@ -71,8 +74,8 @@ or PR.
 
 ## 4. Test before merge
 
-1. Add a per-issue entry to the harness root's local `.claude/launch.json`
-   (untracked; keep it out of commits): its own port, and a database and upload
+1. Add a per-issue entry to the harness root's ignored `.claude/launch.json`:
+   its own port, and a database and upload
    directory under your scratchpad, run against the worktree:
    `"runtimeExecutable": "env"`, `"runtimeArgs": ["PORT=<port>", "<DB var>=<scratchpad path>", …, "pnpm", "--dir", "<worktree>", "<dev script>"]`.
 2. Start it with `preview_start`, sanity-check that the changed page loads, then
@@ -104,6 +107,6 @@ approves the wording.
 
 The harness git-guard hook checks `gh issue|pr create|edit|comment` bodies:
 
-- Give `--body-file` a literal path; a path containing a shell variable is rejected.
+- Give `--body-file` a literal, readable path; a path containing a shell variable, or `-` (stdin), is rejected.
 - Write issue references inline (`Closes #123`); a line that starts with `#123`
   reads as a markdown heading and is rejected.
