@@ -74,7 +74,7 @@ Sizing rule: before filing a task, search the open epics and fit the task under
 an existing one whenever its outcome covers the work. File a new epic, even for
 a one-task request, only when none fits, and list the epics you ruled out in
 the new epic's body. Add one task per pull request the request needs, all
-linked before any implementation session starts. Issues filed before this rule
+linked before any implementation session starts. Issues filed before 2026-11-14
 may stay standalone until they are next triaged. A direction or design decision
 that gates the build is a task under the epic, usually `ready-for-human`, not a
 standalone issue beside it.
@@ -83,8 +83,9 @@ Entry: an issue whose scope and acceptance criteria the user approved in chat
 may skip `needs-triage` and be filed ready, with its type label, readiness
 label, and Gherkin criteria. File anything else, including issues an agent
 proposes without that approval, as `needs-triage`. Session setup and
-`pnpm worktree` reject a `needs-triage` issue or one that fails these label
-rules.
+`pnpm worktree` reject a `needs-triage` issue, one that fails these label
+rules, a task filed from 2026-11-14 with no parent epic, and a task with open
+subtasks.
 
 ## Priority and rank
 

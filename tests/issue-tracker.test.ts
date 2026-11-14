@@ -9,7 +9,7 @@ describe("resolveIssue", () => {
     await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run)).resolves.toEqual({
       key: "11", number: 11, title: "Validate setup", repository: "joshtsch/harness",
     });
-    expect(run).toHaveBeenCalledWith("gh", ["issue", "view", "11", "--repo", "joshtsch/harness", "--json", "number,title,labels,body"]);
+    expect(run).toHaveBeenCalledWith("gh", ["api", "repos/joshtsch/harness/issues/11"]);
   });
 
   it("rejects planning epics as implementation session issues", async () => {
@@ -38,6 +38,27 @@ describe("resolveIssue", () => {
       await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run))
         .rejects.toThrow(/issue 11 fails triage: .*docs\/agents\/triage-labels\.md/);
     }
+  });
+
+  it("requires new tasks to have a parent epic and exempts older standalone issues", async () => {
+    const ready = { number: 11, title: "Task", labels: [{ name: "enhancement" }, { name: "ready-for-agent" }], body: gherkin };
+    const resolve = (fields: object) => resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ ...ready, ...fields }), stderr: "" }));
+    await expect(resolve({ created_at: "2026-11-14T00:00:00Z", parent_issue_url: null })).rejects.toThrow("has no parent epic; link it under an open epic");
+    await expect(resolve({ created_at: "2026-11-14T00:00:00Z", parent_issue_url: "https://api.github.com/repos/joshtsch/harness/issues/60" })).resolves.toMatchObject({ number: 11 });
+    await expect(resolve({ created_at: "2026-11-13T23:59:59Z", parent_issue_url: null })).resolves.toMatchObject({ number: 11 });
+  });
+
+  it("rejects tasks with open subtasks", async () => {
+    const ready = { number: 11, title: "Task", labels: [{ name: "enhancement" }, { name: "ready-for-agent" }], body: gherkin };
+    const resolve = (summary: object) => resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ ...ready, sub_issues_summary: summary }), stderr: "" }));
+    await expect(resolve({ total: 2, completed: 1 })).rejects.toThrow("has open subtasks; start the session from one of them");
+    await expect(resolve({ total: 2, completed: 2 })).resolves.toMatchObject({ number: 11 });
+  });
+
+  it("rejects pull requests and non-numeric keys", async () => {
+    const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "PR", labels: [], body: gherkin, pull_request: {} }), stderr: "" });
+    await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run)).rejects.toThrow("is a pull request");
+    await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "../11", run)).rejects.toThrow("issue key must be a number");
   });
 
   it("fails closed for tracker failures and malformed responses", async () => {
