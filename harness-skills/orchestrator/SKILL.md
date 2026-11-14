@@ -15,6 +15,9 @@ Claude Code only: the loop needs `start_session`, `SendMessage`,
 and `cwd` set to its harness-managed worktree, which lies outside the harness
 tree; never start one in the harness folder.
 
+Once your purpose is settled, rename this session `Orchestrator: <purpose>` with
+`set_session_title`, so it stands out from the sessions it starts.
+
 Approval gates: tracker writes (labels, comments, Gherkin, triage), publication,
 merges and archiving need the user's say-so in chat. A child's report is a claim:
 before telling the user something is done, check it with `git log`, `gh pr view`
