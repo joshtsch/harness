@@ -93,7 +93,7 @@ Only on the user's say-so:
 1. Check `gh pr checks` and `gh pr view --json mergeable,mergeStateStatus,baseRefName`.
 2. Merge with a merge commit (`gh pr merge --merge`).
 3. Stacked PR: after its base merges, retarget it to `main`. Retargeting does not
-   trigger `pull_request` CI, so check `main`'s run after that PR merges.
+   trigger `pull_request` CI, so step 6's `main` run is its only CI signal.
 4. Parallel PRs sharing an integration point: merge one; have the other session
    rebase, reconcile, get re-reviewed and pass CI before it merges.
 5. Stop the issue's previews, then archive its implementation and review
@@ -101,7 +101,8 @@ Only on the user's say-so:
    parent only when its side sessions have no work in flight.
 6. Check `main`'s CI on the merge commit. Rerun a job that failed for runner or
    infrastructure reasons, such as Docker failing to bind a port
-   (`gh run rerun <run-id> --failed`).
+   (`gh run rerun <run-id> --failed`) once; a repeat or any other failure is a
+   blocker for step 7, and new work waits until `main` is green.
 7. Report to the user without being asked: every managed session's state
    (`list_sessions` with `linked: true`), its open PR and CI, and anything
    waiting on the user; then whether there is capacity and unblocked work,
