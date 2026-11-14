@@ -101,7 +101,12 @@ Only on the user's say-so:
    (`gh run rerun <run-id> --failed`) once; a repeat or any other failure is a
    blocker for step 7, and new work waits until `main` is green.
 6. Before proposing the next slice, offer the user one cleanup of the merged
-   issue, and act only on their yes:
+   issue, and act only on their yes. Offer only what you manage: sessions in
+   your linked family (`list_sessions` with `linked: true`), previews you
+   started (`preview_list` and your `launch.json` entries), local stacks your
+   children started, and worktrees you created for your issues. Never offer to
+   remove other sessions, servers or worktrees, even merged and clean ones; at
+   most name them as out of scope.
    - Archive its implementation and review sessions and their side sessions.
      Archiving takes a session's side sessions along, so archive a parent only
      when its side sessions have no work in flight.
