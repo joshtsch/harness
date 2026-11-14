@@ -108,9 +108,11 @@ Only on the user's say-so:
    - Stop its previews and any local stack it started, such as
      `pnpm supabase:stop` in its worktree.
    - Remove its harness-managed worktree and local branch per
-     [session lifecycle](../../docs/agents/session-lifecycle.md): first confirm
-     the branch is in `origin/main` (`git merge-base --is-ancestor <branch> origin/main`)
-     and the worktree has no uncommitted or unpushed work; preserve and report
+     [session lifecycle](../../docs/agents/session-lifecycle.md): first run
+     `git -C <worktree> fetch origin`, then confirm the branch is in
+     `origin/main` (`git -C <worktree> merge-base --is-ancestor <branch> origin/main`)
+     and the worktree has no uncommitted or unpushed work
+     (`git -C <worktree> status --porcelain` is empty); preserve and report
      anything else. Flag any project worktree inside the harness's
      `.claude/worktrees/`.
 7. Report to the user without being asked: what was cleaned up and what is
