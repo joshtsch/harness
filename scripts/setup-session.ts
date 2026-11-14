@@ -11,7 +11,7 @@ import { createSessionFinalizer, runSessionFinalizationHook, type SessionFinaliz
 import { createSessionOptimizationHook } from "../src/optimization/index.js";
 import { recordSetupEvent } from "../src/session/project-setup.js";
 import { prerequisitesForProvider, verifyPrerequisites } from "../src/prerequisites.js";
-import { loadProjectConfigEnvironment } from "../src/session/index.js";
+import { formatEnvFileOutcome, loadProjectConfigEnvironment } from "../src/session/index.js";
 
 const executeFile = promisify(execFile);
 const args = process.argv.slice(2);
@@ -103,6 +103,7 @@ try {
     harnessRoot,
     session,
     logDirectory: resolve("docs/.scratch/setup"),
+    overwriteEnvFiles: input.overwriteEnvFiles,
     onProjectRefresh: (project, result) => console.log(`${project}: ${result.status}${result.reason ? ` (${result.reason})` : ""}`),
     run,
     writeManifest,
@@ -114,5 +115,6 @@ try {
 
 await finalizeSession("success");
 
+for (const [project, state] of Object.entries(result.states)) for (const outcome of state.envFiles ?? []) console.log(formatEnvFileOutcome(project, outcome));
 for (const worktree of result.worktrees) console.log(`${worktree.action}: ${worktree.path}`);
 console.log(`Session instructions: ${resolve(sessionDirectory, "AGENTS.md")}`);

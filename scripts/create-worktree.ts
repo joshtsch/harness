@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 import { resolve } from "node:path";
 import { loadProjectsConfig, requireProjectQuality } from "../src/project-config.js";
-import { ensureProjectClone, createProjectWorktree, recordSetupEvent, runProjectSetup, verifyPreparedProject, resolveWorktreeRoot } from "../src/session/index.js";
+import { ensureProjectClone, copyProjectEnvFiles, createProjectWorktree, formatEnvFileOutcome, recordSetupEvent, runProjectSetup, verifyPreparedProject, resolveWorktreeRoot } from "../src/session/index.js";
 import { parseWorktreeArgs } from "../src/session/worktree-input.js";
 import { resolveIssue } from "../src/issue-tracker.js";
 
 const args = process.argv.slice(2);
-const { projectName, issueKey, ticketTitle, refresh, branch, base } = parseWorktreeArgs(args);
+const { projectName, issueKey, ticketTitle, refresh, overwriteEnvFiles, branch, base } = parseWorktreeArgs(args);
 const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "session";
 
 const projects = await loadProjectsConfig(resolve("projects.yml"), { resolveEnvironment: false });
@@ -39,6 +39,11 @@ if (!configured) {
     onRefresh: () => recordSetupEvent(bootstrapOptions, { type: "clone-refresh-requested", project: configured.name }),
     run,
   });
+  if (configured.envFiles?.length) {
+    const envFiles = await copyProjectEnvFiles(configured, { clonePath: clone.path, worktreePath: result.path, overwrite: overwriteEnvFiles, run });
+    await recordSetupEvent(bootstrapOptions, { type: "env-files", project: configured.name, outcomes: envFiles });
+    for (const outcome of envFiles) console.log(formatEnvFileOutcome(configured.name, outcome));
+  }
   const setupOptions = {
     ...bootstrapOptions,
     worktreePath: result.path,

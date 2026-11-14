@@ -3,6 +3,7 @@ import { ensureProjectClone, type ProjectClone } from "./project-clone.js";
 import { createProjectWorktree, type WorktreeProject, type WorktreeResult } from "./worktree.js";
 import { recordSetupEvent, runProjectCommands, runProjectSetupSession, verifyProjectReady, verifyPreparedProject, type ProjectSetupOptions, type SetupCommandRunner, type SetupSessionResult, type SetupStep, type SetupFailure, type VerificationOptions } from "./project-setup.js";
 import { refreshProjectClone, type ProjectRefreshResult } from "./project-refresh.js";
+import { copyProjectEnvFiles, type EnvFileCopyOptions, type EnvFileOutcome } from "./env-files.js";
 
 export type { ProjectClone } from "./project-clone.js";
 
@@ -14,6 +15,7 @@ export interface PreparationProjectState {
   stage?: string;
   error?: string;
   refresh?: ProjectRefreshResult;
+  envFiles?: EnvFileOutcome[];
 }
 
 export interface PreparationFailure {
@@ -41,6 +43,7 @@ export interface SessionPreparationOptions {
   harnessRoot: string;
   session: SessionContext;
   logDirectory: string;
+  overwriteEnvFiles?: boolean;
   onProjectRefresh?: (project: string, result: ProjectRefreshResult) => void;
   run: SetupCommandRunner;
   writeManifest: (status: string, states: Record<string, PreparationProjectState>, failure?: PreparationFailure) => Promise<void>;
@@ -51,6 +54,7 @@ export interface SessionPreparationAdapters {
   refreshClone: (project: WorktreeProject) => Promise<ProjectRefreshResult>;
   runSetupSession: (steps: SetupStep[]) => Promise<SetupSessionResult>;
   createWorktree: (project: WorktreeProject, options: WorktreePreparationOptions) => Promise<WorktreeResult>;
+  copyEnvFiles: (project: ProjectDefinition, options: EnvFileCopyOptions) => Promise<EnvFileOutcome[]>;
   verifyProject: (path: string, run: SetupCommandRunner) => Promise<void>;
   runCommands: (commands: WorkflowCommand[], options: VerificationOptions) => Promise<SetupFailure[]>;
   recordEvent: (options: { logDirectory: string; sessionId: string }, event: Record<string, unknown>) => Promise<void>;
@@ -82,6 +86,7 @@ function defaultAdapters(options: SessionPreparationOptions): SessionPreparation
     refreshClone: (project) => refreshProjectClone(project, (command, args) => options.run(command, args, { cwd: project.path, env: process.env })),
     runSetupSession: runProjectSetupSession,
     createWorktree: createProjectWorktree,
+    copyEnvFiles: copyProjectEnvFiles,
     verifyProject: verifyProjectReady,
     runCommands: runProjectCommands,
     recordEvent: recordSetupEvent,
@@ -155,6 +160,20 @@ export async function prepareSession(options: SessionPreparationOptions, adapter
     await adapters.recordEvent(eventOptions, { type: "worktree-ready", project: project.name, path: worktree.path, branch: worktree.branch });
     preparation.state = { ...preparation.state, status: "worktree-ready", path: worktree.path, branch: worktree.branch };
     await writeManifest("running");
+    if (!project.envFiles?.length) continue;
+    try {
+      const envFiles = await adapters.copyEnvFiles(project, {
+        clonePath: clone!.path,
+        worktreePath: worktree.path,
+        overwrite: options.overwriteEnvFiles,
+        run: async (command, args) => options.run(command, args, { cwd: worktree.path, env: process.env }),
+      });
+      preparation.state = { ...preparation.state, envFiles };
+      await adapters.recordEvent(eventOptions, { type: "env-files", project: project.name, outcomes: envFiles });
+      await writeManifest("running");
+    } catch (error) {
+      await failSession(preparation, "env-files", error);
+    }
   }
 
   for (const preparation of projects) {

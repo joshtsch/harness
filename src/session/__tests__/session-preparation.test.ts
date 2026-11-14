@@ -43,6 +43,7 @@ function dependencies(overrides: Partial<SessionPreparationDependencies> = {}): 
     refreshClone: vi.fn(async () => ({ status: "current" as const })),
     runSetupSession: vi.fn(async () => ({ results: [], optionalFailures: [] })),
     createWorktree: vi.fn(async (): Promise<WorktreeResult> => ({ action: "created", branch: "issue-39-extract-session-preparation", name: "issue-39-extract-session-preparation", path: "/workspace/.worktrees/example-project/issue-39-extract-session-preparation", base: "origin/main" })),
+    copyEnvFiles: vi.fn(async () => [{ destination: "supabase/.env", status: "copied" as const }]),
     verifyProject: vi.fn(async () => undefined),
     runCommands: vi.fn(async () => []),
     recordEvent: vi.fn(async () => undefined),
@@ -77,6 +78,34 @@ describe("prepareSession", () => {
       projects: result.states,
       status: "complete",
     }).toolMappings).toEqual(["crm"]);
+  });
+
+  it("copies declared env files after worktree creation and before worktree setup", async () => {
+    const deps = dependencies();
+    const withEnvFiles = { ...project, envFiles: [{ source: ".env", destination: "supabase/.env" }] };
+    const result = await prepareSession({ ...options, selected: [withEnvFiles], overwriteEnvFiles: true }, deps);
+
+    expect(deps.copyEnvFiles).toHaveBeenCalledWith(withEnvFiles, expect.objectContaining({ clonePath: "/workspace/projects/example-project", worktreePath: expect.stringContaining("issue-39"), overwrite: true }));
+    expect(vi.mocked(deps.copyEnvFiles).mock.invocationCallOrder[0]).toBeGreaterThan(vi.mocked(deps.createWorktree).mock.invocationCallOrder[0]!);
+    expect(vi.mocked(deps.copyEnvFiles).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(deps.runSetupSession).mock.invocationCallOrder[1]!);
+    expect(result.states[project.name]!.envFiles).toEqual([{ destination: "supabase/.env", status: "copied" }]);
+    expect(deps.recordEvent).toHaveBeenCalledWith(expect.anything(), { type: "env-files", project: project.name, outcomes: [{ destination: "supabase/.env", status: "copied" }] });
+  });
+
+  it("skips env file copying for projects without env files", async () => {
+    const deps = dependencies();
+    const result = await prepareSession(options, deps);
+
+    expect(deps.copyEnvFiles).not.toHaveBeenCalled();
+    expect(result.states[project.name]).not.toHaveProperty("envFiles");
+  });
+
+  it("stops before worktree setup when an env file is refused", async () => {
+    const deps = dependencies({ copyEnvFiles: vi.fn(async () => { throw new Error("not ignored by Git"); }) });
+
+    await expect(prepareSession({ ...options, selected: [{ ...project, envFiles: [{ source: ".env", destination: ".env" }] }] }, deps)).rejects.toThrow("not ignored by Git");
+    expect(deps.runSetupSession).toHaveBeenCalledOnce();
+    expect(deps.writeManifest).toHaveBeenLastCalledWith("failed", expect.anything(), expect.objectContaining({ stage: "env-files" }));
   });
 
   it("refuses to start before cloning when lint and format checks are missing", async () => {
