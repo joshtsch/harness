@@ -96,12 +96,40 @@ Only on the user's say-so:
 1. Check `gh pr checks` and `gh pr view --json mergeable,mergeStateStatus,baseRefName`.
 2. Merge with a merge commit (`gh pr merge --merge`).
 3. Stacked PR: after its base merges, retarget it to `main`. Retargeting does not
-   trigger `pull_request` CI, so check `main`'s run after that PR merges.
+   trigger `pull_request` CI, so step 5's `main` run is its only CI signal.
 4. Parallel PRs sharing an integration point: merge one; have the other session
    rebase, reconcile, get re-reviewed and pass CI before it merges.
-5. Stop the issue's previews, then archive its implementation and review
-   sessions. Archiving takes a session's side sessions along, so archive a
-   parent only when its side sessions have no work in flight.
+5. Check `main`'s CI on the merge commit. Rerun a job that failed for runner or
+   infrastructure reasons, such as Docker failing to bind a port
+   (`gh run rerun <run-id> --failed`) once; a repeat or any other failure is a
+   blocker for step 7, and new work waits until `main` is green.
+6. Before proposing the next slice, offer the user one cleanup of the merged
+   issue, and act only on their yes. Offer only what you manage: sessions you
+   started and their side sessions (find them with `list_sessions` with
+   `linked: true`, skipping the session that started you and its other
+   children), previews you started (`preview_list` and your section 4
+   `launch.json` entries), local stacks your
+   children started, and worktrees you created for your issues. Never offer to
+   remove other sessions, servers or worktrees, even merged and clean ones; at
+   most name them as out of scope.
+   - Archive its implementation and review sessions and their side sessions.
+     Archiving takes a session's side sessions along, so archive a parent only
+     when its side sessions have no work in flight.
+   - Stop its previews and any local stack it started, such as
+     `pnpm supabase:stop` in its worktree.
+   - Remove its harness-managed worktree and local branch per
+     [session lifecycle](../../docs/agents/session-lifecycle.md): first run
+     `git -C <worktree> fetch origin`, then confirm the branch is in
+     `origin/main` (`git -C <worktree> merge-base --is-ancestor <branch> origin/main`)
+     and the worktree has no uncommitted or unpushed work
+     (`git -C <worktree> status --porcelain` is empty); preserve and report
+     anything else. Flag any project worktree inside the harness's
+     `.claude/worktrees/`.
+7. Report to the user without being asked: what was cleaned up and what is
+   left, the state of every session you manage (as scoped in step 6),
+   its open PR and CI, and anything waiting on the user; then whether there is
+   capacity and unblocked work, naming the next
+   [backlog-select](../backlog-select/SKILL.md) candidate.
 
 ## 6. What's next
 
