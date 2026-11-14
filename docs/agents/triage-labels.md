@@ -70,9 +70,10 @@ Tasks and subtasks are deliverable issues: `bug` or `enhancement`, and
 `ready-for-agent` or `ready-for-human`. Only epics use `epic` and
 `ready-for-planning`.
 
-Sizing rule: before filing a task, find or create its epic. Link the task
-under an existing open epic for the same outcome; otherwise file the epic
-first, even for a one-task request. Add one task per pull request the request
+Sizing rule: before filing a task, search the open epics and fit the task
+under an existing one whenever its outcome covers the work. File a new epic,
+even for a one-task request, only when none fits, and say which epics you
+ruled out. Add one task per pull request the request
 needs, all linked before any implementation session starts. Issues filed
 before this rule may stay standalone until they are next triaged. A
 direction or design decision that gates the build is a task under the epic,
