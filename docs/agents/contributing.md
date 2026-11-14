@@ -11,7 +11,7 @@ Harness changes are developed on feature branches, never directly on `main`.
 4. Create a feature branch using the repository's provider prefix, `codex/` through Codex or `claude/` through Claude Code, and include the issue number when the provider supports it.
 5. Implement the change and run the [completion checks](session-completion.md#3-verify-and-review).
 6. Run `code-review` against `main`. The review must cover both documented standards and the originating GitHub issue or specification.
-7. Review the diff with the [`knowledge-routing`](../../harness-skills/knowledge-routing/SKILL.md) skill (is each fact or rule in its authoritative source?) and the [`enforcement-routing`](../../harness-skills/enforcement-routing/SKILL.md) skill (is each new or changed rule enforced at the right level?). Report both outcomes with the code review.
+7. Review the diff with the [`knowledge-routing`](../../harness-skills/knowledge-routing/SKILL.md) skill (is each fact or rule in its authoritative source?) and the [`enforcement-routing`](../../harness-skills/enforcement-routing/SKILL.md) skill (is each new or changed rule enforced at the right level?).
 8. Resolve or explicitly accept review findings.
 9. Commit on the feature branch and run the [paired review loop](session-completion.md#5a-run-the-paired-review-loop) against the local branch until the review session reports no unresolved findings, or the user declines it.
 10. Open a GitHub merge request (shown as a pull request by GitHub) that links the issue and includes verification results, the routing review outcomes, and the paired review outcome.
