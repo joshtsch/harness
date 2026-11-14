@@ -23,13 +23,13 @@ sub-issues through the API when available;
 if GitHub returns 404, it counts issue references in task-list entries in the
 epic body instead.
 
-Session setup resolves every implementation session through the configured issue
-tracker. GitHub sessions require a numeric issue number and use `gh issue view`
-against the configured repository; missing issues, unavailable access,
-unsupported trackers, and malformed responses fail before cloning or worktree
-creation. Session setup rejects issues marked `epic` or
-`ready-for-planning`; start implementation from a deliverable issue instead.
-There is no exploratory implementation bypass.
+Session setup resolves every implementation session through the configured
+issue tracker. GitHub sessions require a numeric issue number and read it with
+`gh api repos/<repository>/issues/<number>` against the configured repository;
+missing issues, unavailable access, unsupported trackers, and malformed
+responses fail before cloning or worktree creation. Session setup rejects
+issues marked `epic` or `ready-for-planning`; start implementation from a
+deliverable issue instead. There is no exploratory implementation bypass.
 
 For session setup, use the repository configured under the selected project's
 issue tracker. Other repository-scoped `gh` commands may infer their repository

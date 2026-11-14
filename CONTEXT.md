@@ -36,11 +36,11 @@ A record in a project's configured issue tracker that provides identity and cont
 _Avoid_: Ticket (except when naming a provider's terminology)
 
 **Epic**:
-A parent issue for a larger outcome, decomposed into deliverable issues through GitHub sub-issues.
+A parent issue for high-level planning with non-technical stakeholders: an outcome decomposed into tasks or nested epics through GitHub sub-issues.
 _Avoid_: Project (a GitHub Project is a planning view, not a parent issue)
 
 **Deliverable issue**:
-A bounded issue that can be implemented and verified on its own, or tracked as an epic's sub-issue.
+A task or subtask: a bounded issue that one pull request implements and verifies. A task holds the technical plan and belongs to an epic; a subtask is a task's sub-issue carrying implementation detail or splitting a task too large for one pull request.
 _Avoid_: Story (unless naming a provider's terminology)
 
 **Slice**:

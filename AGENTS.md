@@ -23,6 +23,7 @@ This harness improves its own workflows and coordinates work across independent 
 
 - For DNS failures, connection errors, or stalled network commands, follow [Sandbox network troubleshooting](docs/agents/tooling.md#sandbox-network-troubleshooting) before diagnosing the host network or remote service.
 - Follow [Agent role routing](docs/agents/agent-roles.md) for capability selection, provider-specific behavior, and skill ownership. Resolve skill routes with `pnpm capabilities`; unresolved or unsupported routes fail closed.
+- Before creating tracker issues, follow [Shaping tracker work](docs/agents/triage-labels.md#shaping-tracker-work): every task belongs to an epic; fit it under an existing one before filing a new epic.
 - Before opening a change request, commit on the feature branch and run `$paired-review` against the local branch; open the change request only once the review session reports nothing unresolved. After later pushes to an open change request, run it again to continue the loop.
 - When a project has Storybook, add or update stories for every UI element a change adds or changes. See [UI stories](docs/agents/session-completion.md#ui-stories).
 - Before reporting work complete, follow [Session completion](docs/agents/session-completion.md) and report remaining blockers or preserved changes.

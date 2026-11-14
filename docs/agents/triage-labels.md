@@ -1,7 +1,8 @@
 # Triage labels
 
-Use canonical labels for issue type and workflow state. Every new issue enters
-through `needs-triage`. Triage adds exactly one issue-type label (`bug` or
+Use canonical labels for issue type and workflow state. A new issue enters
+through `needs-triage` unless [the user approved it](#shaping-tracker-work).
+Triage adds exactly one issue-type label (`bug` or
 `enhancement`) and replaces `needs-triage` with exactly one readiness label when
 scope and verification are complete. An epic uses `epic` and the
 `ready-for-planning` state; deliverable issues use `ready-for-agent` or
@@ -45,6 +46,46 @@ Use GitHub Projects to track initiatives that span multiple epics; a Project is
 a planning view, not an epic issue. Use milestones for releases or date-based
 targets. Use `theme:<name>` labels to group work by a recurring theme
 across epics; themes do not replace parent/sub-issue relationships.
+
+## Shaping tracker work
+
+Read this section before creating or filing tracker issues.
+
+Tracker work has three levels, linked as GitHub sub-issues:
+
+- **Epic:** high-level planning for non-technical stakeholders, written in
+  plain language without implementation detail. Its children are tasks; a
+  nested epic is allowed for a stakeholder sub-outcome, and
+  [backlog selection](../../harness-skills/backlog-select/SKILL.md) follows it.
+- **Task:** technical planning for one deliverable: approach, interfaces,
+  acceptance criteria, and verification. Every new task is a sub-issue of an
+  epic. A task normally lands as one pull request and is what a session or
+  `pnpm worktree` starts from.
+- **Subtask:** optional. A sub-issue of a task that carries implementation-level
+  detail, or splits a task too large for one pull request. Each subtask is a
+  deliverable of its own; once a task has subtasks, start sessions from them
+  and close the task when they are done. A subtask has no children.
+
+Tasks and subtasks are deliverable issues: `bug` or `enhancement`, and
+`ready-for-agent` or `ready-for-human`. Only epics use `epic` and
+`ready-for-planning`.
+
+Sizing rule: before filing a task, search the open epics and fit the task under
+an existing one whenever its outcome covers the work. File a new epic, even for
+a one-task request, only when none fits, and list the epics you ruled out in
+the new epic's body. Add one task per pull request the request needs, all
+linked before any implementation session starts. Issues filed before 2026-11-14
+UTC may stay standalone until they are next triaged. A direction or design
+decision that gates the build is a task under the epic, usually
+`ready-for-human`, not a standalone issue beside it.
+
+Entry: an issue whose scope and acceptance criteria the user approved in chat
+may skip `needs-triage` and be filed ready, with its type label, readiness
+label, and Gherkin criteria. File anything else, including issues an agent
+proposes without that approval, as `needs-triage`. Session setup and `pnpm
+worktree` reject a `needs-triage` issue, one that fails these label rules, a
+task filed from 2026-11-14 UTC with no parent epic, and a task with open
+subtasks.
 
 ## Priority and rank
 
