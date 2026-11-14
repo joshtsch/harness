@@ -8,7 +8,7 @@ description: Run the paired review loop between an implementation session and a 
 This skill executes [the paired review loop](../../docs/agents/session-completion.md#5a-run-the-paired-review-loop),
 which defines the rules. An implementation session and a review session are
 defined in [Agent Context](../../CONTEXT.md#agent-context). It does not replace
-the pre-PR `code-review` gate in [contributing](../../docs/agents/contributing.md).
+the pre-PR `code-review` and routing review gates in [contributing](../../docs/agents/contributing.md).
 
 ## As the implementation session
 
@@ -18,7 +18,7 @@ the pre-PR `code-review` gate in [contributing](../../docs/agents/contributing.m
    In Claude Code, propose it with `start_session` (`initiation: "own_initiative"`,
    `context: "fresh"`) using the review prompt below; it starts only when the user
    accepts. Other providers: ask in chat and start it only on the user's yes.
-2. If the user declines, the pre-PR `code-review` gate still applies; open the
+2. If the user declines, the pre-PR `code-review` and routing review gates still apply; open the
    change request and note the declined review in it and in the completion report.
 3. When findings arrive, fix or explicitly accept each one. After each fix commit,
    send the same review session a re-review request that lists accepted findings
