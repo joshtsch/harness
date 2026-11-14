@@ -6,7 +6,7 @@ project work complete.
 Harness changes are developed on feature branches, never directly on `main`.
 
 1. Run the [repository-scope gate](repository-intake.md) before provisioning any repository or creating any issue, branch, or worktree. Inventory every repository the session may modify, classify each ownership boundary, and register every durable project in `projects.yml` or `projects.local.yml` before continuing.
-2. Create or identify the originating issue in the classified repository. Record its repository and number in the work notes. Harness branches skip session setup, so check the issue has [Gherkin acceptance criteria](triage-labels.md) yourself; if it has none, offer the user a scenario before starting.
+2. Create or identify the originating issue in the classified repository, shaped per [Shaping tracker work](triage-labels.md#shaping-tracker-work). Record its repository and number in the work notes. Harness branches skip session setup, so check the issue has [Gherkin acceptance criteria](triage-labels.md) yourself; if it has none, offer the user a scenario before starting.
 3. Fetch `origin/main`, then fast-forward the local `main` to it. Stop if the local branch has diverged or contains uncommitted changes.
 4. Create a feature branch using the repository's provider prefix, `codex/` through Codex or `claude/` through Claude Code, and include the issue number when the provider supports it.
 5. Implement the change and run the [completion checks](session-completion.md#3-verify-and-review).

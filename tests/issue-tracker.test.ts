@@ -5,7 +5,7 @@ const gherkin = "Scenario: setup\nGiven a project\nWhen setup runs\nThen it pass
 
 describe("resolveIssue", () => {
   it("resolves a GitHub issue without storing its body", async () => {
-    const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "Validate setup", labels: [], body: gherkin }), stderr: "" });
+    const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "Validate setup", labels: [{ name: "enhancement" }, { name: "ready-for-agent" }], body: gherkin }), stderr: "" });
     await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run)).resolves.toEqual({
       key: "11", number: 11, title: "Validate setup", repository: "joshtsch/harness",
     });
@@ -29,6 +29,14 @@ describe("resolveIssue", () => {
       const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "Vague", labels: [{ name: "ready-for-human" }], body }), stderr: "" });
       await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run))
         .rejects.toThrow("issue 11 has no Gherkin acceptance criteria. Before starting, offer the user");
+    }
+  });
+
+  it("rejects issues that fail triage label rules", async () => {
+    for (const labels of [[], [{ name: "ready-for-agent" }], [{ name: "bug" }, { name: "needs-triage" }, { name: "ready-for-agent" }]]) {
+      const run = vi.fn().mockResolvedValue({ code: 0, stdout: JSON.stringify({ number: 11, title: "Untyped", labels, body: gherkin }), stderr: "" });
+      await expect(resolveIssue({ type: "github", repository: "joshtsch/harness" }, "11", run))
+        .rejects.toThrow(/issue 11 fails triage: .*docs\/agents\/triage-labels\.md/);
     }
   });
 

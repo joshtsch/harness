@@ -28,7 +28,8 @@ An epic URL can identify its repository; match that identity to the selected
 project. Resolve a bare issue number only within the scoped tracker. Ask about
 conflicting project/epic arguments, ambiguous identities, or an issue that is not
 an epic. Follow the epic's real sub-issue links, including nested epics; retain
-the selected parent and consider only deliverables within project scope.
+the selected parent and consider only deliverables within project scope. A task
+with open subtasks is delivered through them: consider its subtasks instead.
 
 ## Gather live evidence
 
