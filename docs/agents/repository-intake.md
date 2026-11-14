@@ -91,8 +91,9 @@ the local standards gate below, then use `gh repo create` for repository creatio
 project intake; Terraform is not the repository-provisioning path. Run the
 [Terraform coverage gate](infrastructure.md#terraform-coverage-gate) for
 separate infrastructure resources needed by the project, such as hosting,
-databases, or shared platform workspaces. Registration of a planned remote does
-not require that it already exist.
+databases, or shared platform workspaces; static hosting follows the
+[static hosting default](infrastructure.md#static-hosting-default).
+Registration of a planned remote does not require that it already exist.
 
 Bootstrap is limited to repository metadata and the setup contract needed to
 establish the remote and its initial default branch. Record the operation and
