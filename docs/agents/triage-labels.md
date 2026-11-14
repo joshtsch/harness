@@ -9,7 +9,8 @@ scope and verification are complete. An epic uses `epic` and the
 that a planning-ready epic has a child issue and that every `ready-for-agent`
 issue has Gherkin acceptance criteria. It uses GitHub sub-issues when the
 API is available; otherwise, add issue references as task-list items in the epic
-body (`- [ ] #123`).
+body (`- [ ] #123`). To check another repository from the harness root, set
+`GH_REPO=owner/name`; issues and sub-issues both resolve from it.
 
 | Label | Meaning | Use |
 | --- | --- | --- |

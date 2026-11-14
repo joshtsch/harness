@@ -23,10 +23,10 @@ async function run(): Promise<void> {
   });
   const subIssueCounts = new Map<number, number>();
   if (repositoryIssues.length > 0) {
-    const { stdout: repository } = await execFileAsync("gh", ["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"]);
     for (const issue of repositoryIssues) {
       const subIssueCount = await resolveChildIssueCount(issue.number, issue.body, async () => {
-        const { stdout: count } = await execFileAsync("gh", ["api", `repos/${repository.trim()}/issues/${issue.number}/sub_issues`, "--jq", "length"]);
+        // gh fills {owner}/{repo} from GH_REPO or the cwd, the same source as `gh issue list`.
+        const { stdout: count } = await execFileAsync("gh", ["api", `repos/{owner}/{repo}/issues/${issue.number}/sub_issues`, "--jq", "length"]);
         return Number(count.trim());
       });
       subIssueCounts.set(issue.number, subIssueCount);
