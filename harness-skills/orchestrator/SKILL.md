@@ -99,6 +99,13 @@ Only on the user's say-so:
 5. Stop the issue's previews, then archive its implementation and review
    sessions. Archiving takes a session's side sessions along, so archive a
    parent only when its side sessions have no work in flight.
+6. Check `main`'s CI on the merge commit. Rerun a job that failed for runner or
+   infrastructure reasons, such as Docker failing to bind a port
+   (`gh run rerun <run-id> --failed`).
+7. Report to the user without being asked: every managed session's state
+   (`list_sessions` with `linked: true`), its open PR and CI, and anything
+   waiting on the user; then whether there is capacity and unblocked work,
+   naming the next [backlog-select](../backlog-select/SKILL.md) candidate.
 
 ## 6. What's next
 
