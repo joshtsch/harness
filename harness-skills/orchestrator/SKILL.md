@@ -101,9 +101,11 @@ Only on the user's say-so:
    (`gh run rerun <run-id> --failed`) once; a repeat or any other failure is a
    blocker for step 7, and new work waits until `main` is green.
 6. Before proposing the next slice, offer the user one cleanup of the merged
-   issue, and act only on their yes. Offer only what you manage: sessions in
-   your linked family (`list_sessions` with `linked: true`), previews you
-   started (`preview_list` and your `launch.json` entries), local stacks your
+   issue, and act only on their yes. Offer only what you manage: sessions you
+   started and their side sessions (find them with `list_sessions` with
+   `linked: true`, skipping the session that started you and its other
+   children), previews you started (`preview_list` and your section 4
+   `launch.json` entries), local stacks your
    children started, and worktrees you created for your issues. Never offer to
    remove other sessions, servers or worktrees, even merged and clean ones; at
    most name them as out of scope.
@@ -121,7 +123,7 @@ Only on the user's say-so:
      anything else. Flag any project worktree inside the harness's
      `.claude/worktrees/`.
 7. Report to the user without being asked: what was cleaned up and what is
-   left, every managed session's state (`list_sessions` with `linked: true`),
+   left, the state of every session you manage (as scoped in step 6),
    its open PR and CI, and anything waiting on the user; then whether there is
    capacity and unblocked work, naming the next
    [backlog-select](../backlog-select/SKILL.md) candidate.
