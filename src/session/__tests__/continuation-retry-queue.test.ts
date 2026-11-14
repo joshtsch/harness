@@ -74,6 +74,32 @@ describe("encrypted continuation retry queue", () => {
     expect(await readdir(directory)).toEqual([]);
   });
 
+  it("carries a queued label through flush and refuses an unsafe one", async () => {
+    const store = new MemoryStore();
+    const { queue } = await makeQueue();
+    const failing: ContinuationStore = {
+      load: (key) => store.load(key),
+      list: (state) => store.list(state),
+      readArtifact: (key) => store.readArtifact(key),
+      commit: async () => { throw new Error("offline"); },
+    };
+    const encrypt = async (plaintext: string) => ({ privacy: "encrypted" as const, ciphertext: armor(plaintext) });
+    const input = [{ id: "handoff", kind: "handoff" as const, content: { privacy: "sensitive" as const, plaintext: "handoff" } }];
+    await expect(persistSave(failing, keyMaterial, "retry-fixture", null, 1000, input, encrypt, {
+      label: "Ship the handoff band",
+      retryQueue: queue,
+      isRetryable: () => true,
+    })).rejects.toBeInstanceOf(ContinuationQueuedError);
+    await queue.flush(store, 2000, encrypt);
+    expect(store.manifest?.label).toBe("Ship the handoff band");
+
+    const fresh = new MemoryStore();
+    const tampered = await makeQueue();
+    await tampered.queue.enqueueIntent({ operationId: crypto.randomUUID(), keyMaterial: keyMaterial.toString("base64"), session, owner: null, artifacts: input, label: "two\nlines" }, 1000);
+    await expect(tampered.queue.flush(fresh, 2000, encrypt)).rejects.toThrow("continuation label");
+    expect(fresh.manifest).toBeNull();
+  });
+
   it("keeps queued writes after one day", async () => {
     const { directory, queue } = await makeQueue();
     const manifest: ContinuationManifest = { key: session, revision: 1, state: "active", latest: {}, events: [{ type: "saved", at: new Date(1000).toISOString(), operationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }] };

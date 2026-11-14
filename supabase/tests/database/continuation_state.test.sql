@@ -1,6 +1,6 @@
 begin;
 
-select plan(27);
+select plan(33);
 
 select set_config('test.continuation_key', 'sessions/' || repeat('a', 64), true);
 select set_config('test.handoff_key', 'sessions/' || repeat('a', 64) || '/artifacts/handoff/' || repeat('b', 64), true);
@@ -8,6 +8,8 @@ select set_config('test.decisions_key', 'sessions/' || repeat('a', 64) || '/arti
 select set_config('test.todos_key', 'sessions/' || repeat('a', 64) || '/artifacts/todos/' || repeat('d', 64), true);
 select set_config('test.first_owner', repeat('d', 64), true);
 select set_config('test.second_owner', repeat('e', 64), true);
+select set_config('test.labeled_key', 'sessions/' || repeat('9', 64), true);
+select set_config('test.labeled_handoff_key', 'sessions/' || repeat('9', 64) || '/artifacts/handoff/' || repeat('8', 64), true);
 select set_config('test.user_record_key', 'user-records/' || repeat('f', 64), true);
 
 select ok((select relrowsecurity from pg_class where oid = 'public.continuation_sessions'::regclass), 'session table has RLS enabled');
@@ -35,6 +37,107 @@ select throws_ok(
   '22023',
   'invalid continuation payload',
   'manifest rejects unknown fields that could expose plaintext'
+);
+
+select throws_ok(
+  $$select public.continuation_commit(
+    null,
+    jsonb_build_object(
+      'key', current_setting('test.labeled_key'),
+      'revision', 1,
+      'state', 'active',
+      'label', '',
+      'latest', '{}'::jsonb,
+      'events', jsonb_build_array(jsonb_build_object('type', 'saved'))
+    ),
+    '[]'::jsonb
+  )$$,
+  '22023',
+  'invalid continuation payload',
+  'manifest rejects an empty label'
+);
+
+select throws_ok(
+  $$select public.continuation_commit(
+    null,
+    jsonb_build_object(
+      'key', current_setting('test.labeled_key'),
+      'revision', 1,
+      'state', 'active',
+      'label', repeat('x', 81),
+      'latest', '{}'::jsonb,
+      'events', jsonb_build_array(jsonb_build_object('type', 'saved'))
+    ),
+    '[]'::jsonb
+  )$$,
+  '22023',
+  'invalid continuation payload',
+  'manifest rejects a label over 80 characters'
+);
+
+select throws_ok(
+  $$select public.continuation_commit(
+    null,
+    jsonb_build_object(
+      'key', current_setting('test.labeled_key'),
+      'revision', 1,
+      'state', 'active',
+      'label', E'two\nlines',
+      'latest', '{}'::jsonb,
+      'events', jsonb_build_array(jsonb_build_object('type', 'saved'))
+    ),
+    '[]'::jsonb
+  )$$,
+  '22023',
+  'invalid continuation payload',
+  'manifest rejects a multi-line label'
+);
+
+select throws_ok(
+  $$select public.continuation_commit(
+    null,
+    jsonb_build_object(
+      'key', current_setting('test.labeled_key'),
+      'revision', 1,
+      'state', 'active',
+      'label', 123,
+      'latest', '{}'::jsonb,
+      'events', jsonb_build_array(jsonb_build_object('type', 'saved'))
+    ),
+    '[]'::jsonb
+  )$$,
+  '22023',
+  'invalid continuation payload',
+  'manifest rejects a non-string label'
+);
+
+select is(
+  public.continuation_commit(
+    null,
+    jsonb_build_object(
+      'key', current_setting('test.labeled_key'),
+      'revision', 1,
+      'state', 'active',
+      'label', 'Ship the handoff band',
+      'latest', jsonb_build_object(current_setting('test.labeled_handoff_key'), 1),
+      'events', jsonb_build_array(jsonb_build_object('type', 'saved'))
+    ),
+    jsonb_build_array(jsonb_build_object(
+      'key', current_setting('test.labeled_handoff_key') || '/revisions/1',
+      'kind', 'handoff',
+      'revision', 1,
+      'privacy', 'encrypted',
+      'ciphertext', '-----BEGIN AGE ENCRYPTED FILE-----\nopaque'
+    ))
+  )->>'label',
+  'Ship the handoff band',
+  'manifest accepts a one-line label'
+);
+
+select is(
+  public.continuation_load(current_setting('test.labeled_key'))->>'label',
+  'Ship the handoff band',
+  'stored label is returned by continuation_load'
 );
 
 select throws_ok(
