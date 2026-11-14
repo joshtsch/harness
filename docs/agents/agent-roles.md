@@ -89,6 +89,15 @@ as or hearing from a paired review session, run
 degraded because they cannot start or message sessions; they relay the review
 prompt and findings through the user.
 
+## Orchestrator routing
+
+When told to act as the orchestrator of a project's implementation and review
+sessions, or asked to start an implementation session for an issue, run
+`pnpm capabilities route claude orchestrator` and read its
+[skill](../../harness-skills/orchestrator/SKILL.md). It is Claude Code only,
+because it starts, messages, previews and archives sessions; Codex and Gemini
+are unavailable.
+
 ## Research destination routing
 
 General source placement uses `knowledge-routing`; vault work uses

@@ -19,6 +19,7 @@ skills:
   caveman-review: { capability: caveman-review, state: canonical, codex: supported, gemini: supported, claude: supported }
   caveman-setup: { capability: caveman-setup, state: canonical, codex: supported, gemini: degraded, claude: supported }
   caveman-stats: { capability: caveman-stats, state: canonical, codex: supported, gemini: degraded, claude: supported }
+  orchestrator: { capability: orchestrator, state: canonical, requires: [paired-review, backlog-select], codex: unavailable, gemini: unavailable, claude: supported }
   paired-review: { capability: paired-review, state: canonical, codex: degraded, gemini: degraded, claude: supported }
   domain-modeling: { capability: domain-modeling, state: canonical, codex: supported, gemini: supported, claude: supported }
   grill-with-docs: { capability: interview, state: available, requires: [grilling, domain-modeling], codex: supported, gemini: degraded, claude: supported }
