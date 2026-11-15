@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { loadHarnessConfig, providerAccountCategories, providerAccountsForProject, type ProviderAccount } from "../src/project-config.js";
+import { isProviderAccountCategory, loadHarnessConfig, providerAccountCategories, selectProviderAccounts, type HarnessConfig, type ProviderAccount } from "../src/project-config.js";
 
 const usage = "Usage: pnpm accounts [--project <name>] [--category <category>] [--json]";
 
@@ -16,12 +16,13 @@ try {
   process.exit(1);
 }
 
-if (options.category !== undefined && !(providerAccountCategories as readonly string[]).includes(options.category)) {
+const category = options.category;
+if (category !== undefined && !isProviderAccountCategory(category)) {
   console.error(`Unknown category. Known categories: ${providerAccountCategories.join(", ")}`);
   process.exit(1);
 }
 
-let config: Awaited<ReturnType<typeof loadHarnessConfig>>;
+let config: HarnessConfig;
 try {
   config = await loadHarnessConfig(resolve("projects.yml"), { resolveEnvironment: false });
 } catch {
@@ -30,16 +31,13 @@ try {
   process.exit(1);
 }
 
-let accounts: ProviderAccount[] = config.providerAccounts;
-if (options.project !== undefined) {
-  const project = config.projects[options.project];
-  if (!project) {
-    console.error("Unknown project; run pnpm projects to list configured names.");
-    process.exit(1);
-  }
-  accounts = providerAccountsForProject(accounts, project);
+let accounts: ProviderAccount[];
+try {
+  accounts = selectProviderAccounts(config, { ...(options.project === undefined ? {} : { project: options.project }), ...(category === undefined ? {} : { category }) });
+} catch (error) {
+  console.error((error as Error).message);
+  process.exit(1);
 }
-if (options.category !== undefined) accounts = accounts.filter(({ categories }) => categories.includes(options.category as never));
 
 if (options.json) {
   console.log(JSON.stringify(accounts, null, 2));

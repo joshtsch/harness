@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadHarnessConfig, providerAccountsForProject } from "../project-config.js";
+import { loadHarnessConfig, providerAccountsForProject, selectProviderAccounts } from "../project-config.js";
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -73,8 +73,22 @@ describe("provider accounts", () => {
     expect(names("sales-app")).toEqual(["object-store", "database-host", "sales-hosting"]);
   });
 
+  it("selects accounts by project and category, rejecting unknown projects", async () => {
+    const config = await load(base, accounts);
+    const names = (filter: Parameters<typeof selectProviderAccounts>[1]) => selectProviderAccounts(config, filter).map(({ name }) => name);
+    expect(names({})).toEqual(["object-store", "database-host", "sales-hosting", "support-email"]);
+    expect(names({ category: "object-storage" })).toEqual(["object-store", "database-host"]);
+    expect(names({ project: "sales-app", category: "hosting" })).toEqual(["sales-hosting"]);
+    expect(names({ project: "personal-app", category: "hosting" })).toEqual([]);
+    expect(() => selectProviderAccounts(config, { project: "missing" })).toThrow("Unknown project");
+  });
+
   it("treats a missing provider_accounts key as empty", async () => {
     await expect(load(base, ["{}"])).resolves.toMatchObject({ providerAccounts: [] });
+  });
+
+  it("rejects provider accounts in the public configuration", async () => {
+    await expect(load([...base, ...accounts], ["{}"])).rejects.toThrow("move it from projects.yml to projects.local.yml");
   });
 
   it.each([

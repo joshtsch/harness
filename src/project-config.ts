@@ -65,6 +65,10 @@ export interface ProjectDefinition {
 export const providerAccountCategories = ["ai", "analytics", "auth", "backups", "cdn", "ci", "database", "dns", "email", "hosting", "monitoring", "object-storage", "payments", "queues", "search", "secrets"] as const;
 export type ProviderAccountCategory = (typeof providerAccountCategories)[number];
 
+export function isProviderAccountCategory(value: string): value is ProviderAccountCategory {
+  return (providerAccountCategories as readonly string[]).includes(value);
+}
+
 export interface ProviderAccount {
   name: string;
   plan: "paid" | "free";
@@ -267,15 +271,14 @@ function parseProviderAccounts(value: unknown, businessLines: Record<string, Bus
     if (entry.plan !== "paid" && entry.plan !== "free") throw new Error(`${label}.plan must be paid or free`);
     const categories = parseStringList(entry.categories, `${label}.categories`);
     if (categories.length === 0) throw new Error(`${label}.categories must not be empty`);
-    for (const category of categories) {
-      if (!(providerAccountCategories as readonly string[]).includes(category)) throw new Error(`${label}.categories contains unknown category ${category}`);
-    }
+    const unknown = categories.find((category) => !isProviderAccountCategory(category));
+    if (unknown !== undefined) throw new Error(`${label}.categories contains unknown category ${unknown}`);
     const businessLine = entry.business_line === undefined ? undefined : requiredString(entry.business_line, `${label}.business_line`);
     if (businessLine !== undefined && !businessLines[businessLine]) throw new Error(`${label}.business_line references unknown business line ${businessLine}`);
     return {
       name,
       plan: entry.plan,
-      categories: categories as ProviderAccountCategory[],
+      categories: categories.filter(isProviderAccountCategory),
       ...(businessLine === undefined ? {} : { businessLine }),
       ...(entry.notes === undefined ? {} : { notes: requiredString(entry.notes, `${label}.notes`) }),
     };
@@ -287,16 +290,36 @@ export function providerAccountsForProject(accounts: ProviderAccount[], project:
   return accounts.filter(({ businessLine }) => businessLine === undefined || (project.businessLines ?? []).includes(businessLine));
 }
 
+/** Accounts for `pnpm accounts`: optionally scoped to a project and filtered by category. */
+export function selectProviderAccounts(config: HarnessConfig, filter: { project?: string; category?: ProviderAccountCategory }): ProviderAccount[] {
+  let accounts = config.providerAccounts;
+  if (filter.project !== undefined) {
+    const project = config.projects[filter.project];
+    if (!project) throw new Error("Unknown project; run pnpm projects to list configured names.");
+    accounts = providerAccountsForProject(accounts, project);
+  }
+  const { category } = filter;
+  return category === undefined ? accounts : accounts.filter(({ categories }) => categories.includes(category));
+}
+
 export async function loadProjectsConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<Record<string, ProjectDefinition>> {
   return (await loadHarnessConfig(filePath, options)).projects;
 }
 
-export async function loadHarnessConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<{ projects: Record<string, ProjectDefinition>; providerAccounts: ProviderAccount[] }> {
+export interface HarnessConfig {
+  projects: Record<string, ProjectDefinition>;
+  providerAccounts: ProviderAccount[];
+}
+
+export async function loadHarnessConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<HarnessConfig> {
   const resolveEnvironment = options.resolveEnvironment ?? true;
   const environment = options.environment ?? process.env;
   const localConfigPath = options.localConfigPath === undefined ? defaultLocalConfigPath(filePath) : options.localConfigPath;
   const publicRaw = parse(await readFile(filePath, "utf8"));
   let rawValue = publicRaw;
+  if (localConfigPath && isRecord(publicRaw) && "provider_accounts" in publicRaw) {
+    throw new Error("provider_accounts is private account metadata; move it from projects.yml to projects.local.yml");
+  }
   if (localConfigPath) {
     try {
       const localRaw = parse(await readFile(localConfigPath, "utf8"));

@@ -149,7 +149,8 @@ External tools must be classified by scope before they are added. Shared tools b
 A [provider account](../../CONTEXT.md) is one login and bill held with an
 external provider. Declare provider accounts under top-level
 `provider_accounts` in `projects.local.yml` only; they are private account
-metadata and sync through the encrypted record with `pnpm config:backup`.
+metadata and sync through the encrypted record with `pnpm config:backup`. The
+loader rejects the key in `projects.yml`.
 
 ```yaml
 provider_accounts:
