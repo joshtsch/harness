@@ -13,10 +13,14 @@ const machineField = /(?:^|_)(?:absolute|machine|checkout|clone|worktree|workspa
 const machinePathField = /(?:^|_)(?:path|cwd|working_directory)(?:_|$)/i;
 const absolutePath = /^(?:\/|~(?:[\\/]|$)|[a-z]:[\\/]|\\\\)/i;
 
-function portable(value: unknown, field = ""): unknown {
+// Top-level mappings keyed by user-chosen names, such as a `google-workspace` provider account.
+const nameKeyedSections = new Set(["projects", "business_lines", "provider_accounts"]);
+
+function portable(value: unknown, field = "", path: string[] = []): unknown {
   const normalizedField = field.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase().replace(/[\s.-]+/g, "_");
-  if (privateField.test(normalizedField) || (machineField.test(normalizedField) && normalizedField !== "hcp_workspace")
-      || (machinePathField.test(normalizedField) && normalizedField !== "wiki_path")) return undefined;
+  const isName = path.length === 2 && nameKeyedSections.has(path[0]!);
+  if (!isName && (privateField.test(normalizedField) || (machineField.test(normalizedField) && normalizedField !== "hcp_workspace")
+      || (machinePathField.test(normalizedField) && normalizedField !== "wiki_path"))) return undefined;
   if (typeof value === "string") {
     if (findSensitiveContent(`+${JSON.stringify(value)}`).some(({ kind }) => kind === "credential" || kind === "private-key")) return undefined;
     const trimmed = value.trim();
@@ -41,7 +45,7 @@ function portable(value: unknown, field = ""): unknown {
   if (!record(value)) return value;
   const result: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value).sort(([left], [right]) => left.localeCompare(right))) {
-    const safe = portable(item, key);
+    const safe = portable(item, key, [...path, key]);
     if (safe !== undefined) result[key] = safe;
   }
   return result;
