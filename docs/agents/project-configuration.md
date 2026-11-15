@@ -144,6 +144,44 @@ CRM configuration is provider-neutral. A project may declare a CRM type, such as
 
 External tools must be classified by scope before they are added. Shared tools belong in the harness-level MCP configuration; project-specific providers, records, workspace/account mappings, permissions, or overrides belong in the relevant project entry. Temporary tools belong in ignored session state rather than durable configuration. Session tool metadata may contain only `tool_mappings`; resolution precedence is session mapping, project override, then inherited business-line mapping. Session mappings apply only to the loaded session and must contain stable target identifiers, never credentials or external records.
 
+## Provider accounts
+
+A [provider account](../../CONTEXT.md) is one login and bill held with an
+external provider. Declare provider accounts under top-level
+`provider_accounts` in `projects.local.yml` only; they are private account
+metadata and sync through the encrypted record with `pnpm config:backup`.
+
+```yaml
+provider_accounts:
+  example-storage:
+    plan: paid
+    categories: [object-storage, backups]
+    notes: Existing backups bucket
+  example-hosting:
+    plan: free
+    categories: [hosting]
+    business_line: example-line
+```
+
+Each entry requires `plan` (`paid` or `free`) and a non-empty, duplicate-free
+`categories` list from the fixed set in `providerAccountCategories` in
+`src/project-config.ts`. Optional `business_line` names the account holder and
+must be a declared business line; omit it for a personal account. Optional
+`notes` holds short free text such as plan limits. Never record amounts,
+renewal dates, account identifiers, or credentials. Resources inside an account,
+such as buckets, are tool targets, not separate provider accounts.
+
+Before choosing, recommending, or adding an external provider, run
+`pnpm accounts --project <name> [--category <category>] [--json]`. A project
+with no business line sees personal accounts only; a business-line project sees
+its business lines' accounts plus personal accounts. Prefer an in-scope paid
+account; when choosing anything else, state why. Without `--project`, the
+command lists every account with its holder for harness-level work.
+
+To add or change an entry, show the user the exact entry first, write it only
+after they confirm in chat, then run `pnpm config:backup`. Adding a category is
+a code change to the category list.
+
 ## Worktree root
 
 The location decision is recorded in [ADR-0002](../adr/0002-isolated-deterministic-worktrees.md#external-root-amendment--october-9-2026).

@@ -62,6 +62,18 @@ export interface ProjectDefinition {
   workflows: WorkflowCommand[];
 }
 
+export const providerAccountCategories = ["ai", "analytics", "auth", "backups", "cdn", "ci", "database", "dns", "email", "hosting", "monitoring", "object-storage", "payments", "queues", "search", "secrets"] as const;
+export type ProviderAccountCategory = (typeof providerAccountCategories)[number];
+
+export interface ProviderAccount {
+  name: string;
+  plan: "paid" | "free";
+  categories: ProviderAccountCategory[];
+  /** Absent means the account is held personally. */
+  businessLine?: string;
+  notes?: string;
+}
+
 export function requireProjectQuality(project: ProjectDefinition): ProjectQualityChecks {
   if (!project.quality) {
     throw new Error(`project ${project.name} must configure required lint and format checks before session setup; see docs/agents/repository-intake.md#quality-and-formatting`);
@@ -92,6 +104,7 @@ interface RawProject {
 interface RawConfig {
   defaults?: RawProject;
   business_lines?: Record<string, unknown>;
+  provider_accounts?: unknown;
   projects?: Record<string, RawProject>;
 }
 
@@ -104,6 +117,7 @@ export interface LoadProjectsConfigOptions {
 const rawProjectFields = new Set(["purpose", "topics", "excludes", "remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "env_files", "verification", "workflows"]);
 const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "quality", "verification", "workflows"]);
 const businessLineFields = new Set(["display_name", "tool_mappings"]);
+const providerAccountFields = new Set(["plan", "categories", "business_line", "notes"]);
 const issueTrackerFields = new Set(["type", "repository"]);
 const crmFields = new Set(["type"]);
 const wikiFields = new Set(["description", "topics", "pages", "raw", "templates"]);
@@ -243,7 +257,41 @@ function parseEnvFiles(value: unknown, label: string): ProjectEnvFile[] {
   return envFiles;
 }
 
+function parseProviderAccounts(value: unknown, businessLines: Record<string, BusinessLine>): ProviderAccount[] {
+  if (value === undefined) return [];
+  if (!isRecord(value)) throw new Error("provider_accounts must be a mapping");
+  return Object.entries(value).map(([name, entry]): ProviderAccount => {
+    const label = `provider_accounts.${name}`;
+    if (name.trim() === "") throw new Error("provider account names must be non-empty");
+    assertKnownFields(entry, providerAccountFields, label);
+    if (entry.plan !== "paid" && entry.plan !== "free") throw new Error(`${label}.plan must be paid or free`);
+    const categories = parseStringList(entry.categories, `${label}.categories`);
+    if (categories.length === 0) throw new Error(`${label}.categories must not be empty`);
+    for (const category of categories) {
+      if (!(providerAccountCategories as readonly string[]).includes(category)) throw new Error(`${label}.categories contains unknown category ${category}`);
+    }
+    const businessLine = entry.business_line === undefined ? undefined : requiredString(entry.business_line, `${label}.business_line`);
+    if (businessLine !== undefined && !businessLines[businessLine]) throw new Error(`${label}.business_line references unknown business line ${businessLine}`);
+    return {
+      name,
+      plan: entry.plan,
+      categories: categories as ProviderAccountCategory[],
+      ...(businessLine === undefined ? {} : { businessLine }),
+      ...(entry.notes === undefined ? {} : { notes: requiredString(entry.notes, `${label}.notes`) }),
+    };
+  });
+}
+
+/** Accounts a project may draw on: its business lines' accounts plus personal ones. */
+export function providerAccountsForProject(accounts: ProviderAccount[], project: ProjectDefinition): ProviderAccount[] {
+  return accounts.filter(({ businessLine }) => businessLine === undefined || (project.businessLines ?? []).includes(businessLine));
+}
+
 export async function loadProjectsConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<Record<string, ProjectDefinition>> {
+  return (await loadHarnessConfig(filePath, options)).projects;
+}
+
+export async function loadHarnessConfig(filePath: string, options: LoadProjectsConfigOptions = {}): Promise<{ projects: Record<string, ProjectDefinition>; providerAccounts: ProviderAccount[] }> {
   const resolveEnvironment = options.resolveEnvironment ?? true;
   const environment = options.environment ?? process.env;
   const localConfigPath = options.localConfigPath === undefined ? defaultLocalConfigPath(filePath) : options.localConfigPath;
@@ -259,7 +307,7 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
   }
   const raw = rawValue as RawConfig | null;
   if (!isRecord(raw)) throw new Error("configuration must be a mapping");
-  assertKnownFields(raw, new Set(["defaults", "business_lines", "projects"]), "configuration");
+  assertKnownFields(raw, new Set(["defaults", "business_lines", "provider_accounts", "projects"]), "configuration");
   const businessLines = raw.business_lines;
   if (businessLines !== undefined && !isRecord(businessLines)) throw new Error("business_lines must be a mapping");
   const defaults = raw.defaults === undefined ? {} : raw.defaults;
@@ -277,6 +325,8 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
       toolMappings: parseToolMappings(value.tool_mappings, `business_lines.${key}.tool_mappings`, resolveEnvironment, environment),
     };
   }
+
+  const providerAccounts = parseProviderAccounts(raw.provider_accounts, parsedBusinessLines);
 
   const definitions: Array<[string, ProjectDefinition]> = Object.entries(projects).map(([name, project]): [string, ProjectDefinition] => {
       if (name.trim() === "") throw new Error("project names must be non-empty");
@@ -312,5 +362,5 @@ export async function loadProjectsConfig(filePath: string, options: LoadProjects
     if (previous) throw new Error(`projects.${name}.remote duplicates projects.${previous}.remote`);
     remotes.set(definition.remote, name);
   }
-  return Object.fromEntries(definitions);
+  return { projects: Object.fromEntries(definitions), providerAccounts };
 }

@@ -10,6 +10,7 @@ This harness improves its own workflows and coordinates work across independent 
 - When task ownership is unclear, use [project discovery](harness-skills/project-discovery/SKILL.md). Classify repository scope before provisioning or writing, and register durable projects before repository work. Follow [Repository intake](docs/agents/repository-intake.md).
 - Treat `projects.yml` as public configuration and ignored `projects.local.yml` as its installation-specific overlay. Validate the merged configuration. See [Project configuration](docs/agents/project-configuration.md).
 - Update affected authoritative documentation with each code or operational change. Update `.env.example` when environment variables change.
+- Before choosing, recommending, or adding an external provider, run `pnpm accounts --project <name>` and prefer an in-scope paid provider account, or state why not. See [Provider accounts](docs/agents/project-configuration.md#provider-accounts).
 - Use Terraform for supported infrastructure changes. Complete the [Terraform coverage gate](docs/agents/infrastructure.md#terraform-coverage-gate) before choosing an infrastructure write tool.
 
 ## Context routing
