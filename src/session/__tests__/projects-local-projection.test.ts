@@ -23,6 +23,31 @@ describe("projects.local portable projection", () => {
     });
   });
 
+  it("keeps name keys that resemble private or machine fields while filtering their fields", () => {
+    const source = [
+      "business_lines:",
+      "  workspace-tools:",
+      "    display_name: Tools",
+      "projects:",
+      "  auth-service:",
+      "    remote: git@github.com:example/auth-service.git",
+      "    local_path: /Users/private/auth-service",
+      "provider_accounts:",
+      "  google-workspace:",
+      "    plan: paid",
+      "    categories: [email]",
+      "  auth0:",
+      "    plan: free",
+      "    categories: [auth]",
+      "    cache_dir: tmp/cache",
+    ].join("\n");
+    const parsed = parse(createProjectsLocalProjection(source, Buffer.alloc(32, 9)));
+    expect(parsed.business_lines["workspace-tools"]).toEqual({ display_name: "Tools" });
+    expect(parsed.projects["auth-service"]).toEqual({ remote: "git@github.com:example/auth-service.git" });
+    expect(parsed.provider_accounts["google-workspace"]).toEqual({ plan: "paid", categories: ["email"] });
+    expect(parsed.provider_accounts.auth0).toEqual({ plan: "free", categories: ["auth"] });
+  });
+
   it("filters credential-like and machine-specific fields recursively", () => {
     const result = createProjectsLocalProjection(`projects:\n  app:\n    remote: https://user:secret@example.com/repo.git?token=hidden#secret\n    local_path: /Users/private/app\n    location: /Users/private/repo\n    windows_path: C:\\Users\\private\\app\n    home_path: ~/private/app\n    unc_path: \\\\server\\share\\app\n    file_url: file:///Users/private/app\n    file_scheme: file:/Users/private/app\n    setup_script: scripts/setup.sh\n    api_token: private-token\n`, Buffer.alloc(32, 1));
     expect(result).toContain("https://example.com/repo.git");

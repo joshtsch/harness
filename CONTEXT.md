@@ -276,6 +276,14 @@ _Avoid_: Integration (when describing the business relationship)
 An opaque, stable identifier for an external resource used by a tool mapping, such as a calendar or CRM record.
 _Avoid_: Credential, record data
 
+**Provider account**:
+One login and bill that the user or a business line holds with an external provider, on a paid or free plan. Resources inside it are tool targets.
+_Avoid_: Service, subscription, tool mapping
+
+**Account holder**:
+The personal scope or business line that owns and pays for a provider account.
+_Avoid_: Payer, owner (when the account's resources are meant)
+
 **Project override**:
 Project-specific configuration that takes precedence over inherited business-line or user-scoped configuration for that project.
 _Avoid_: Fork, replacement
