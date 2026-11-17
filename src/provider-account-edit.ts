@@ -1,5 +1,5 @@
 import { rename, writeFile } from "node:fs/promises";
-import { Document, isMap, parseDocument } from "yaml";
+import { Document, isMap, isScalar, parseDocument } from "yaml";
 import { backupProjectConfig } from "./project-config-sync.js";
 
 export interface ProviderAccountChanges {
@@ -31,6 +31,10 @@ export function setProviderAccount(localSource: string, name: string, changes: P
   const document: Document = localSource.trim() === "" ? new Document({}) : parseDocument(localSource);
   if (document.errors.length > 0) throw new Error("projects.local.yml is not valid YAML");
   if (!isMap(document.contents)) throw new Error("projects.local.yml must be a mapping");
+  const accounts = document.get("provider_accounts", true);
+  // A bare `provider_accounts:` parses as null; treat it as an empty mapping.
+  if (accounts === undefined || (isScalar(accounts) && accounts.value === null)) document.set("provider_accounts", document.createNode({}));
+  else if (!isMap(accounts)) throw new Error("provider_accounts must be a mapping");
 
   const existing = document.getIn(["provider_accounts", name]);
   if (existing !== undefined && !isMap(existing)) throw new Error(`provider_accounts.${name} must be a mapping`);
@@ -49,7 +53,7 @@ export function setProviderAccount(localSource: string, name: string, changes: P
 
   const entry = (document.getIn(path) as { toJSON(): Record<string, unknown> }).toJSON();
   const status = before === undefined ? "added" : before === JSON.stringify(entry) ? "unchanged" : "changed";
-  return { status, source: document.toString(), entry };
+  return { status, source: document.toString({ flowCollectionPadding: false }), entry };
 }
 
 export type ProviderAccountSaveResult = { backup: "updated" } | { backup: "skipped" } | { backup: "failed"; error: Error };

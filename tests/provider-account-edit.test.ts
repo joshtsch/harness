@@ -38,6 +38,20 @@ describe("setProviderAccount", () => {
     expect(result.source).toContain("# existing mail account");
   });
 
+  it("leaves untouched entries byte-identical", () => {
+    const withOther = `${local}  storage:\n    plan: paid\n    categories: [object-storage, backups]\n`;
+    expect(setProviderAccount(withOther, "mail", { plan: "paid" }).source).toContain("  storage:\n    plan: paid\n    categories: [object-storage, backups]\n");
+  });
+
+  it("treats a bare provider_accounts key as empty", () => {
+    const result = setProviderAccount("provider_accounts:\n", "storage", { plan: "paid", categories: ["backups"] });
+    expect(parse(result.source)).toEqual({ provider_accounts: { storage: { plan: "paid", categories: ["backups"] } } });
+  });
+
+  it("rejects a provider_accounts value that is not a mapping", () => {
+    expect(() => setProviderAccount("provider_accounts: [a]\n", "storage", { plan: "paid", categories: ["backups"] })).toThrow("must be a mapping");
+  });
+
   it("replaces the category list", () => {
     expect(setProviderAccount(local, "mail", { categories: ["email", "crm"] }).entry.categories).toEqual(["email", "crm"]);
   });
