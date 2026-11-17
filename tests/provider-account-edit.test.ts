@@ -1,6 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
-import { setProviderAccount } from "../src/provider-account-edit.js";
+import { backupProjectConfig } from "../src/project-config-sync.js";
+import { saveProviderAccountChange, setProviderAccount } from "../src/provider-account-edit.js";
+
+vi.mock("../src/project-config-sync.js", () => ({ backupProjectConfig: vi.fn() }));
+const backup = vi.mocked(backupProjectConfig);
 
 const local = `# local overlay
 provider_accounts:
@@ -47,5 +54,35 @@ describe("setProviderAccount", () => {
   it("rejects conflicting flags", () => {
     expect(() => setProviderAccount(local, "mail", { personal: true, businessLine: "x" })).toThrow("conflicts");
     expect(() => setProviderAccount(local, "mail", { clearNotes: true, notes: "x" })).toThrow("conflicts");
+  });
+});
+
+describe("saveProviderAccountChange", () => {
+  let dir: string;
+  let localPath: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "accounts-test-"));
+    localPath = join(dir, "projects.local.yml");
+    backup.mockReset();
+  });
+  afterEach(() => rm(dir, { recursive: true, force: true }));
+
+  it("writes the file and replaces the encrypted backup", async () => {
+    backup.mockResolvedValue();
+    expect(await saveProviderAccountChange("projects.yml", localPath, local, false)).toEqual({ backup: "updated" });
+    expect(await readFile(localPath, "utf8")).toBe(local);
+    expect(backup).toHaveBeenCalledWith("projects.yml", localPath, true);
+  });
+
+  it("keeps the local write when the backup fails", async () => {
+    backup.mockRejectedValue(new Error("vault is locked"));
+    const result = await saveProviderAccountChange("projects.yml", localPath, local, false);
+    expect(result).toMatchObject({ backup: "failed", error: { message: "vault is locked" } });
+    expect(await readFile(localPath, "utf8")).toBe(local);
+  });
+
+  it("skips the backup on request", async () => {
+    expect(await saveProviderAccountChange("projects.yml", localPath, local, true)).toEqual({ backup: "skipped" });
+    expect(backup).not.toHaveBeenCalled();
   });
 });

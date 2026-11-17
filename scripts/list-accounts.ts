@@ -4,8 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { stringify } from "yaml";
-import { setProviderAccount } from "../src/provider-account-edit.js";
-import { backupProjectConfig } from "../src/project-config-sync.js";
+import { saveProviderAccountChange, setProviderAccount } from "../src/provider-account-edit.js";
 import { isProviderAccountCategory, loadHarnessConfig, providerAccountCategories, selectProviderAccounts, type HarnessConfig, type ProviderAccount } from "../src/project-config.js";
 
 const usage = "Usage: pnpm accounts [--project <name>] [--category <category>] [--json]";
@@ -99,17 +98,12 @@ async function setAccount(args: string[]): Promise<void> {
     return;
   }
 
-  await writeFile(localPath, result.source, { mode: 0o600 });
+  const saved = await saveProviderAccountChange(publicPath, localPath, result.source, values["skip-backup"] ?? false);
   console.log("Saved projects.local.yml.");
-  if (values["skip-backup"]) {
-    console.log(`Skipped backup. ${backupRetry}`);
-    return;
-  }
-  try {
-    await backupProjectConfig(publicPath, localPath, true);
-    console.log("Updated the encrypted backup.");
-  } catch (error) {
-    console.error(`Backup failed: ${(error as Error).message}. The local change is kept. ${backupRetry}`);
+  if (saved.backup === "updated") console.log("Updated the encrypted backup.");
+  else if (saved.backup === "skipped") console.log(`Skipped backup. ${backupRetry}`);
+  else {
+    console.error(`Backup failed: ${saved.error.message}. The local change is kept. ${backupRetry}`);
     process.exit(1);
   }
 }

@@ -1,4 +1,6 @@
+import { writeFile } from "node:fs/promises";
 import { Document, isMap, parseDocument } from "yaml";
+import { backupProjectConfig } from "./project-config-sync.js";
 
 export interface ProviderAccountChanges {
   plan?: string;
@@ -48,4 +50,18 @@ export function setProviderAccount(localSource: string, name: string, changes: P
   const entry = (document.getIn(path) as { toJSON(): Record<string, unknown> }).toJSON();
   const status = before === undefined ? "added" : before === JSON.stringify(entry) ? "unchanged" : "changed";
   return { status, source: document.toString(), entry };
+}
+
+export type ProviderAccountSaveResult = { backup: "updated" } | { backup: "skipped" } | { backup: "failed"; error: Error };
+
+/** Writes projects.local.yml, then replaces the encrypted backup unless skipped. The local write is kept if the backup fails. */
+export async function saveProviderAccountChange(publicConfigPath: string, localConfigPath: string, source: string, skipBackup: boolean): Promise<ProviderAccountSaveResult> {
+  await writeFile(localConfigPath, source, { mode: 0o600 });
+  if (skipBackup) return { backup: "skipped" };
+  try {
+    await backupProjectConfig(publicConfigPath, localConfigPath, true);
+    return { backup: "updated" };
+  } catch (error) {
+    return { backup: "failed", error: error instanceof Error ? error : new Error(String(error)) };
+  }
 }
