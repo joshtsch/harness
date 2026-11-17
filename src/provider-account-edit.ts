@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { rename, writeFile } from "node:fs/promises";
 import { Document, isMap, parseDocument } from "yaml";
 import { backupProjectConfig } from "./project-config-sync.js";
 
@@ -56,7 +56,10 @@ export type ProviderAccountSaveResult = { backup: "updated" } | { backup: "skipp
 
 /** Writes projects.local.yml, then replaces the encrypted backup unless skipped. The local write is kept if the backup fails. */
 export async function saveProviderAccountChange(publicConfigPath: string, localConfigPath: string, source: string, skipBackup: boolean): Promise<ProviderAccountSaveResult> {
-  await writeFile(localConfigPath, source, { mode: 0o600 });
+  // Write then rename so a crash cannot leave a truncated private config.
+  const temporaryPath = `${localConfigPath}.${process.pid}.tmp`;
+  await writeFile(temporaryPath, source, { mode: 0o600 });
+  await rename(temporaryPath, localConfigPath);
   if (skipBackup) return { backup: "skipped" };
   try {
     await backupProjectConfig(publicConfigPath, localConfigPath, true);

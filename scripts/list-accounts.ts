@@ -45,6 +45,10 @@ async function setAccount(args: string[]): Promise<void> {
     process.exit(1);
   }
   const categories = values.categories?.split(",").map((category) => category.trim());
+  if (categories?.includes("")) {
+    console.error("--categories must be a comma-separated list without empty items.");
+    process.exit(1);
+  }
   const unknown = categories?.find((category) => !isProviderAccountCategory(category));
   if (unknown !== undefined) {
     console.error(`Unknown category ${unknown}. Known categories: ${providerAccountCategories.join(", ")}`);
@@ -75,19 +79,30 @@ async function setAccount(args: string[]): Promise<void> {
     process.exit(1);
   }
 
-  // Validate the whole merged configuration before anything is written.
+  // Validate the whole merged configuration before anything is written. The current
+  // configuration must load first, so any candidate error comes from this change and
+  // echoes only the user's own input; other errors can contain private source values.
+  let validationError: string | undefined;
   const staging = await mkdtemp(join(tmpdir(), "harness-accounts-"));
   try {
-    const candidatePath = join(staging, "projects.local.yml");
-    await writeFile(candidatePath, result.source, { mode: 0o600 });
-    await loadHarnessConfig(publicPath, { localConfigPath: candidatePath, resolveEnvironment: false });
+    await loadHarnessConfig(publicPath, { localConfigPath: localPath, resolveEnvironment: false });
+  } catch {
+    validationError = "Unable to load the current configuration; validate projects.yml and projects.local.yml.";
+  }
+  try {
+    if (validationError === undefined) {
+      const candidatePath = join(staging, "projects.local.yml");
+      await writeFile(candidatePath, result.source, { mode: 0o600 });
+      await loadHarnessConfig(publicPath, { localConfigPath: candidatePath, resolveEnvironment: false });
+    }
   } catch (error) {
-    const message = (error as Error).message;
-    // Only this account's errors are echoed; others can contain private source values.
-    console.error(message.startsWith(`provider_accounts.${name}`) ? message : "Unable to validate the change; validate projects.yml and projects.local.yml.");
-    process.exit(1);
+    validationError = (error as Error).message;
   } finally {
     await rm(staging, { recursive: true, force: true });
+  }
+  if (validationError !== undefined) {
+    console.error(validationError);
+    process.exit(1);
   }
 
   console.log(`${result.status === "added" ? "Add" : result.status === "changed" ? "Change" : "No change to"} provider account ${name}:`);
