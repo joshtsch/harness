@@ -62,7 +62,7 @@ export interface ProjectDefinition {
   workflows: WorkflowCommand[];
 }
 
-export const providerAccountCategories = ["ai", "analytics", "auth", "backups", "cdn", "ci", "crm", "database", "dns", "email", "hosting", "infrastructure", "monitoring", "object-storage", "payments", "queues", "search", "secrets"] as const;
+export const providerAccountCategories = ["ai", "analytics", "auth", "backups", "cdn", "ci", "crm", "database", "dns", "email", "hosting", "infrastructure", "monitoring", "object-storage", "payments", "productivity", "queues", "search", "secrets"] as const;
 export type ProviderAccountCategory = (typeof providerAccountCategories)[number];
 
 export function isProviderAccountCategory(value: string): value is ProviderAccountCategory {
