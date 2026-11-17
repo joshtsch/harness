@@ -179,9 +179,18 @@ its business lines' accounts plus personal accounts. Prefer an in-scope paid
 account; when choosing anything else, state why. Without `--project`, the
 command lists every account with its holder for harness-level work.
 
-To add or change an entry, show the user the exact entry first, write it only
-after they confirm in chat, then run `pnpm config:backup`. Adding a category is
-a code change to the category list.
+To add or change an entry, run
+`pnpm accounts set <name> [--plan paid|free] [--categories a,b]
+[--business-line <line> | --personal] [--notes <text> | --clear-notes]`. It
+validates the merged configuration and prints the exact final entry without
+writing. Show that output to the user and rerun with `--write` only after they
+confirm in chat. A new account needs `--plan` and `--categories`; for an
+existing account, omitted flags keep their values and `--categories` replaces
+the list. `--write` keeps comments in `projects.local.yml` and then updates the
+encrypted backup. If the backup fails, the local change stays and the command
+exits non-zero; run `pnpm config:backup --replace`. `--skip-backup` writes the
+local file only. To remove an account, delete its entry and run the backup.
+Adding a category is a code change to the category list.
 
 ## Worktree root
 
