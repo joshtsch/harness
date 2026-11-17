@@ -111,6 +111,24 @@ describe("portable continuation contract", () => {
     await expect(persistResume(store, session, "codex-session", 2500, 1000)).rejects.toThrow("already claimed");
   });
 
+  it("stores a plaintext label that later saves and claims keep, and rejects unsafe labels", async () => {
+    const store = new MemoryStore();
+    const input = [{ id: "main", kind: "handoff" as const, content: { privacy: "sensitive" as const, plaintext: "handoff" } }];
+    await persistSave(store, keyMaterial, "private issue title", null, 1000, input, encryptForTest, { label: "Ship the handoff band" });
+    expect(store.manifest?.label).toBe("Ship the handoff band");
+    expect((await persistClaim(store, session, "codex-session", 2000, 1000)).label).toBe("Ship the handoff band");
+    await persistClose(store, session, "codex-session", 2100, "superseded");
+    expect(store.manifest?.label).toBe("Ship the handoff band");
+
+    const fresh = new MemoryStore();
+    await persistSave(fresh, keyMaterial, "private issue title", null, 1000, input, encryptForTest);
+    expect(fresh.manifest && "label" in fresh.manifest).toBe(false);
+    for (const label of ["", "two\nlines", "two\u2028lines", "x".repeat(81), `email ${["jane.doe", "example.com"].join("@")}`]) {
+      await expect(persistSave(fresh, keyMaterial, "private issue title", null, 3000, input, encryptForTest, { label })).rejects.toThrow();
+    }
+    expect(fresh.manifest?.revision).toBe(1);
+  });
+
   it("persists lease renewal and resolution through the same revision gate", async () => {
     const store = new MemoryStore();
     await persistSave(store, keyMaterial, "private issue title", null, 1000, [{ id: "main", kind: "handoff", content: { privacy: "sensitive", plaintext: "handoff" } }], encryptForTest);

@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { chmod, lstat, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { artifactKey, claim, projectsLocalRecordKey, save, type ArtifactContent, type ContinuationArtifact, type ContinuationManifest, type ContinuationSaveIntent, type ContinuationStore, type ContinuationUserRecordStore } from "./continuation.js";
+import { artifactKey, assertSafeContinuationLabel, claim, projectsLocalRecordKey, save, type ArtifactContent, type ContinuationArtifact, type ContinuationManifest, type ContinuationSaveIntent, type ContinuationStore, type ContinuationUserRecordStore } from "./continuation.js";
 import { ContinuationRevisionConflictError } from "./supabase-continuation-store.js";
 import { assertSafeContinuationArtifact } from "./continuation-content-policy.js";
 import { commitProjectsLocalProjection, mergeProjectsLocal } from "./projects-local-projection.js";
@@ -162,6 +162,7 @@ export class EncryptedContinuationRetryQueue {
   ): Promise<void> {
     const keyMaterial = Buffer.from(intent.keyMaterial, "base64");
     if (keyMaterial.length < 32 || !/^sessions\/[0-9a-f]{64}$/.test(intent.session) || !intent.operationId.trim()) throw new Error("invalid queued continuation save");
+    if (intent.label !== undefined) assertSafeContinuationLabel(intent.label);
     const session = intent.session;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       let current = await store.load(session);
@@ -199,7 +200,7 @@ export class EncryptedContinuationRetryQueue {
           content: await encryptSensitive(content.plaintext),
         };
       }));
-      const prepared = save(session, current, intent.owner, now, inputs, intent.operationId, true);
+      const prepared = save(session, current, intent.owner, now, inputs, intent.operationId, true, intent.label);
       try {
         await store.commit(current?.revision ?? null, prepared.manifest, prepared.artifacts);
         return;
@@ -233,6 +234,7 @@ function parseQueueEnvelope(source: string): QueueEnvelope {
       && typeof value.intent.operationId === "string" && typeof value.intent.keyMaterial === "string"
       && typeof value.intent.session === "string" && /^sessions\/[0-9a-f]{64}$/.test(value.intent.session)
       && (value.intent.expectedRevision === undefined || value.intent.expectedRevision === null || Number.isSafeInteger(value.intent.expectedRevision))
+      && (value.intent.label === undefined || typeof value.intent.label === "string")
       && Array.isArray(value.intent.artifacts)) {
     return value as Extract<QueueEnvelope, { kind: "save" }>;
   }
