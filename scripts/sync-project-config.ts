@@ -2,9 +2,9 @@ import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { BitwardenSecureRecordStore } from "../src/bitwarden-records.js";
-import { projectConfigFromRecord, projectConfigRecordId, projectConfigRecordSource } from "../src/project-config-sync.js";
+import { backupProjectConfig, projectConfigFromRecord, projectConfigRecordId } from "../src/project-config-sync.js";
 import { loadProjectsConfig } from "../src/project-config.js";
-import { decryptSecureRecord, encryptSecureRecord, recipientFromEnvironment, secureRecordPath } from "../src/secure-records.js";
+import { decryptSecureRecord, secureRecordPath } from "../src/secure-records.js";
 import { resolveBitwardenSession } from "../src/bitwarden-session.js";
 import { withTemporaryIdentity } from "../src/identity-files.js";
 import { BitwardenKeyCustody } from "../src/bitwarden-custody.js";
@@ -12,23 +12,6 @@ import { BitwardenKeyCustody } from "../src/bitwarden-custody.js";
 const repoRoot = resolve(import.meta.dirname, "..");
 const publicConfigPath = join(repoRoot, "projects.yml");
 const localConfigPath = join(repoRoot, "projects.local.yml");
-
-async function backup(replace: boolean): Promise<void> {
-  const config = await readFile(localConfigPath, "utf8");
-  await loadProjectsConfig(publicConfigPath, { localConfigPath });
-  const session = await resolveBitwardenSession();
-  const staging = await mkdtemp(join(tmpdir(), "harness-project-config-"));
-  const sourcePath = join(staging, "projects.local.yml.md");
-  try {
-    await writeFile(sourcePath, projectConfigRecordSource(config), { mode: 0o600 });
-    await encryptSecureRecord(staging, projectConfigRecordId, sourcePath, recipientFromEnvironment());
-    const ciphertext = await readFile(secureRecordPath(staging, projectConfigRecordId));
-    await new BitwardenSecureRecordStore().put(projectConfigRecordId, ciphertext, session, replace);
-  } finally {
-    await rm(staging, { recursive: true, force: true });
-  }
-  console.log(`stored encrypted project configuration ${projectConfigRecordId}`);
-}
 
 async function restore(replace: boolean): Promise<void> {
   if (!replace) {
@@ -62,7 +45,7 @@ async function restore(replace: boolean): Promise<void> {
 
 const [command, ...args] = process.argv.slice(2);
 const replace = args.includes("--replace");
-if (command === "backup") backup(replace).catch((error: unknown) => {
+if (command === "backup") backupProjectConfig(publicConfigPath, localConfigPath, replace).then(() => console.log(`stored encrypted project configuration ${projectConfigRecordId}`)).catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
 });
