@@ -23,7 +23,7 @@ try {
     if (result.code !== 0) throw new Error("git init failed; verify Git availability");
     await mkdir(join(path, "scripts"));
     await writeFile(join(path, "README.md"), "# Project setup\n\nInitial setup and quality contract.\n");
-    await writeFile(join(path, ".gitignore"), "node_modules/\n.env\n.env.*\n!.env.example\n");
+    await writeFile(join(path, ".gitignore"), "node_modules/\n.env\n.env.*\n*.env\n!.env.example\n");
     await writeFile(join(path, project.setupScript), '#!/usr/bin/env bash\nset -euo pipefail\ncase "${1:-}" in\n  bootstrap|worktree) ;;\n  *) exit 2 ;;\nesac\n# Add project-owned dependency setup here before enabling CI.\n');
     console.log("scaffold prepared; configure owner-approved lint/format and applicable verification commands, then run standards bootstrap");
   } else if (operation === "workflow") {

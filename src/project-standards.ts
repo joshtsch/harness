@@ -126,10 +126,10 @@ async function storybookWarnings(options: StandardsOptions): Promise<string[]> {
   return ui && !storybook ? [missingStorybookWarning] : [];
 }
 
-// Probe paths stand for every .env file at any depth; an unborn path is enough for check-ignore.
-const ignoredEnvProbes = [".env", ".env.local", "nested/.env", "nested/.env.production"];
+// Probe paths stand for every .env, .env.* and *.env file at any depth; an unborn path is enough for check-ignore.
+const ignoredEnvProbes = [".env", ".env.local", "config.env", "nested/.env", "nested/.env.production", "nested/config.env"];
 const keptEnvProbes = [".env.example", "nested/.env.example"];
-export const envIgnoreLines = [".env", ".env.*", "!.env.example"];
+export const envIgnoreLines = [".env", ".env.*", "*.env", "!.env.example"];
 
 async function ignoredPaths(options: StandardsOptions, paths: string[]): Promise<Set<string>> {
   // --no-index evaluates ignore rules even for tracked files; exit 1 means none matched.
@@ -146,7 +146,7 @@ async function requireEnvIgnored(options: StandardsOptions): Promise<void> {
     ...required.filter((path) => !ignored.has(path)).map((path) => `${path} is not ignored`),
     ...keptEnvProbes.filter((path) => ignored.has(path)).map((path) => `${path} is ignored`),
   ];
-  const tracked = (await commandOutput(options, "git", ["ls-files", "-z"])).split("\0").filter((path) => /(^|\/)\.env(\.[^/]*)?$/.test(path));
+  const tracked = (await commandOutput(options, "git", ["ls-files", "-z"])).split("\0").filter((path) => /(^|\/)(\.env(\.[^/]*)?|[^/]*\.env)$/.test(path));
   const trackedIgnored = tracked.length ? [...await ignoredPaths(options, tracked)] : [];
   if (trackedIgnored.length) problems.push(`tracked env files (left tracked; untrack only with the owner's approval): ${trackedIgnored.join(", ")}`);
   if (problems.length) throw new Error(`.env files must be ignored at any depth: ${problems.join("; ")}. Add ${envIgnoreLines.map((line) => `"${line}"`).join(", ")} to .gitignore through the project's issue-bound worktree and change request`);
