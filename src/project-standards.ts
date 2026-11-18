@@ -61,7 +61,7 @@ const scaffoldFiles = new Set([
   "pyproject.toml", "uv.lock", "requirements.txt", "ruff.toml", ".ruff.toml",
   "biome.json", "biome.jsonc", "tsconfig.json", ".prettierignore", ".prettierrc", ".prettierrc.json",
   "eslint.config.js", "eslint.config.mjs", "eslint.config.ts", "prettier.config.js", "prettier.config.mjs",
-  "scripts/setup.sh", standardsWorkflowPath,
+  "scripts/setup.sh", ".claude/settings.json", standardsWorkflowPath,
 ]);
 
 export interface StandardsOptions {
@@ -130,6 +130,9 @@ async function storybookWarnings(options: StandardsOptions): Promise<string[]> {
 const ignoredEnvProbes = [".env", ".env.local", "config.env", "nested/.env", "nested/.env.production", "nested/config.env"];
 const keptEnvProbes = [".env.example", "nested/.env.example"];
 export const envIgnoreLines = [".env", ".env.*", "*.env", "!.env.example"];
+// Claude Code loads settings only from the session's folder, so harness-root rules never reach project worktrees.
+export const envDenyRules = ["Read", "Edit"].flatMap((tool) => ["**/.env", "**/.env.*", "**/*.env", "!**/.env.example"].map((pattern) => `${tool}(${pattern})`));
+const claudeSettingsPath = ".claude/settings.json";
 
 async function ignoredPaths(options: StandardsOptions, paths: string[]): Promise<Set<string>> {
   // --no-index evaluates ignore rules even for tracked files; exit 1 means none matched.
@@ -152,11 +155,26 @@ async function requireEnvIgnored(options: StandardsOptions): Promise<void> {
   if (problems.length) throw new Error(`.env files must be ignored at any depth: ${problems.join("; ")}. Add ${envIgnoreLines.map((line) => `"${line}"`).join(", ")} to .gitignore through the project's issue-bound worktree and change request`);
 }
 
+async function requireClaudeEnvDeny(options: StandardsOptions): Promise<void> {
+  const settings = await readFile(join(options.path, claudeSettingsPath), "utf8").then((text) => JSON.parse(text) as { permissions?: { deny?: unknown } }, () => undefined);
+  const deny = Array.isArray(settings?.permissions?.deny) ? settings.permissions.deny : [];
+  const missing = envDenyRules.filter((rule) => !deny.includes(rule));
+  const problems = [
+    ...(settings ? [] : [`${claudeSettingsPath} is missing or not valid JSON`]),
+    ...(missing.length ? [`permissions.deny lacks ${missing.map((rule) => `"${rule}"`).join(", ")}`] : []),
+    ...((await ignoredPaths(options, [claudeSettingsPath])).size ? [`${claudeSettingsPath} is ignored, so it can't be committed`] : []),
+    // Bootstrap validates a scaffold before its first commit; elsewhere an untracked file never reaches new worktrees.
+    ...(settings && !options.bootstrap && !(await commandOutput(options, "git", ["ls-files", "--", claudeSettingsPath])) ? [`${claudeSettingsPath} is not tracked; add and commit it`] : []),
+  ];
+  if (problems.length) throw new Error(`Claude Code must deny reading and editing env files: ${problems.join("; ")}. Merge the rules into the existing settings without dropping entries, through the project's issue-bound worktree and change request`);
+}
+
 export async function validateLocalStandards(options: StandardsOptions): Promise<{ status: "locally-validated"; fingerprint: string; optionalFailures: number; checks: number; warnings: string[] }> {
   const commands = checks(options.project);
   if (options.bootstrap) await requireBootstrap(options);
   await readFile(join(options.path, options.project.setupScript));
   await requireEnvIgnored(options);
+  await requireClaudeEnvDeny(options);
   if (options.bootstrap) await commandOutput(options, "bash", [options.project.setupScript, "bootstrap"]);
   const before = await snapshot(options);
   let optionalFailures = 0;

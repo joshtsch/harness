@@ -220,8 +220,9 @@ sessions started in `projects/`.
   working directory. So neither file covers a session started in a project
   worktree under the [external worktree root](project-configuration.md#worktree-root),
   or anywhere else outside the harness tree. Those sessions get env deny rules
-  only from the project repository's own `.claude/settings.json` or from the
-  user's settings.
+  only from the project repository's own `.claude/settings.json`, which
+  [onboarding requires](repository-intake.md#claude-code-env-deny-rules), or
+  from the user's settings.
 - **Commit guard** (`scripts/claude-hooks/git-guard.mjs`, Bash) blocks commits
   on `main` or `master`, commits of `projects.local.yml` or environment files
   other than `.env.example`, and staged diffs the sensitive-content scan flags.

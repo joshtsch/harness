@@ -1,11 +1,11 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse, stringify } from "yaml";
-import { missingStorybookWarning, projectStandardsWorkflow, publishBootstrap, standardsCheckName, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
+import { envDenyRules, missingStorybookWarning, projectStandardsWorkflow, publishBootstrap, standardsCheckName, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
 import type { ProjectDefinition } from "../src/project-config.js";
 import type { SetupCommandRunner } from "../src/session/project-setup.js";
 
@@ -26,6 +26,9 @@ async function repository(): Promise<string> {
   await mkdir(join(root, "scripts"));
   await writeFile(join(root, "scripts/setup.sh"), "#!/bin/sh\nexit 0\n");
   await writeFile(join(root, ".gitignore"), ".env\n.env.*\n*.env\n!.env.example\n");
+  await mkdir(join(root, ".claude"));
+  await writeFile(join(root, ".claude/settings.json"), JSON.stringify({ permissions: { deny: envDenyRules } }));
+  await exec("git", ["add", ".claude/settings.json"], { cwd: root });
   return root;
 }
 async function commit(root: string): Promise<void> {
@@ -82,6 +85,23 @@ describe("local standards", () => {
     await exec("git", ["add", "-f", "apps/web/.env.local", "apps/web/app.env", ".env.example"], { cwd: path });
     await expect(validateLocalStandards({ project, path })).rejects.toThrow(/tracked env files[^:]*: apps\/web\/\.env\.local, apps\/web\/app\.env\./);
     expect((await exec("git", ["ls-files", "apps/web/.env.local"], { cwd: path })).stdout.trim()).toBe("apps/web/.env.local");
+  });
+  it("requires committable Claude Code env deny rules without editing settings", async () => {
+    const path = await repository();
+    const settings = join(path, ".claude/settings.json");
+    await writeFile(settings, JSON.stringify({ hooks: {}, permissions: { allow: ["Bash(ls)"], deny: ["Read(./secrets/**)", ...envDenyRules] } }));
+    await expect(validateLocalStandards({ project, path })).resolves.toMatchObject({ status: "locally-validated" });
+    await writeFile(settings, JSON.stringify({ permissions: { deny: envDenyRules.filter((rule) => !rule.includes("*.env)")) } }));
+    await expect(validateLocalStandards({ project, path })).rejects.toThrow(/lacks "Read\(\*\*\/\*\.env\)", "Edit\(\*\*\/\*\.env\)"\. Merge/);
+    await rm(settings);
+    await expect(validateLocalStandards({ project, path })).rejects.toThrow(/settings\.json is missing or not valid JSON; permissions\.deny lacks "Read\(\*\*\/\.env\)"/);
+    await expect(readFile(settings)).rejects.toThrow();
+    await writeFile(settings, JSON.stringify({ permissions: { deny: envDenyRules } }));
+    await writeFile(join(path, ".gitignore"), ".env\n.env.*\n*.env\n!.env.example\n.claude/\n");
+    await expect(validateLocalStandards({ project, path })).rejects.toThrow(".claude/settings.json is ignored");
+    await writeFile(join(path, ".gitignore"), ".env\n.env.*\n*.env\n!.env.example\n");
+    await exec("git", ["rm", "-q", "--cached", ".claude/settings.json"], { cwd: path });
+    await expect(validateLocalStandards({ project, path })).rejects.toThrow(".claude/settings.json is not tracked");
   });
   it("reruns checks after source/config edits and rejects mutating format checks", async () => {
     const path = await repository();

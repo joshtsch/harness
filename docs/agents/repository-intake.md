@@ -94,6 +94,26 @@ hold credentials that need rotation. The check never edits the repository. Add
 the missing lines in the project's issue-bound worktree and land them through
 its change request. `standards prepare` writes these lines into new scaffolds.
 
+### Claude Code env deny rules
+
+Claude Code reads `.claude/settings.json` only from the folder a session starts
+in, so the harness's own deny rules don't reach project worktrees. Every project
+repository commits a `.claude/settings.json` whose `permissions.deny` contains:
+
+```json
+"Read(**/.env)", "Read(**/.env.*)", "Read(**/*.env)", "Read(!**/.env.example)",
+"Edit(**/.env)", "Edit(**/.env.*)", "Edit(**/*.env)", "Edit(!**/.env.example)"
+```
+
+The `!` entries sit inside the deny list because an allow rule can't override a
+deny. `pnpm standards local` and `bootstrap` fail when the file is missing, is
+not valid JSON, is ignored, is untracked (outside `bootstrap` of an
+uncommitted scaffold), or lacks any of these entries, and name the missing
+ones. The check never edits the repository. Merge the entries into the existing
+settings without dropping anything, in the project's issue-bound worktree, and
+land them through its change request. `standards prepare` writes them into new
+scaffolds. Codex has no per-file deny; see [Secrets and PII safety](data-safety.md).
+
 Choose the path from observed state:
 
 | State | Next action |

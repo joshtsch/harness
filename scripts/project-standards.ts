@@ -2,7 +2,7 @@
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { loadProjectsConfig } from "../src/project-config.js";
-import { envIgnoreLines, projectStandardsWorkflow, publishBootstrap, runStandardsCommand, standardsWorkflowPath, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
+import { envDenyRules, envIgnoreLines, projectStandardsWorkflow, publishBootstrap, runStandardsCommand, standardsWorkflowPath, validateLocalStandards, verifyRemoteStandards } from "../src/project-standards.js";
 
 try {
   const [operation, name, directory, ...extra] = process.argv.slice(2);
@@ -22,6 +22,8 @@ try {
     const result = await runStandardsCommand("git", ["init", "--initial-branch", project.defaultBranch], { cwd: path, env: process.env });
     if (result.code !== 0) throw new Error("git init failed; verify Git availability");
     await mkdir(join(path, "scripts"));
+    await mkdir(join(path, ".claude"));
+    await writeFile(join(path, ".claude/settings.json"), `${JSON.stringify({ permissions: { deny: envDenyRules } }, null, 2)}\n`);
     await writeFile(join(path, "README.md"), "# Project setup\n\nInitial setup and quality contract.\n");
     await writeFile(join(path, ".gitignore"), `${["node_modules/", ...envIgnoreLines].join("\n")}\n`);
     await writeFile(join(path, project.setupScript), '#!/usr/bin/env bash\nset -euo pipefail\ncase "${1:-}" in\n  bootstrap|worktree) ;;\n  *) exit 2 ;;\nesac\n# Add project-owned dependency setup here before enabling CI.\n');

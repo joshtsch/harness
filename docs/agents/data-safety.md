@@ -91,7 +91,7 @@ not search for the value.
 
 - Keep API keys, OAuth tokens, passwords, private keys, and connection strings in the custody their tier assigns.
 - Keep `.env` files and local credential material untracked; commit only safe templates such as `.env.example`.
-- Claude Code [deny rules](skills-and-plugins.md#claude-code-settings) stop Claude from reading env files, including through `cat` and similar commands. They don't stop `grep -r`, scripts, or sessions started outside the harness tree. Don't read env file values by those routes either.
+- Claude Code [deny rules](skills-and-plugins.md#claude-code-settings) stop Claude from reading env files, including through `cat` and similar commands. They don't stop `grep -r` or scripts. Sessions in project worktrees get them only from the project's own committed `.claude/settings.json`, which [onboarding requires](repository-intake.md#claude-code-env-deny-rules). Codex has no per-file deny, so Codex sessions rely on `.gitignore` and this rule. Don't read env file values by any of these routes.
 - Treat CRM records, meeting notes, transcripts, attendee details, email addresses, phone numbers, and customer-specific context as PII or sensitive business data unless explicitly confirmed otherwise.
 - Do not copy MCP results from Attio or Granola into tracked files. Record only stable identifiers or redacted summaries when durable context is genuinely required.
 - Redact secrets and PII from GitHub issues, PRs, comments, test fixtures, command output, and `docs/.scratch/` state.
