@@ -40,3 +40,60 @@ export function projectWorkspaceInventory(projects: Record<string, ProjectDefini
     organizationNames: [...organizationNames].sort(),
   };
 }
+
+export type ProjectInputAddress = [workspace: string, category: "environment" | "terraform", key: string];
+
+const inputKey = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Parses the private retire list and refuses entries that are malformed, duplicated, or still supplied. */
+export function parseProjectInputRetirements(
+  raw: string,
+  workspaceNames: string[],
+  suppliedInputs: Record<string, Partial<Record<string, Record<string, string>>>> | undefined,
+): ProjectInputAddress[] {
+  const usage = "HCP_RETIRE_PROJECT_INPUTS must be a JSON array of [workspace, \"environment\"|\"terraform\", key] entries";
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(usage);
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) throw new Error(usage);
+  if (suppliedInputs === undefined) {
+    throw new Error("Retiring project inputs requires the new complete TF_VAR_project_workspace_variables map");
+  }
+  const seen = new Set<string>();
+  return parsed.map((entry: unknown) => {
+    if (!Array.isArray(entry) || entry.length !== 3 || !entry.every((part) => typeof part === "string")) throw new Error(usage);
+    const [workspace, category, key] = entry as string[];
+    if (!workspaceNames.includes(workspace) || (category !== "environment" && category !== "terraform") || !inputKey.test(key)) {
+      throw new Error(`${usage}; ${JSON.stringify(entry)} does not name a registered workspace input`);
+    }
+    const address = JSON.stringify(entry);
+    if (seen.has(address)) throw new Error(`HCP_RETIRE_PROJECT_INPUTS lists ${address} twice`);
+    seen.add(address);
+    if (suppliedInputs[workspace]?.[category]?.[key] !== undefined) {
+      throw new Error(`HCP_RETIRE_PROJECT_INPUTS lists ${address}, which TF_VAR_project_workspace_variables still supplies`);
+    }
+    return [workspace, category, key];
+  });
+}
+
+/** The state address of a managed project input, as `terraform state list` prints it. */
+export function projectInputStateAddress(entry: ProjectInputAddress, resource = "project_input"): string {
+  return `tfe_variable.${resource}[${JSON.stringify(JSON.stringify(entry))}]`;
+}
+
+/**
+ * Instance-level moves to an undeclared address. Terraform plans a destroy for each moved
+ * instance, bypassing only that instance's prevent_destroy; Terraform also refuses a move
+ * whose source is still declared.
+ */
+export function retirementMovedBlocks(entries: ProjectInputAddress[]): string {
+  return entries.map((entry) => [
+    "moved {",
+    `  from = ${projectInputStateAddress(entry)}`,
+    `  to   = ${projectInputStateAddress(entry, "retired_project_input")}`,
+    "}",
+  ].join("\n")).join("\n\n") + "\n";
+}

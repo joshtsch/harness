@@ -256,8 +256,9 @@ Template markers are escaped in this persisted aggregate as well. Remove the
 local override after successful persistence so subsequent runs use that protected
 input. For rotations, supply a new complete map including unchanged inputs for
 all managed workspaces. Omitting an existing managed input is blocked by
-`prevent_destroy`; intentional removal requires a separately reviewed lifecycle
-change. Changing a variable's category or key also changes its address.
+`prevent_destroy`; to remove one on purpose, follow
+[Retiring project inputs](#retiring-project-inputs). Changing a variable's
+category or key also changes its address, so it is a retirement plus a new input.
 
 Values exist in encrypted remote state and uploaded run configuration, as well as
 the destination workspace. Sensitive flags redact values from routine output;
@@ -266,6 +267,58 @@ access accordingly. The provider cannot detect out-of-band edits to sensitive
 values; rotate through Terraform. Keep application inputs out of public project
 configuration and issues. This step configures execution inputs only; it does
 not provision application resources or release an application.
+
+### Retiring project inputs
+
+Retire a managed input only when the project's Terraform root no longer reads
+it, for example after the project drops a provider. Every other managed input
+keeps `prevent_destroy`, and an omission that is not listed still fails the plan.
+
+Supply two private process inputs, through the protected environment or the
+ignored harness-root `.env`:
+
+- `TF_VAR_project_workspace_variables`: the new complete map, without the
+  retired inputs. The command refuses a retirement without it.
+- `HCP_RETIRE_PROJECT_INPUTS`: a JSON array of `[workspace, category, key]`
+  entries naming exactly the inputs to retire, where category is `environment`
+  or `terraform`. It holds names only, never values.
+
+```sh
+HCP_RETIRE_PROJECT_INPUTS='[["example-infrastructure","environment","EXAMPLE_PROVIDER_TOKEN"]]'
+```
+
+Then run `node --env-file=.env --import tsx scripts/hcp-projects.ts plan`.
+Before Terraform plans, the command refuses an entry that is malformed, listed
+twice, names an unregistered workspace, or is still in the new map. After
+`terraform init` it reads `terraform state list` and refuses an entry with no
+managed `tfe_variable.project_input` instance. It then prints the inputs the
+run retires. Review that list and the plan: each listed input appears once as
+`tfe_variable.retired_project_input[...]` to be destroyed, moved from its
+`project_input` address, and nothing else is destroyed. Run `apply` with the
+same inputs, then remove `HCP_RETIRE_PROJECT_INPUTS` and the local map override.
+Destroying a variable deletes it from the project workspace and the value
+cannot be recovered from HCP, so keep the source credential in protected
+custody until the provider account is retired as well.
+
+How it works: [lifecycle arguments](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle)
+such as `prevent_destroy` accept only literal values, and a
+[`removed` block](https://developer.hashicorp.com/terraform/language/block/removed)
+names a whole resource: Terraform 1.16 rejects an instance key there with
+"Resource instance keys not allowed". The command instead writes a temporary, ignored
+`onboarding-retire.tf` with one instance-level
+[`moved` block](https://developer.hashicorp.com/terraform/language/block/moved) per
+entry, from `tfe_variable.project_input[...]` to the undeclared
+`tfe_variable.retired_project_input[...]`. Terraform plans to destroy an object
+moved to an address that is not in configuration, and that address has no
+`prevent_destroy`. Terraform also refuses a move whose source is still declared
+("Moved object still exists"), and ignores one whose source is absent from
+state, which is why the command checks state first. The file is uploaded with
+the run, like the temporary tfvars, and removed afterward. Never declare a
+`retired_project_input` resource, and if an interrupted run leaves the file
+behind, inspect and remove it before retrying. The rejected alternatives were a
+second, unprotected resource for retirable inputs (it would need a static
+`moved` block per input and leave those inputs unguarded meanwhile) and
+`terraform state mv` (it changes state before any reviewed plan).
 
 ### CLI import prerequisites
 
@@ -331,7 +384,12 @@ Mock-provider tests require Terraform 1.7 or newer. The resource configuration
 retains its existing Terraform 1.6 minimum.
 
 Mock plans prove empty-default behavior, repository isolation, remote execution,
-and rejection of harness/bootstrap collisions and invalid names. Live planning
+and rejection of harness/bootstrap collisions and invalid names.
+`src/__tests__/hcp-input-retirement.terraform.test.ts` copies this root,
+applies mock project inputs, and plans with generated retirement moves. It
+proves that only listed inputs are destroyed, that an unlisted omission still
+fails, and that a still-supplied input cannot be retired. It needs a local
+Terraform with registry access and skips when Terraform is absent. Live planning
 still requires the existing remote backend and control-plane credentials.
 Both project workspaces and organizations have `prevent_destroy`. Terraform's
 [`expect_failures` test support](https://developer.hashicorp.com/terraform/language/tests)

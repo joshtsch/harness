@@ -16,6 +16,7 @@
 *.tfstate.*
 .terraform.tfstate.lock.info
 /infrastructure/hcp/onboarding.auto.tfvars
+/infrastructure/hcp/onboarding-retire.tf
 .vscode/
 .env
 .env.*

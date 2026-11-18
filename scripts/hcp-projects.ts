@@ -3,7 +3,12 @@ import { unlink, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { loadProjectsConfig } from "../src/project-config.js";
-import { projectWorkspaceInventory } from "../src/hcp-project-workspaces.js";
+import {
+  parseProjectInputRetirements,
+  projectInputStateAddress,
+  projectWorkspaceInventory,
+  retirementMovedBlocks,
+} from "../src/hcp-project-workspaces.js";
 
 const [action, ...options] = process.argv.slice(2);
 
@@ -11,13 +16,16 @@ function hclLiteral(value: unknown): string {
   return JSON.stringify(value).replace(/\$\{|%\{/g, (marker) => marker[0] + marker);
 }
 
-async function run(command: string, args: string[], environment: NodeJS.ProcessEnv): Promise<void> {
+async function run(command: string, args: string[], environment: NodeJS.ProcessEnv, capture = false): Promise<string> {
+  let output = "";
   const code = await new Promise<number>((done, reject) => {
-    const child = spawn(command, args, { env: environment, stdio: "inherit" });
+    const child = spawn(command, args, { env: environment, stdio: ["inherit", capture ? "pipe" : "inherit", "inherit"] });
+    child.stdout?.on("data", (chunk: Buffer) => { output += chunk.toString(); });
     child.once("error", reject);
     child.once("exit", (status) => done(status ?? 1));
   });
   if (code !== 0) throw new Error(`${command} exited with status ${code}`);
+  return output;
 }
 
 try {
@@ -55,7 +63,7 @@ try {
   const names = inventory.workspaceNames;
   if (names.length === 0) throw new Error("No Terraform projects are configured; refusing an empty workspace inventory");
 
-  let projectVariables: unknown;
+  let projectVariables: Parameters<typeof parseProjectInputRetirements>[2];
   const suppliedVariables = process.env.TF_VAR_project_workspace_variables;
   if (suppliedVariables?.trim()) {
     try {
@@ -68,16 +76,27 @@ try {
           && Object.entries(variables).every(([key, value]) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(key) && typeof value === "string")))) {
         throw new Error();
       }
-      projectVariables = parsed;
+      projectVariables = parsed as typeof projectVariables;
     } catch {
       throw new Error("TF_VAR_project_workspace_variables must map registered workspaces to environment/terraform string maps");
     }
   }
 
+  const suppliedRetirements = process.env.HCP_RETIRE_PROJECT_INPUTS;
+  const retirements = suppliedRetirements?.trim()
+    ? parseProjectInputRetirements(suppliedRetirements, names, projectVariables)
+    : [];
+
   const terraformRoot = resolve("infrastructure/hcp");
   const variables = join(terraformRoot, "onboarding.auto.tfvars");
+  const moves = join(terraformRoot, "onboarding-retire.tf");
   let wroteVariables = false;
+  let wroteMoves = false;
   try {
+    if (retirements.length > 0) {
+      await writeFile(moves, retirementMovedBlocks(retirements), { mode: 0o600, flag: "wx" });
+      wroteMoves = true;
+    }
     await writeFile(variables, [
       `project_workspace_names = ${JSON.stringify(names)}`,
       `project_workspace_organizations = ${JSON.stringify(inventory.workspaceOrganizations)}`,
@@ -96,8 +115,19 @@ try {
     // override breaks migration from the single-workspace remote backend.
     delete environment.TF_WORKSPACE;
     await run("terraform", [`-chdir=${terraformRoot}`, "init", "-input=false"], environment);
+    if (retirements.length > 0) {
+      // A move whose source is absent is a silent no-op, so check state first.
+      const managed = new Set((await run("terraform", [`-chdir=${terraformRoot}`, "state", "list"], environment, true)).split("\n"));
+      const unmatched = retirements.filter((entry) => !managed.has(projectInputStateAddress(entry)));
+      if (unmatched.length > 0) {
+        throw new Error(`HCP_RETIRE_PROJECT_INPUTS entries match no managed project input: ${unmatched.map((entry) => JSON.stringify(entry)).join(", ")}`);
+      }
+      console.log(`This ${action} retires (destroys) ${retirements.length} protected project input(s):`);
+      for (const [workspace, category, key] of retirements) console.log(`  - ${workspace} ${category} ${key}`);
+    }
     await run("terraform", [`-chdir=${terraformRoot}`, action, "-var-file=onboarding.auto.tfvars", ...(action === "plan" ? ["-input=false"] : [])], environment);
   } finally {
+    if (wroteMoves) await unlink(moves);
     if (wroteVariables) await unlink(variables);
   }
 } catch (error) {
