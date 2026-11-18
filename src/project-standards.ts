@@ -126,10 +126,37 @@ async function storybookWarnings(options: StandardsOptions): Promise<string[]> {
   return ui && !storybook ? [missingStorybookWarning] : [];
 }
 
+// Probe paths stand for every .env, .env.* and *.env file at any depth; an unborn path is enough for check-ignore.
+const ignoredEnvProbes = [".env", ".env.local", "config.env", "nested/.env", "nested/.env.production", "nested/config.env"];
+const keptEnvProbes = [".env.example", "nested/.env.example"];
+export const envIgnoreLines = [".env", ".env.*", "*.env", "!.env.example"];
+
+async function ignoredPaths(options: StandardsOptions, paths: string[]): Promise<Set<string>> {
+  // --no-index evaluates ignore rules even for tracked files; exit 1 means none matched.
+  const result = await (options.run ?? runStandardsCommand)("git", ["-c", "core.quotePath=false", "check-ignore", "--no-index", "--", ...paths], { cwd: options.path, env: process.env });
+  if (result.code > 1) throw new Error(`repository check failed (exit ${result.code}); verify Git and the repository's ignore files locally`);
+  return new Set(result.code === 0 ? result.stdout.split("\n").filter(Boolean) : []);
+}
+
+// Fails without editing: the fix belongs in the project's own issue-bound worktree and change request.
+async function requireEnvIgnored(options: StandardsOptions): Promise<void> {
+  const required = [...ignoredEnvProbes, ...(options.project.envFiles ?? []).map(({ destination }) => destination)];
+  const ignored = await ignoredPaths(options, [...required, ...keptEnvProbes]);
+  const problems = [
+    ...required.filter((path) => !ignored.has(path)).map((path) => `${path} is not ignored`),
+    ...keptEnvProbes.filter((path) => ignored.has(path)).map((path) => `${path} is ignored`),
+  ];
+  const tracked = (await commandOutput(options, "git", ["ls-files", "-z"])).split("\0").filter((path) => /(^|\/)(\.env(\.[^/]*)?|[^/]*\.env)$/.test(path));
+  const trackedIgnored = tracked.length ? [...await ignoredPaths(options, tracked)] : [];
+  if (trackedIgnored.length) problems.push(`tracked env files (left tracked; untrack only with the owner's approval): ${trackedIgnored.join(", ")}`);
+  if (problems.length) throw new Error(`.env files must be ignored at any depth: ${problems.join("; ")}. Add ${envIgnoreLines.map((line) => `"${line}"`).join(", ")} to .gitignore through the project's issue-bound worktree and change request`);
+}
+
 export async function validateLocalStandards(options: StandardsOptions): Promise<{ status: "locally-validated"; fingerprint: string; optionalFailures: number; checks: number; warnings: string[] }> {
   const commands = checks(options.project);
   if (options.bootstrap) await requireBootstrap(options);
   await readFile(join(options.path, options.project.setupScript));
+  await requireEnvIgnored(options);
   if (options.bootstrap) await commandOutput(options, "bash", [options.project.setupScript, "bootstrap"]);
   const before = await snapshot(options);
   let optionalFailures = 0;

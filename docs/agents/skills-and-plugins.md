@@ -204,11 +204,24 @@ only one user, belong in ignored `.claude/settings.local.json` for sessions
 started in the harness, and in `projects/.claude/settings.local.json` for
 sessions started in `projects/`.
 
-- **Deny rules** block Claude's file tools from reading or editing local
-  environment files (`.env`, `.env.local`, `.env.*.local`, `.env.production`)
-  and from reading `.secure-documents/`. `.env.example` stays editable. The rules
-  do not cover shell commands or reads through the resolved target of the
-  `.secure-documents` symlink; data-safety rules still apply to both.
+- **Deny rules** in both settings files block Claude from reading or editing
+  environment files (`.env`, `.env.*` and `*.env`, at any depth). The harness
+  file also blocks reading `.secure-documents/`. `.env.example` stays readable
+  and editable through a `!` carve-out in the deny list. An allow rule can't
+  override a deny rule, so the carve-out must be in the deny list, after the
+  rule it narrows; see [Claude Code permissions](https://code.claude.com/docs/en/permissions).
+  The rules also cover the Bash file commands Claude Code recognizes, such as
+  `cat`, `head`, `tail`, `sed` and `tee`, and redirection targets. They don't
+  cover commands that read files without naming them, such as `grep -r`, or
+  scripts that open files themselves. They also don't cover reads through the
+  resolved target of the `.secure-documents` symlink. Data-safety rules still
+  apply in all of these cases.
+- Claude Code loads `.claude/settings.json` only from a session's primary
+  working directory. So neither file covers a session started in a project
+  worktree under the [external worktree root](project-configuration.md#worktree-root),
+  or anywhere else outside the harness tree. Those sessions get env deny rules
+  only from the project repository's own `.claude/settings.json` or from the
+  user's settings.
 - **Commit guard** (`scripts/claude-hooks/git-guard.mjs`, Bash) blocks commits
   on `main` or `master`, commits of `projects.local.yml` or environment files
   other than `.env.example`, and staged diffs the sensitive-content scan flags.

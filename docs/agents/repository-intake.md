@@ -72,6 +72,28 @@ start a session until onboarding is complete. See
 [project configuration](project-configuration.md#project-configuration) for the
 command schema and enforcement behavior.
 
+### Environment file ignores
+
+Every project repository ignores all env files (`.env`, `.env.*` and `*.env`)
+at any depth and keeps its committed example. Its `.gitignore` includes at
+least:
+
+```gitignore
+.env
+.env.*
+*.env
+!.env.example
+```
+
+`pnpm standards local` and `bootstrap` fail when a `.env`, `.env.*` or `*.env`
+file at the root or in a subdirectory is not ignored, when `.env.example` is ignored, or when an
+[`env_files`](project-configuration.md#worktree-env-files) destination is not
+ignored. They also fail on a tracked file whose name the ignore rules cover,
+and name it without untracking it. Ask the owner before untracking; the file may
+hold credentials that need rotation. The check never edits the repository. Add
+the missing lines in the project's issue-bound worktree and land them through
+its change request. `standards prepare` writes these lines into new scaffolds.
+
 Choose the path from observed state:
 
 | State | Next action |
