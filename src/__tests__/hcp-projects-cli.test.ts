@@ -82,4 +82,14 @@ describe("pnpm hcp:projects retirements", () => {
     expect(result.stderr).toContain("still supplies");
     expect(existsSync(join(directory, "calls.txt"))).toBe(false);
   });
+
+  it("refuses a leftover retire file even without a retire list", () => {
+    const run = harness([managed]);
+    writeFileSync(join(directory, "infrastructure", "hcp", "onboarding-retire.tf"), "# leftover\n");
+    const result = run("");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("remains from an interrupted run");
+    expect(existsSync(join(directory, "calls.txt"))).toBe(false);
+    expect(existsSync(join(directory, "infrastructure", "hcp", "onboarding.auto.tfvars"))).toBe(false);
+  });
 });

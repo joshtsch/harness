@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { unlink, writeFile } from "node:fs/promises";
+import { access, unlink, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { loadProjectsConfig } from "../src/project-config.js";
@@ -90,6 +90,10 @@ try {
   const terraformRoot = resolve("infrastructure/hcp");
   const variables = join(terraformRoot, "onboarding.auto.tfvars");
   const moves = join(terraformRoot, "onboarding-retire.tf");
+  // Terraform loads a leftover from an interrupted run even without a retire list.
+  if (await access(moves).then(() => true, () => false)) {
+    throw new Error(`${moves} remains from an interrupted run; inspect and remove it before retrying (see infrastructure/hcp/README.md#retiring-project-inputs)`);
+  }
   let wroteVariables = false;
   let wroteMoves = false;
   try {

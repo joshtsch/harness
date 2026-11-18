@@ -314,8 +314,9 @@ moved to an address that is not in configuration, and that address has no
 ("Moved object still exists"), and ignores one whose source is absent from
 state, which is why the command checks state first. The file is uploaded with
 the run, like the temporary tfvars, and removed afterward. Never declare a
-`retired_project_input` resource, and if an interrupted run leaves the file
-behind, inspect and remove it before retrying. The rejected alternatives were a
+`retired_project_input` resource. If an interrupted run leaves the file behind,
+every later run refuses to start, with or without a retire list, until you
+inspect and remove it. The rejected alternatives were a
 second, unprotected resource for retirable inputs (it would need a static
 `moved` block per input and leave those inputs unguarded meanwhile) and
 `terraform state mv` (it changes state before any reviewed plan).
