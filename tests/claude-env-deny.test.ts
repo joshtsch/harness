@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
+import { envDenyRules } from "../src/project-standards.js";
 
 const exec = promisify(execFile);
 const repository = resolve(import.meta.dirname, "..");
@@ -41,4 +42,8 @@ describe("Claude Code env deny rules", () => {
       });
     }
   }
+  it("matches the rules onboarding requires of project repositories", async () => {
+    const settings = JSON.parse(await readFile(resolve(repository, ".claude/settings.json"), "utf8")) as { permissions: { deny: string[] } };
+    expect(settings.permissions.deny.filter((rule) => rule.includes("env"))).toEqual(envDenyRules);
+  });
 });
