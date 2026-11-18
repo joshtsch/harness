@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { projectWorkspaceInventory, projectWorkspaceNames } from "../hcp-project-workspaces.js";
+import {
+  parseProjectInputRetirements,
+  projectInputStateAddress,
+  projectWorkspaceInventory,
+  projectWorkspaceNames,
+  retirementMovedBlocks,
+} from "../hcp-project-workspaces.js";
 import type { ProjectDefinition } from "../project-config.js";
 
 function project(name: string, hcpWorkspace?: string, hcpOrganization?: string): ProjectDefinition {
@@ -47,5 +53,36 @@ describe("projectWorkspaceNames", () => {
   it("rejects organizations without workspaces and invalid names", () => {
     expect(() => projectWorkspaceInventory({ a: project("a", undefined, "finance-org") })).toThrow(/requires hcp_workspace/);
     expect(() => projectWorkspaceInventory({ a: project("a", "finance-state", "invalid\/org") })).toThrow(/valid HCP organization/);
+  });
+});
+
+describe("project input retirements", () => {
+  const supplied = { "a-app": { environment: { KEPT: "value" } } };
+
+  it("accepts listed inputs that the new map omits", () => {
+    expect(parseProjectInputRetirements('[["a-app","environment","OLD"],["a-app","terraform","old_name"]]', ["a-app"], supplied))
+      .toEqual([["a-app", "environment", "OLD"], ["a-app", "terraform", "old_name"]]);
+  });
+
+  it("refuses malformed, unregistered, duplicate and still-supplied entries", () => {
+    expect(() => parseProjectInputRetirements("{}", ["a-app"], supplied)).toThrow(/JSON array/);
+    expect(() => parseProjectInputRetirements("[]", ["a-app"], supplied)).toThrow(/JSON array/);
+    expect(() => parseProjectInputRetirements('[["a-app","env","OLD"]]', ["a-app"], supplied)).toThrow(/registered workspace input/);
+    expect(() => parseProjectInputRetirements('[["other","environment","OLD"]]', ["a-app"], supplied)).toThrow(/registered workspace input/);
+    expect(() => parseProjectInputRetirements('[["a-app","environment","OLD"],["a-app","environment","OLD"]]', ["a-app"], supplied)).toThrow(/twice/);
+    expect(() => parseProjectInputRetirements('[["a-app","environment","KEPT"]]', ["a-app"], supplied)).toThrow(/still supplies/);
+    expect(() => parseProjectInputRetirements('[["a-app","environment","OLD"]]', ["a-app"], undefined)).toThrow(/complete TF_VAR_project_workspace_variables/);
+  });
+
+  it("matches the state address format and moves only listed instances", () => {
+    expect(projectInputStateAddress(["a-app", "environment", "OLD"]))
+      .toBe(String.raw`tfe_variable.project_input["[\"a-app\",\"environment\",\"OLD\"]"]`);
+    expect(retirementMovedBlocks([["a-app", "environment", "OLD"]])).toBe([
+      "moved {",
+      String.raw`  from = tfe_variable.project_input["[\"a-app\",\"environment\",\"OLD\"]"]`,
+      String.raw`  to   = tfe_variable.retired_project_input["[\"a-app\",\"environment\",\"OLD\"]"]`,
+      "}",
+      "",
+    ].join("\n"));
   });
 });
