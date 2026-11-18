@@ -80,7 +80,7 @@ describe("local standards", () => {
     await writeFile(join(path, ".env.example"), "VALUE=\n");
     await writeFile(join(path, "apps/web/app.env"), "VALUE=fixture\n");
     await exec("git", ["add", "-f", "apps/web/.env.local", "apps/web/app.env", ".env.example"], { cwd: path });
-    await expect(validateLocalStandards({ project, path })).rejects.toThrow(/tracked env files.*apps\/web\/\.env\.local, apps\/web\/app\.env/);
+    await expect(validateLocalStandards({ project, path })).rejects.toThrow(/tracked env files[^:]*: apps\/web\/\.env\.local, apps\/web\/app\.env\./);
     expect((await exec("git", ["ls-files", "apps/web/.env.local"], { cwd: path })).stdout.trim()).toBe("apps/web/.env.local");
   });
   it("reruns checks after source/config edits and rejects mutating format checks", async () => {

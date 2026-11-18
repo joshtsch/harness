@@ -137,7 +137,7 @@ export function parseCommitInvocation(command: string, cwd: string): CommitInvoc
 export function forbiddenStagedPath(path: string): boolean {
   const name = posix.basename(path);
   if (name === "projects.local.yml") return true;
-  return name === ".env" || (name.startsWith(".env.") && name !== ".env.example");
+  return name.endsWith(".env") || (name.startsWith(".env.") && name !== ".env.example");
 }
 
 export function commitGuardViolations(input: { branch: string | undefined; stagedPaths: string[]; stagedDiff: string; stagesChanges: boolean }): string[] {

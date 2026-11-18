@@ -134,7 +134,7 @@ export const envIgnoreLines = [".env", ".env.*", "*.env", "!.env.example"];
 async function ignoredPaths(options: StandardsOptions, paths: string[]): Promise<Set<string>> {
   // --no-index evaluates ignore rules even for tracked files; exit 1 means none matched.
   const result = await (options.run ?? runStandardsCommand)("git", ["-c", "core.quotePath=false", "check-ignore", "--no-index", "--", ...paths], { cwd: options.path, env: process.env });
-  if (result.code > 1) throw new Error("repository check failed; verify Git and the repository's ignore files locally");
+  if (result.code > 1) throw new Error(`repository check failed (exit ${result.code}); verify Git and the repository's ignore files locally`);
   return new Set(result.code === 0 ? result.stdout.split("\n").filter(Boolean) : []);
 }
 

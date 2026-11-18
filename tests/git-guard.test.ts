@@ -36,6 +36,7 @@ describe("git commit guard", () => {
     expect(forbiddenStagedPath("projects.local.yml")).toBe(true);
     expect(forbiddenStagedPath("app/.env")).toBe(true);
     expect(forbiddenStagedPath(".env.local")).toBe(true);
+    expect(forbiddenStagedPath("config/app.env")).toBe(true);
     expect(forbiddenStagedPath(".env.example")).toBe(false);
     expect(forbiddenStagedPath("docs/env.md")).toBe(false);
   });
