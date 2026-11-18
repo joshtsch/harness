@@ -163,6 +163,8 @@ async function requireClaudeEnvDeny(options: StandardsOptions): Promise<void> {
     ...(settings ? [] : [`${claudeSettingsPath} is missing or not valid JSON`]),
     ...(missing.length ? [`permissions.deny lacks ${missing.map((rule) => `"${rule}"`).join(", ")}`] : []),
     ...((await ignoredPaths(options, [claudeSettingsPath])).size ? [`${claudeSettingsPath} is ignored, so it can't be committed`] : []),
+    // Bootstrap validates a scaffold before its first commit; elsewhere an untracked file never reaches new worktrees.
+    ...(settings && !options.bootstrap && !(await commandOutput(options, "git", ["ls-files", "--", claudeSettingsPath])) ? [`${claudeSettingsPath} is not tracked; add and commit it`] : []),
   ];
   if (problems.length) throw new Error(`Claude Code must deny reading and editing env files: ${problems.join("; ")}. Merge the rules into the existing settings without dropping entries, through the project's issue-bound worktree and change request`);
 }

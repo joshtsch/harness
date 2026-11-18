@@ -107,7 +107,8 @@ repository commits a `.claude/settings.json` whose `permissions.deny` contains:
 
 The `!` entries sit inside the deny list because an allow rule can't override a
 deny. `pnpm standards local` and `bootstrap` fail when the file is missing, is
-not valid JSON, is ignored, or lacks any of these entries, and name the missing
+not valid JSON, is ignored, is untracked (outside `bootstrap` of an
+uncommitted scaffold), or lacks any of these entries, and name the missing
 ones. The check never edits the repository. Merge the entries into the existing
 settings without dropping anything, in the project's issue-bound worktree, and
 land them through its change request. `standards prepare` writes them into new

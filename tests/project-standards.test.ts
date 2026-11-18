@@ -28,6 +28,7 @@ async function repository(): Promise<string> {
   await writeFile(join(root, ".gitignore"), ".env\n.env.*\n*.env\n!.env.example\n");
   await mkdir(join(root, ".claude"));
   await writeFile(join(root, ".claude/settings.json"), JSON.stringify({ permissions: { deny: envDenyRules } }));
+  await exec("git", ["add", ".claude/settings.json"], { cwd: root });
   return root;
 }
 async function commit(root: string): Promise<void> {
@@ -98,6 +99,9 @@ describe("local standards", () => {
     await writeFile(settings, JSON.stringify({ permissions: { deny: envDenyRules } }));
     await writeFile(join(path, ".gitignore"), ".env\n.env.*\n*.env\n!.env.example\n.claude/\n");
     await expect(validateLocalStandards({ project, path })).rejects.toThrow(".claude/settings.json is ignored");
+    await writeFile(join(path, ".gitignore"), ".env\n.env.*\n*.env\n!.env.example\n");
+    await exec("git", ["rm", "-q", "--cached", ".claude/settings.json"], { cwd: path });
+    await expect(validateLocalStandards({ project, path })).rejects.toThrow(".claude/settings.json is not tracked");
   });
   it("reruns checks after source/config edits and rejects mutating format checks", async () => {
     const path = await repository();
