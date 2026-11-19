@@ -9,8 +9,8 @@ action="${1:-}"; repo="${2:-}"; mode="${3:-}"
 name="ci-runner-${repo//\//-}"
 engine="$name-docker"
 dir="$(cd "$(dirname "$0")/../infrastructure/ci-runner" && pwd)"
-# Tagged by Dockerfile content so a changed Dockerfile rebuilds.
-image="harness-ci-runner:$(shasum "$dir/Dockerfile" | cut -c1-12)"
+# Tagged by build-context content so a changed Dockerfile or hook rebuilds.
+image="harness-ci-runner:$(cat "$dir/Dockerfile" "$dir/job-started.sh" | shasum | cut -c1-12)"
 exists() { docker container inspect "$1" >/dev/null 2>&1; }
 
 # stop skips the visibility gate: a repo that turned public is exactly when the runner must come off.

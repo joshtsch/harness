@@ -256,7 +256,10 @@ job with the same Supabase project id would reuse and then wipe them. The
 engine is privileged, so any job controls the Docker VM, including the host
 folders Docker shares; use `--docker` only for private, owner-only
 repositories. The runner container name comes from the repository, so switching
-modes means `stop` then `start`. On an arm64
+modes means `stop` then `start`. The runner shares the engine's network, so after
+Docker restarts, rerun `pnpm ci-runner start <owner/repo> --docker` to reconnect
+it. The engine keeps its images and build cache; reclaim space with
+`docker exec ci-runner-<owner>-<repo>-docker docker system prune`. On an arm64
 host the runner is arm64, unlike hosted x64 runners.
 
 Route jobs to it with the repository variable `CI_RUNNER=self-hosted`, which

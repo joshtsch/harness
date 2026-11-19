@@ -34,3 +34,27 @@ it("removes the runner from a repository that turned public, deleting it through
   expect(result.code).toBe(0);
   expect(await readFile(join(result.bin, "calls"), "utf8")).toMatch(/-X DELETE repos\/example\/fixture\/actions\/runners\/42/);
 });
+
+async function startRunner(...mode: string[]) {
+  const bin = await mkdtemp(join(tmpdir(), "ci-runner-"));
+  await writeFile(join(bin, "gh"), `#!/bin/sh\n[ "$1" = repo ] && echo PRIVATE\n[ "$1" = api ] && echo token\nexit 0\n`);
+  // Nothing exists yet, the image is cached, and every docker run is logged.
+  await writeFile(join(bin, "docker"), `#!/bin/sh\n[ "$1" = container ] && exit 1\n[ "$1" = run ] && echo "$*" >> "${bin}/runs"\nexit 0\n`);
+  await chmod(join(bin, "gh"), 0o755);
+  await chmod(join(bin, "docker"), 0o755);
+  await exec("bash", ["scripts/ci-runner.sh", "start", "example/fixture", ...mode], { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
+  return (await readFile(join(bin, "runs"), "utf8")).trim().split("\n");
+}
+
+it("gives a default runner no Docker engine", async () => {
+  const runs = await startRunner();
+  expect(runs).toHaveLength(1);
+  expect(runs[0]).not.toMatch(/--privileged|DOCKER_HOST|docker\.sock|dind/);
+});
+
+it("gives a --docker runner a dedicated engine, never the host socket", async () => {
+  const runs = (await startRunner("--docker")).join("\n");
+  expect(runs).toMatch(/--privileged .*docker:28\.5\.2-dind/);
+  expect(runs).toMatch(/--network container:ci-runner-example-fixture-docker -e DOCKER_HOST=tcp:\/\/127\.0\.0\.1:2375/);
+  expect(runs).not.toMatch(/docker\.sock:/);
+});
