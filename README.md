@@ -115,6 +115,10 @@ configuration. Reuse reads that value and refuses a conflicting explicit base.
 refresh, checks use the available remote-tracking refs. See
 [branch and base lifecycle](docs/agents/session-lifecycle.md#worktree-branches-and-bases).
 
+Run `pnpm start <project>` to update a project's main clone and start its app
+with the command it declares; see
+[starting a project's app](docs/agents/project-configuration.md#starting-a-projects-app).
+
 Use `pnpm projects --json` to inspect the merged project inventory before choosing
 an owner for a task. The [project-discovery skill](harness-skills/project-discovery/SKILL.md)
 checks likely project boundaries and distinguishes new-project candidates from

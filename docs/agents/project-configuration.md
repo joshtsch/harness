@@ -29,6 +29,7 @@ Each project entry should identify:
 - required project-specific lint and format checks (`quality.lint` and
   `quality.format`);
 - optional `env_files` to copy into new worktrees (see [worktree env files](#worktree-env-files));
+- an optional `start` block for `pnpm start` (see [starting a project's app](#starting-a-projects-app));
 - verification and other optional workflow commands.
 
 `hcp_workspace` is an optional, unique HCP workspace name. Set it only for a
@@ -250,6 +251,38 @@ session manifest:
 - An existing destination is kept and reported `skipped`. Pass
   `--overwrite-env-files` to replace it.
 - Written files have mode `0600`.
+
+## Starting a project's app
+
+`pnpm start <project>` runs a project's app from its main clone
+(`projects/<name>`, the `projectRoot` in `pnpm projects --json`). The project
+declares how in a `start` block:
+
+```yaml
+start:
+  install: { command: pnpm, args: [install, --frozen-lockfile] }  # optional
+  default: hosted               # mode used without a flag
+  modes:
+    hosted: { command: pnpm, args: [dev, --hosted] }
+    local: { command: pnpm, args: [dev] }
+```
+
+Each mode is a `--<mode>` flag, so `pnpm start example --local`
+runs the `local` mode. Arguments after `--` are appended to the mode's command:
+`pnpm start <project> -- --some-flag`. Mode names are lowercase, and `default`
+must name a declared mode. Put the public defaults in `projects.yml`; put
+installation-specific modes, or a different `default`, in
+`projects.local.yml`, which merges over it. A project registered only in
+`projects.local.yml` declares its whole `start` block there. `start` cannot be
+set in defaults. A project with no `start` block fails with a message naming
+the missing field.
+
+Before starting, the command updates the clone only when it is on its default
+branch with a clean worktree: it runs `git pull --ff-only`, then `install`.
+Otherwise it prints a warning and starts what is checked out; a failed pull
+also warns and skips the install. It never stashes, resets, or switches
+branches. A failed install stops before starting. The project's own launcher
+reports missing local configuration, such as a git-ignored env file.
 
 ## Project setup contract
 
