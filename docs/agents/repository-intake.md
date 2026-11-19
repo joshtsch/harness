@@ -188,7 +188,8 @@ pnpm standards workflow <project> <repository-path>
 
 This creates `.github/workflows/standards.yml` without overwriting a workflow.
 It runs the project-owned bootstrap setup, lint, format, and verification commands
-in Ubuntu CI. Setup must install the chosen toolchain and dependencies. Review
+in Ubuntu CI on the runner the `CI_RUNNER` repository variable selects, falling
+back to `ubuntu-latest`; see [CI runners](#ci-runners). Setup must install the chosen toolchain and dependencies. Review
 all generated content for publication suitability. Commands must use scripts or
 environment references rather than credentials or GitHub expressions. Existing
 custom workflows remain intact; adapt onboarding explicitly when the generated
@@ -224,3 +225,35 @@ validation nor session setup proves remote enforcement. Re-run `standards remote
 after changes to commands, CI, integration content, or protection. Keep missing
 provider access and unsupported protection explicit. Complete the Terraform
 coverage gate before any protection write; this verifier never writes settings.
+
+## CI runners
+
+Public repositories use GitHub-hosted runners: they cost no Actions minutes, and
+a self-hosted runner there would run fork pull request code on the host. Private
+repositories bill hosted minutes, so prefer a self-hosted runner for them:
+
+```sh
+pnpm ci-runner start <owner/repo>
+pnpm ci-runner stop <owner/repo>
+```
+
+`start` refuses repositories that are not private. It builds the image in
+`infrastructure/ci-runner/` (the Actions runner plus Node and Corepack, matching
+what `ubuntu-latest` preinstalls) and runs one Linux container per repository
+under Docker, restarting with Docker. `stop` deregisters the runner, through the
+API if the container is gone, and removes the container; it skips the visibility
+check so a repository that turned public can still be cleaned up. Jobs need Docker running on the host; the container has no Docker
+socket, so workflows that build images still need a hosted runner. On an arm64
+host the runner is arm64, unlike hosted x64 runners.
+
+Route jobs to it with the repository variable `CI_RUNNER=self-hosted`, which
+generated standards workflows read; delete the variable to fall back to hosted
+runners when the host is offline. Custom workflows adopt the same
+`runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}` expression. Changing the
+generator changes the expected workflow, so regenerate an existing
+`standards.yml` before rerunning `standards remote`.
+
+Terraform coverage: the GitHub provider has no resource for repository runner
+registration, so `pnpm ci-runner` is the scoped fallback. `CI_RUNNER` is covered
+by `github_actions_variable`; manage it in the project's Terraform root when it
+has one.

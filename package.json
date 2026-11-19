@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "standards": "node --import tsx scripts/project-standards.ts",
+    "ci-runner": "bash scripts/ci-runner.sh",
     "build": "tsc -p tsconfig.json",
     "capabilities": "node --import tsx scripts/capabilities.ts",
     "check:sensitive": "node --import tsx scripts/check-sensitive-content.ts",

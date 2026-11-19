@@ -159,6 +159,9 @@ describe("remote standards", () => {
     const workflow = parse(projectStandardsWorkflow({ ...project, name: "logical-fixture" }));
     expect(workflow.jobs.standards.env.HARNESS_PROJECT_NAME).toBe("logical-fixture");
   });
+  it("selects the runner from the CI_RUNNER repository variable with a hosted fallback", () => {
+    expect(parse(projectStandardsWorkflow(project)).jobs.standards["runs-on"]).toBe("${{ vars.CI_RUNNER || 'ubuntu-latest' }}");
+  });
   it("requires successful current CI, exact project commands, and enforced protection", async () => {
     await expect(verifyRemoteStandards(project, provider())).resolves.toMatchObject({ status: "remotely-enforced" });
     await expect(verifyRemoteStandards(project, provider({ "branches/main/protection": {} }))).resolves.toMatchObject({ status: "blocked" });

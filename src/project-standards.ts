@@ -42,7 +42,8 @@ export function projectStandardsWorkflow(project: ProjectDefinition): string {
     permissions: { contents: "read" },
     jobs: { standards: {
       name: standardsCheckName,
-      "runs-on": "ubuntu-latest",
+      // Repository variable CI_RUNNER selects a self-hosted runner; unset falls back to hosted.
+      "runs-on": "${{ vars.CI_RUNNER || 'ubuntu-latest' }}",
       env: { HARNESS_ROOT: "${{ github.workspace }}", HARNESS_PROJECT_NAME: project.name },
       steps: [
         { uses: "actions/checkout@v4", with: { "persist-credentials": false } },
