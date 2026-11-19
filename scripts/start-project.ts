@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { constants } from "node:os";
 import { resolve } from "node:path";
 import { loadProjectsConfig, type WorkflowCommand } from "../src/project-config.js";
 
@@ -36,7 +37,11 @@ const root = resolve("projects", name);
 if (!existsSync(resolve(root, ".git"))) fail(`No main clone at ${root}; run pnpm clone ${name} first.`);
 
 const git = (...args: string[]) => spawnSync("git", ["-C", root, ...args], { encoding: "utf8" });
-const run = ({ command, args }: WorkflowCommand, more: string[] = []) => spawnSync(command, [...args, ...more], { cwd: root, stdio: "inherit" }).status ?? 1;
+function run({ command, args }: WorkflowCommand, more: string[] = []): number {
+  const result = spawnSync(command, [...args, ...more], { cwd: root, stdio: "inherit" });
+  if (result.error) console.error(`${command}: ${result.error.message}`);
+  return result.status ?? (result.signal ? 128 + (constants.signals[result.signal] ?? 0) : 1);
+}
 
 const branch = git("symbolic-ref", "--quiet", "--short", "HEAD").stdout.trim();
 const dirty = git("status", "--porcelain").stdout.trim() !== "";

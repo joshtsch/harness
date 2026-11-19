@@ -263,11 +263,11 @@ start:
   install: { command: pnpm, args: [install, --frozen-lockfile] }  # optional
   default: hosted               # mode used without a flag
   modes:
-    hosted: { command: pnpm, args: [ingestion:local, --hosted] }
-    local: { command: pnpm, args: [ingestion:local] }
+    hosted: { command: pnpm, args: [dev, --hosted] }
+    local: { command: pnpm, args: [dev] }
 ```
 
-Each mode is a `--<mode>` flag, so `pnpm start household-finance --local`
+Each mode is a `--<mode>` flag, so `pnpm start example --local`
 runs the `local` mode. Arguments after `--` are appended to the mode's command:
 `pnpm start <project> -- --some-flag`. Mode names are lowercase, and `default`
 must name a declared mode. Put the public defaults in `projects.yml`; put
@@ -282,8 +282,7 @@ branch with a clean worktree: it runs `git pull --ff-only`, then `install`.
 Otherwise it prints a warning and starts what is checked out; a failed pull
 also warns and skips the install. It never stashes, resets, or switches
 branches. A failed install stops before starting. The project's own launcher
-reports missing local configuration, such as Household Finance's `.env.hosted`
-(created by its `scripts/hosted-supabase-setup.sh`).
+reports missing local configuration, such as a git-ignored env file.
 
 ## Project setup contract
 

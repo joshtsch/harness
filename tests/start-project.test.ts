@@ -65,7 +65,9 @@ it("starts a clone on another branch without switching back", async () => {
   const h = await harness();
   await h.git(h.clone, "switch", "-q", "-c", "feature");
   const result = await h.run("fixture", "--local");
+  expect(result.code).toBe(0);
   expect(result.stderr).toContain("on feature, not main");
+  expect(await h.head()).toBe("one");
   expect((await h.git(h.clone, "branch", "--show-current")).stdout.trim()).toBe("feature");
   expect(await h.calls()).toBe("local \n");
 });
@@ -80,6 +82,14 @@ it("fails clearly for a project without a start command or an unknown mode", asy
   expect(unknown.code).toBe(1);
   expect(unknown.stderr).toContain("no start mode staging; modes: hosted, local");
   expect(await withStart.calls()).toBe("");
+});
+
+it("names a start command that cannot be run", async () => {
+  const h = await harness();
+  await writeFile(join(h.dir, "projects.local.yml"), "projects:\n  fixture:\n    start:\n      modes:\n        local: { command: no-such-start-command, args: [] }\n");
+  const result = await h.run("fixture", "--local");
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain("no-such-start-command: spawnSync no-such-start-command ENOENT");
 });
 
 it("validates the merged start block", async () => {
