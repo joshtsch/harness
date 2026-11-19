@@ -26,6 +26,7 @@ it("refuses to register a runner for a public repository", async () => {
 
 it("rejects malformed arguments before calling GitHub", async () => {
   await expect(exec("bash", ["scripts/ci-runner.sh", "start", "not a repo"])).rejects.toMatchObject({ code: 2 });
+  await expect(exec("bash", ["scripts/ci-runner.sh", "start", "example/fixture", "--privileged"])).rejects.toMatchObject({ code: 2 });
 });
 
 it("removes the runner from a repository that turned public, deleting it through the API when the container is gone", async () => {
