@@ -248,7 +248,9 @@ Docker engine.
 `--docker` adds the `docker` label and a dedicated Docker-in-Docker engine for
 jobs that run `supabase start`, `container:` images, or `docker buildx`. Job
 ports are reachable on `localhost`, and `_work` and `externals` share volumes
-with the engine so `container:` jobs and bind mounts resolve. The runner never
+with the engine so `container:` jobs and bind mounts resolve. A job-started hook
+returns `_work` to the runner user, because `container:` jobs run as root and the
+runner, unlike a hosted one, is reused between jobs. The runner never
 gets the host socket: the host engine runs developers' local stacks, and a CI
 job with the same Supabase project id would reuse and then wipe them. The
 engine is privileged, so any job controls the Docker VM, including the host

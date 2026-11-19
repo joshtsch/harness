@@ -52,7 +52,7 @@ if [[ -n "$mode" ]]; then
   docker run -d --name "$engine" --privileged --restart unless-stopped -e DOCKER_TLS_CERTDIR= \
     -v "$engine:/var/lib/docker" -v "$name-work:/home/runner/_work" -v "$name-externals:/home/runner/externals" \
     docker:28.5.2-dind dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --tls=false >/dev/null
-  run_args=(--network "container:$engine" -e DOCKER_HOST=tcp://127.0.0.1:2375 -v "$name-work:/home/runner/_work" -v "$name-externals:/home/runner/externals")
+  run_args=(--network "container:$engine" -e DOCKER_HOST=tcp://127.0.0.1:2375 -e ACTIONS_RUNNER_HOOK_JOB_STARTED=/home/runner/hooks/job-started.sh -v "$name-work:/home/runner/_work" -v "$name-externals:/home/runner/externals")
   labels="$labels,docker"
 fi
 

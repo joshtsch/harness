@@ -12,6 +12,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/libexec/docker/cli-plugins/docker-buildx
+COPY job-started.sh /home/runner/hooks/job-started.sh
 USER runner
 # Owned by the runner so a fresh volume mounted here stays writable.
 RUN mkdir -p /home/runner/_work
