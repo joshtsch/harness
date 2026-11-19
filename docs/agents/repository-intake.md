@@ -240,8 +240,9 @@ pnpm ci-runner stop <owner/repo>
 `start` refuses repositories that are not private. It builds the image in
 `infrastructure/ci-runner/` (the Actions runner plus Node and Corepack, matching
 what `ubuntu-latest` preinstalls) and runs one Linux container per repository
-under Docker, restarting with Docker. `stop` deregisters the runner and removes
-the container. Jobs need Docker running on the host; the container has no Docker
+under Docker, restarting with Docker. `stop` deregisters the runner, through the
+API if the container is gone, and removes the container; it skips the visibility
+check so a repository that turned public can still be cleaned up. Jobs need Docker running on the host; the container has no Docker
 socket, so workflows that build images still need a hosted runner. On an arm64
 host the runner is arm64, unlike hosted x64 runners.
 
