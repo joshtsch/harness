@@ -33,6 +33,12 @@ export interface ProjectEnvFile {
   variables?: string[];
 }
 
+export interface ProjectStart {
+  install?: WorkflowCommand;
+  default: string;
+  modes: Record<string, WorkflowCommand>;
+}
+
 export interface ProjectWiki {
   description: string;
   topics: string[];
@@ -58,6 +64,7 @@ export interface ProjectDefinition {
   toolMappings?: Record<string, ToolMapping>;
   quality?: ProjectQualityChecks;
   envFiles?: ProjectEnvFile[];
+  start?: ProjectStart;
   verification: WorkflowCommand[];
   workflows: WorkflowCommand[];
 }
@@ -101,6 +108,7 @@ interface RawProject {
   tool_mappings?: unknown;
   quality?: unknown;
   env_files?: unknown;
+  start?: unknown;
   verification?: unknown;
   workflows?: unknown;
 }
@@ -118,7 +126,7 @@ export interface LoadProjectsConfigOptions {
   environment?: Record<string, string | undefined>;
 }
 
-const rawProjectFields = new Set(["purpose", "topics", "excludes", "remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "env_files", "verification", "workflows"]);
+const rawProjectFields = new Set(["purpose", "topics", "excludes", "remote", "hcp_workspace", "hcp_organization", "default_branch", "setup_script", "issue_tracker", "crm", "wiki", "business_lines", "tool_mappings", "quality", "env_files", "start", "verification", "workflows"]);
 const defaultFields = new Set(["default_branch", "setup_script", "issue_tracker", "crm", "quality", "verification", "workflows"]);
 const businessLineFields = new Set(["display_name", "tool_mappings"]);
 const providerAccountFields = new Set(["plan", "categories", "business_line", "notes"]);
@@ -128,6 +136,7 @@ const wikiFields = new Set(["description", "topics", "pages", "raw", "templates"
 const workflowCommandFields = new Set(["command", "args", "required"]);
 const qualityFields = new Set(["lint", "format"]);
 const envFileFields = new Set(["source", "destination", "variables"]);
+const startFields = new Set(["install", "default", "modes"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -261,6 +270,24 @@ function parseEnvFiles(value: unknown, label: string): ProjectEnvFile[] {
   return envFiles;
 }
 
+function parseStart(value: unknown, label: string): ProjectStart {
+  assertKnownFields(value, startFields, label);
+  const command = (entry: unknown, entryLabel: string) => parseCommands([entry], entryLabel, true)[0]!;
+  if (!isRecord(value.modes) || Object.keys(value.modes).length === 0) throw new Error(`${label}.modes must be a non-empty mapping`);
+  const modes = Object.fromEntries(Object.entries(value.modes).map(([mode, entry]) => {
+    // Modes become `--<mode>` flags of pnpm start.
+    if (!/^[a-z][a-z0-9-]*$/.test(mode)) throw new Error(`${label}.modes.${mode} must be a lowercase name`);
+    return [mode, command(entry, `${label}.modes.${mode}`)];
+  }));
+  const defaultMode = requiredString(value.default, `${label}.default`);
+  if (!modes[defaultMode]) throw new Error(`${label}.default references unknown mode ${defaultMode}`);
+  return {
+    ...(value.install === undefined ? {} : { install: command(value.install, `${label}.install`) }),
+    default: defaultMode,
+    modes,
+  };
+}
+
 function parseProviderAccounts(value: unknown, businessLines: Record<string, BusinessLine>): ProviderAccount[] {
   if (value === undefined) return [];
   if (!isRecord(value)) throw new Error("provider_accounts must be a mapping");
@@ -375,6 +402,7 @@ export async function loadHarnessConfig(filePath: string, options: LoadProjectsC
         toolMappings: parseToolMappings(definition.tool_mappings, `projects.${name}.tool_mappings`, resolveEnvironment, environment),
         quality: parseQuality(definition.quality ?? defaults.quality, `projects.${name}.quality`),
         ...(definition.env_files === undefined ? {} : { envFiles: parseEnvFiles(definition.env_files, `projects.${name}.env_files`) }),
+        ...(definition.start === undefined ? {} : { start: parseStart(definition.start, `projects.${name}.start`) }),
         verification: parseCommands(definition.verification ?? defaults.verification, `projects.${name}.verification`, true),
         workflows: parseCommands(definition.workflows ?? defaults.workflows, `projects.${name}.workflows`, false),
       } satisfies ProjectDefinition];
