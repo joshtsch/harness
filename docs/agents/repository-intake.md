@@ -233,7 +233,7 @@ a self-hosted runner there would run fork pull request code on the host. Private
 repositories bill hosted minutes, so prefer a self-hosted runner for them:
 
 ```sh
-pnpm ci-runner start <owner/repo>
+pnpm ci-runner start <owner/repo> [--docker]
 pnpm ci-runner stop <owner/repo>
 ```
 
@@ -242,8 +242,24 @@ pnpm ci-runner stop <owner/repo>
 what `ubuntu-latest` preinstalls) and runs one Linux container per repository
 under Docker, restarting with Docker. `stop` deregisters the runner, through the
 API if the container is gone, and removes the container; it skips the visibility
-check so a repository that turned public can still be cleaned up. Jobs need Docker running on the host; the container has no Docker
-socket, so workflows that build images still need a hosted runner. On an arm64
+check so a repository that turned public can still be cleaned up. Jobs need Docker running on the host; by default the container has no
+Docker engine.
+
+`--docker` adds the `docker` label and a dedicated Docker-in-Docker engine for
+jobs that run `supabase start`, `container:` images, or `docker buildx`. Job
+ports are reachable on `localhost`, and `_work` and `externals` share volumes
+with the engine so `container:` jobs and bind mounts resolve. A job-started hook
+returns `_work` to the runner user, because `container:` jobs run as root and the
+runner, unlike a hosted one, is reused between jobs. The runner never
+gets the host socket: the host engine runs developers' local stacks, and a CI
+job with the same Supabase project id would reuse and then wipe them. The
+engine is privileged, so any job controls the Docker VM, including the host
+folders Docker shares; use `--docker` only for private, owner-only
+repositories. The runner container name comes from the repository, so switching
+modes means `stop` then `start`. The runner shares the engine's network, so after
+Docker restarts, rerun `pnpm ci-runner start <owner/repo> --docker` to reconnect
+it. The engine keeps its images and build cache; reclaim space with
+`docker exec ci-runner-<owner>-<repo>-docker docker system prune`. On an arm64
 host the runner is arm64, unlike hosted x64 runners.
 
 Route jobs to it with the repository variable `CI_RUNNER=self-hosted`, which
