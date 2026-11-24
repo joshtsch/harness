@@ -48,6 +48,21 @@ completion report, and review sessions raise it as a standards finding. Either
 session proposes a separate issue to adopt Storybook instead of setting it up
 inside an unrelated change.
 
+## 3a. Stop what testing started
+
+In every project, once testing ends and before reporting completion, stop each
+process the session started: dev servers, Storybook, local stacks such as
+`pnpm supabase:stop`, `pnpm start` apps, MCP servers run by hand, and
+background shell jobs. Use the tool that started each one, such as
+`preview_stop` for a preview or the stack's own stop command, and kill the
+process tree only when no stop command exists. Then confirm none of them still
+runs or holds its port (`ps`, `lsof -nP -iTCP:<port> -sTCP:LISTEN`).
+
+Keep a process running only when the user asks; the report then names it and
+how to stop it. Never stop a process this session did not start. MCP servers
+that the provider launches for each open session exit with that session, so
+leave them alone.
+
 ## 4. Ingest durable knowledge into wikis
 
 Before reporting completion, check whether the session produced reusable
@@ -130,7 +145,8 @@ The final report should state:
 - merge state;
 - synchronized local `main` branches; and
 - wiki-ingestion result for the harness and affected child wikis; and
-- every remaining blocker or intentionally preserved local change.
+- every remaining blocker or intentionally preserved local change, including
+  any process left running at the user's request and how to stop it.
 
 Do not report the session as fully complete while a required change request is
 open, an issue link is missing, or a required merge/synchronization step is
