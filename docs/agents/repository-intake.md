@@ -243,7 +243,9 @@ what `ubuntu-latest` preinstalls) and runs one Linux container per repository
 under Docker, restarting with Docker. `stop` deregisters the runner, through the
 API if the container is gone, and removes the container; it skips the visibility
 check so a repository that turned public can still be cleaned up. Jobs need Docker running on the host; by default the container has no
-Docker engine.
+Docker engine. The runner, and the `--docker` engine, are each capped at 4 CPUs
+(fewer when Docker has fewer) so a job leaves the host usable; `start` on an
+existing runner applies the cap.
 
 `--docker` adds the `docker` label and a dedicated Docker-in-Docker engine for
 jobs that run `supabase start`, `container:` images, or `docker buildx`. Job
