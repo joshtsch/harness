@@ -26,6 +26,9 @@ describe("secret command guard", () => {
     "pnpm --dir /x hcp:projects apply",
     "pnpm -s hcp:projects plan",
     'sh -c "pnpm hcp:projects"',
+    'sh -c " bw get notes x"',
+    "bash -c '  pnpm hcp:projects plan'",
+    "echo ` bw unlock`",
     "bash scripts/hcp-inputs-note-wizard.sh",
     'sh -c "scripts/hcp-inputs-note-wizard.sh"',
   ])("blocks %s and sends the user to their own terminal", (command) => {

@@ -10,8 +10,9 @@ let input = "";
 for await (const chunk of process.stdin) input += chunk;
 const command = JSON.parse(input || "{}").tool_input?.command ?? "";
 
-// After a quote, the command must start at once: `'x' path` is an argument, `"bw …"` a command.
-const commandWord = String.raw`(?:(?:^|[\n;&|(])\s*|[\x60"'])(?:(?:env|command|sudo|exec|xargs|nohup|time)\s+)*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*`;
+// A backtick always starts a command. After a quote the command must start at once
+// (`'x' path` is an argument), unless the quote follows -c (`sh -c " bw …"`).
+const commandWord = String.raw`(?:(?:^|[\n;&|(\x60])\s*|-c\s+["']\s*|["'])(?:(?:env|command|sudo|exec|xargs|nohup|time)\s+)*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*`;
 const bitwarden = new RegExp(String.raw`${commandWord}(?:\S*/)?bw(?=$|[\s;&|)"'\x60])(?:\s+([^\s;&|)"'\x60]+))?`, "g");
 const blocked = [];
 for (const match of command.matchAll(bitwarden)) {
