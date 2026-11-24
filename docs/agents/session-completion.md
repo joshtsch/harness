@@ -146,7 +146,7 @@ The final report should state:
 - synchronized local `main` branches; and
 - wiki-ingestion result for the harness and affected child wikis; and
 - every remaining blocker or intentionally preserved local change, including
-  any process left running at the user's request.
+  any process left running at the user's request and how to stop it.
 
 Do not report the session as fully complete while a required change request is
 open, an issue link is missing, or a required merge/synchronization step is

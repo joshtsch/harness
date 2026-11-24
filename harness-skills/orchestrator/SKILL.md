@@ -109,7 +109,7 @@ Only on the user's say-so:
    `linked: true`, skipping the session that started you and its other
    children), previews you started (`preview_list` and your section 4
    `launch.json` entries), local stacks your
-   children started, and worktrees you created for your issues. Never offer to
+   children left running, and worktrees you created for your issues. Never offer to
    remove other sessions, servers or worktrees, even merged and clean ones; at
    most name them as out of scope.
    - Archive its implementation and review sessions and their side sessions.

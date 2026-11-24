@@ -42,6 +42,9 @@ the pre-PR `code-review` and routing review gates in [contributing](../../docs/a
    findings the implementation session accepted with reasons as resolved.
 3. On each re-review request, review the new head and send only unresolved
    findings, or state that none remain.
+4. Before sending the findings that end a review round, stop any process you
+   started to verify the change, per
+   [Stop what testing started](../../docs/agents/session-completion.md#3a-stop-what-testing-started).
 
 ## Review prompt
 
