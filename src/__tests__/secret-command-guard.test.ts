@@ -43,6 +43,8 @@ describe("secret command guard", () => {
     "pnpm hcp:projects-docs",
     "git add scripts/hcp-projects.ts src/x.ts",
     "bash -n scripts/hcp-inputs-note-wizard.sh",
+    "grep -n 'trap' scripts/hcp-inputs-note-wizard.sh",
+    "sed -n '1,5p' scripts/hcp-inputs-note-wizard.sh",
     "git show HEAD -- . ':!scripts/hcp-inputs-note-wizard.sh'",
     "vitest run src/__tests__/hcp-projects-cli.test.ts",
   ])(
