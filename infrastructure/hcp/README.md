@@ -233,8 +233,15 @@ and `terraform`; omitted categories are empty. Each individual value is a litera
 string (`hcl = false`) and sensitive, including private account metadata.
 Arbitrary HCL expressions are outside this interface.
 
-Edit the note in Bitwarden, then pipe it in yourself, in a terminal outside any
-agent session. `--variables-file -` reads the map from standard input, so it
+`scripts/hcp-inputs-note-wizard.sh` builds or updates the note and runs the
+plan and apply. Run it yourself, outside any agent session. It reads which
+inputs platform-bootstrap manages (names only, from Terraform state), asks for
+each value with the note's current value as the default, offers new inputs,
+refuses a map that leaves out a managed input, saves the note, and refuses to
+apply a plan that destroys or replaces anything.
+
+To do it by hand, edit the note in Bitwarden, then pipe it in yourself, in a
+terminal outside any agent session. `--variables-file -` reads the map from standard input, so it
 never lands on disk outside the run's temporary tfvars:
 
 ```sh

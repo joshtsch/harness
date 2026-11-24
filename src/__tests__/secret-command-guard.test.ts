@@ -21,6 +21,8 @@ describe("secret command guard", () => {
     "BW_SESSION=x bw list items",
     "export S=$(bw unlock --raw)",
     "env FOO=1 bw sync",
+    "./scripts/hcp-inputs-note-wizard.sh",
+    "bash scripts/hcp-inputs-note-wizard.sh",
   ])("blocks %s and sends the user to their own terminal", (command) => {
     const result = run(command);
     expect(result.status).toBe(2);
@@ -35,6 +37,7 @@ describe("secret command guard", () => {
     "echo bw get",
     "pnpm hcp:projects-docs",
     "git add scripts/hcp-projects.ts src/x.ts",
+    "bash -n scripts/hcp-inputs-note-wizard.sh",
     "vitest run src/__tests__/hcp-projects-cli.test.ts",
   ])(
     "allows %s",

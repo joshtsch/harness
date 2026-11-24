@@ -20,6 +20,9 @@ for (const match of command.matchAll(bitwarden)) {
 if (new RegExp(String.raw`${commandWord}(?:pnpm|npm|yarn)\s+(?:run\s+)?hcp:projects(?=$|[\s;&|)])|hcp-projects\.ts\s+(?:plan|apply)\b`).test(command)) {
   blocked.push("`hcp:projects`, which reads the protected project inputs");
 }
+if (new RegExp(String.raw`${commandWord}(?:bash\s+|sh\s+)?\S*hcp-inputs-note-wizard\.sh(?=$|[\s;&|)])`).test(command)) {
+  blocked.push("the project inputs note wizard");
+}
 
 if (blocked.length > 0) {
   console.error(

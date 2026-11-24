@@ -231,8 +231,9 @@ sessions started in `projects/`.
   (inline `--body` or `--body-file`) with the markdown publication check and the
   sensitive-content scan; a body from standard input is blocked.
 - **Secret guard** (`scripts/claude-hooks/secret-command-guard.mjs`, Bash)
-  blocks the Bitwarden CLI (`bw`, except `status`, `--help` and `--version`)
-  and `hcp:projects` runs, which read tier 4 secrets, and tells the agent to
+  blocks the Bitwarden CLI (`bw`, except `status`, `--help` and `--version`),
+  `hcp:projects` runs and `scripts/hcp-inputs-note-wizard.sh`, which read tier
+  4 secrets, and tells the agent to
   ask the user to run the command in their own terminal. It matches command
   text, not a shell parse: `bw` counts where a command starts, including after
   `$(` or a quote, so `sh -c "bw …"` is blocked and a mention in a commit
