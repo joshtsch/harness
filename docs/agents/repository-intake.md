@@ -28,9 +28,11 @@ or inaccessible sources leave the choice unresolved.
 5. For a project using Terraform, set `hcp_workspace` to its unique HCP workspace
    name in the project entry. Set private `hcp_organization` only as permitted
    by the [infrastructure organization policy](infrastructure.md#state-and-execution).
-   Run `pnpm hcp:projects plan` from the harness root
-   after registration and review the complete control-plane plan. Run
-   `pnpm hcp:projects apply` only when its workspace changes are approved. The
+   After registration, give the user `pnpm hcp:projects plan` to run from the
+   harness root in their own terminal; agents never run it
+   ([data safety](data-safety.md#secret-custody-tiers)). Review the complete
+   control-plane plan they report back. They run `pnpm hcp:projects apply`
+   only when its workspace changes are approved. The
    command derives the full list from merged configuration and persists it in
    HCP; do not edit the list separately in the HCP UI. A project without
    `hcp_workspace` receives no workspace.

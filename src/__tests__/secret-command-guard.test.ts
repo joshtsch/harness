@@ -22,6 +22,9 @@ describe("secret command guard", () => {
     "export S=$(bw unlock --raw)",
     "env FOO=1 bw sync",
     "./scripts/hcp-inputs-note-wizard.sh",
+    "pnpm -C . hcp:projects plan",
+    "pnpm --dir /x hcp:projects apply",
+    "pnpm -s hcp:projects plan",
     "bash scripts/hcp-inputs-note-wizard.sh",
   ])("blocks %s and sends the user to their own terminal", (command) => {
     const result = run(command);

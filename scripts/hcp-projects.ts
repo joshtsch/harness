@@ -90,7 +90,8 @@ try {
       }
       projectVariables = parsed as typeof projectVariables;
     } catch {
-      throw new Error("TF_VAR_project_workspace_variables must map registered workspaces to environment/terraform string maps");
+      const source = variablesFile === undefined ? "TF_VAR_project_workspace_variables" : "The --variables-file map";
+      throw new Error(`${source} must map registered workspaces to environment/terraform string maps`);
     }
   }
 

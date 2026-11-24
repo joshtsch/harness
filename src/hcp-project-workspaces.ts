@@ -60,7 +60,7 @@ export function parseProjectInputRetirements(
   }
   if (!Array.isArray(parsed) || parsed.length === 0) throw new Error(usage);
   if (suppliedInputs === undefined) {
-    throw new Error("Retiring project inputs requires the new complete TF_VAR_project_workspace_variables map");
+    throw new Error("Retiring project inputs requires the new complete project inputs map (--variables-file or TF_VAR_project_workspace_variables)");
   }
   const seen = new Set<string>();
   return parsed.map((entry: unknown) => {
@@ -73,7 +73,7 @@ export function parseProjectInputRetirements(
     if (seen.has(address)) throw new Error(`HCP_RETIRE_PROJECT_INPUTS lists ${address} twice`);
     seen.add(address);
     if (suppliedInputs[workspace]?.[category]?.[key] !== undefined) {
-      throw new Error(`HCP_RETIRE_PROJECT_INPUTS lists ${address}, which TF_VAR_project_workspace_variables still supplies`);
+      throw new Error(`HCP_RETIRE_PROJECT_INPUTS lists ${address}, which the project inputs map still supplies`);
     }
     return [workspace, category, key];
   });

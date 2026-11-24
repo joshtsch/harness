@@ -71,7 +71,7 @@ describe("project input retirements", () => {
     expect(() => parseProjectInputRetirements('[["other","environment","OLD"]]', ["a-app"], supplied)).toThrow(/registered workspace input/);
     expect(() => parseProjectInputRetirements('[["a-app","environment","OLD"],["a-app","environment","OLD"]]', ["a-app"], supplied)).toThrow(/twice/);
     expect(() => parseProjectInputRetirements('[["a-app","environment","KEPT"]]', ["a-app"], supplied)).toThrow(/still supplies/);
-    expect(() => parseProjectInputRetirements('[["a-app","environment","OLD"]]', ["a-app"], undefined)).toThrow(/complete TF_VAR_project_workspace_variables/);
+    expect(() => parseProjectInputRetirements('[["a-app","environment","OLD"]]', ["a-app"], undefined)).toThrow(/complete project inputs map/);
   });
 
   it("matches the state address format and moves only listed instances", () => {

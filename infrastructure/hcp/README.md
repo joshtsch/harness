@@ -93,7 +93,8 @@ each registered Terraform project in merged harness configuration. Optionally
 set private `hcp_organization` as directed by the
 [infrastructure organization policy](../../docs/agents/infrastructure.md#state-and-execution).
 Projects without that field stay in the control-plane organization. Then run
-`pnpm hcp:projects plan` and `pnpm hcp:projects apply` from the harness root.
+`pnpm hcp:projects plan` and `pnpm hcp:projects apply` from the harness root,
+yourself, in a terminal outside any agent session.
 The command supplies the complete workspace and organization inventory for that
 run. The `tfe_variable` resources persist it in the `platform-bootstrap`
 workspace for later remote runs, keeping private project and organization names
@@ -297,20 +298,23 @@ Retire a managed input only when the project's Terraform root no longer reads
 it, for example after the project drops a provider. Every other managed input
 keeps `prevent_destroy`, and an omission that is not listed still fails the plan.
 
-Supply two private process inputs, through the protected environment or the
-ignored harness-root `.env`:
+Supply two inputs for the run, in your own terminal:
 
-- `TF_VAR_project_workspace_variables`: the new complete map, without the
-  retired inputs. The command refuses a retirement without it.
+- The new complete project inputs map, without the retired inputs: edit the
+  Bitwarden note and pipe it with `--variables-file -`, as in
+  [Protected project inputs](#protected-project-inputs). The command refuses a
+  retirement without it.
 - `HCP_RETIRE_PROJECT_INPUTS`: a JSON array of `[workspace, category, key]`
   entries naming exactly the inputs to retire, where category is `environment`
   or `terraform`. It holds names only, never values.
 
 ```sh
-HCP_RETIRE_PROJECT_INPUTS='[["example-infrastructure","environment","EXAMPLE_PROVIDER_TOKEN"]]'
+export HCP_RETIRE_PROJECT_INPUTS='[["example-infrastructure","environment","EXAMPLE_PROVIDER_TOKEN"]]'
+bw get notes "<note name>" | node --env-file=.env --import tsx scripts/hcp-projects.ts plan --variables-file -
 ```
 
-Then run `node --env-file=.env --import tsx scripts/hcp-projects.ts plan`.
+An optional input the root still reads, such as household-finance's
+`tailnet_site_url`, can be retired the same way to fall back to its default.
 Before Terraform plans, the command refuses an entry that is malformed, listed
 twice, names an unregistered workspace, or is still in the new map. After
 `terraform init` it reads `terraform state list` and refuses an entry with no
@@ -318,7 +322,7 @@ managed `tfe_variable.project_input` instance. It then prints the inputs the
 run retires. Review that list and the plan: each listed input appears once as
 `tfe_variable.retired_project_input[...]` to be destroyed, moved from its
 `project_input` address, and nothing else is destroyed. Run `apply` with the
-same inputs, then remove `HCP_RETIRE_PROJECT_INPUTS` and the local map override.
+same inputs, then unset `HCP_RETIRE_PROJECT_INPUTS`.
 Destroying a variable deletes it from the project workspace and the value
 cannot be recovered from HCP, so keep the source credential in protected
 custody until the provider account is retired as well.
