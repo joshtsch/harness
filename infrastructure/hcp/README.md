@@ -294,8 +294,10 @@ not provision application resources or release an application.
 
 ### Retiring project inputs
 
-Retire a managed input only when the project's Terraform root no longer reads
-it, for example after the project drops a provider. Every other managed input
+Retire a managed input when the project's Terraform root no longer reads it,
+for example after the project drops a provider, or when the root reads it as
+optional and it should fall back to its default, such as household-finance's
+`tailnet_site_url`. Every other managed input
 keeps `prevent_destroy`, and an omission that is not listed still fails the plan.
 
 Supply two inputs for the run, in your own terminal:
@@ -313,8 +315,6 @@ export HCP_RETIRE_PROJECT_INPUTS='[["example-infrastructure","environment","EXAM
 bw get notes "<note name>" | node --env-file=.env --import tsx scripts/hcp-projects.ts plan --variables-file -
 ```
 
-An optional input the root still reads, such as household-finance's
-`tailnet_site_url`, can be retired the same way to fall back to its default.
 Before Terraform plans, the command refuses an entry that is malformed, listed
 twice, names an unregistered workspace, or is still in the new map. After
 `terraform init` it reads `terraform state list` and refuses an entry with no
