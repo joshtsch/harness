@@ -35,16 +35,31 @@ it("removes the runner from a repository that turned public, deleting it through
   expect(await readFile(join(result.bin, "calls"), "utf8")).toMatch(/-X DELETE repos\/example\/fixture\/actions\/runners\/42/);
 });
 
-async function startRunner(...mode: string[]) {
+async function startRunner(mode: string[] = [], { ncpu = 8, existing = [] as string[] } = {}) {
   const bin = await mkdtemp(join(tmpdir(), "ci-runner-"));
   await writeFile(join(bin, "gh"), `#!/bin/sh\n[ "$1" = repo ] && echo PRIVATE\n[ "$1" = api ] && echo token\nexit 0\n`);
-  // Nothing exists yet, the image is cached, and every docker run is logged.
-  await writeFile(join(bin, "docker"), `#!/bin/sh\n[ "$1" = container ] && exit 1\n[ "$1" = run ] && echo "$*" >> "${bin}/runs"\nexit 0\n`);
+  // Only the listed containers exist, the image is cached, and every docker run and update is logged.
+  const exists = existing.map((name) => `[ "$1" = container ] && [ "$3" = ${name} ] && exit 0\n`).join("");
+  await writeFile(join(bin, "docker"), `#!/bin/sh\n${exists}[ "$1" = container ] && exit 1\n[ "$1" = info ] && echo ${ncpu}\ncase "$1" in run|update) echo "$*" >> "${bin}/runs";; esac\nexit 0\n`);
   await chmod(join(bin, "gh"), 0o755);
   await chmod(join(bin, "docker"), 0o755);
   await exec("bash", ["scripts/ci-runner.sh", "start", "example/fixture", ...mode], { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` } });
   return (await readFile(join(bin, "runs"), "utf8")).trim().split("\n");
 }
+
+it("caps a new runner and its engine at 4 CPUs, or fewer when Docker has fewer", async () => {
+  const runs = await startRunner(["--docker"]);
+  expect(runs.filter((run) => run.startsWith("run -d"))).toEqual([expect.stringContaining("--cpus 4"), expect.stringContaining("--cpus 4")]);
+  expect((await startRunner([], { ncpu: 2 }))[0]).toContain("--cpus 2");
+});
+
+it("applies the cap to a runner created before it", async () => {
+  expect(await startRunner([], { existing: ["ci-runner-example-fixture"] })).toEqual(["update --cpus 4 ci-runner-example-fixture"]);
+  expect(await startRunner(["--docker"], { existing: ["ci-runner-example-fixture", "ci-runner-example-fixture-docker"] })).toEqual([
+    "update --cpus 4 ci-runner-example-fixture-docker",
+    "update --cpus 4 ci-runner-example-fixture",
+  ]);
+});
 
 it("gives a default runner no Docker engine", async () => {
   const runs = await startRunner();
@@ -53,7 +68,7 @@ it("gives a default runner no Docker engine", async () => {
 });
 
 it("gives a --docker runner a dedicated engine, never the host socket", async () => {
-  const runs = (await startRunner("--docker")).join("\n");
+  const runs = (await startRunner(["--docker"])).join("\n");
   expect(runs).toMatch(/--privileged .*docker:28\.5\.2-dind/);
   expect(runs).toMatch(/--network container:ci-runner-example-fixture-docker -e DOCKER_HOST=tcp:\/\/127\.0\.0\.1:2375/);
   expect(runs).not.toMatch(/docker\.sock:/);

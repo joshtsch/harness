@@ -31,10 +31,17 @@ fi
 visibility="$(gh repo view "$repo" --json visibility -q .visibility)"
 [[ "$visibility" == "PRIVATE" ]] || { echo "refusing $repo: self-hosted runners are for private repositories only (visibility: $visibility)" >&2; exit 1; }
 
+# A job may not take every core Docker has and starve the host; Docker rejects a limit above its core count.
+ncpu="$(docker info --format '{{.NCPU}}')"
+cpus=$(( ncpu < 4 ? ncpu : 4 ))
+
 if exists "$name"; then
   has_engine=no; if exists "$engine"; then has_engine=yes; fi
   wants_engine=no; if [[ -n "$mode" ]]; then wants_engine=yes; fi
   [[ "$has_engine" == "$wants_engine" ]] || { echo "$name exists in the other mode; run pnpm ci-runner stop $repo first" >&2; exit 1; }
+  # Runners created before the cap pick it up here.
+  if [[ "$has_engine" == yes ]]; then docker update --cpus "$cpus" "$engine" >/dev/null; fi
+  docker update --cpus "$cpus" "$name" >/dev/null
   if [[ "$has_engine" == yes ]]; then docker start "$engine" >/dev/null; docker restart "$name" >/dev/null; else docker start "$name" >/dev/null; fi
   echo "started existing $name"
   exit 0
@@ -49,7 +56,7 @@ if [[ -n "$mode" ]]; then
   # Shared volumes keep _work and externals at the same path for the engine, so container:
   # jobs and bind mounts resolve; sharing its network namespace makes job ports reachable on localhost.
   docker run --rm -v "$name-work:/home/runner/_work" -v "$name-externals:/home/runner/externals" "$image" true
-  docker run -d --name "$engine" --privileged --restart unless-stopped -e DOCKER_TLS_CERTDIR= \
+  docker run -d --name "$engine" --privileged --restart unless-stopped --cpus "$cpus" -e DOCKER_TLS_CERTDIR= \
     -v "$engine:/var/lib/docker" -v "$name-work:/home/runner/_work" -v "$name-externals:/home/runner/externals" \
     docker:28.5.2-dind dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --tls=false >/dev/null
   run_args=(--network "container:$engine" -e DOCKER_HOST=tcp://127.0.0.1:2375 -e ACTIONS_RUNNER_HOOK_JOB_STARTED=/home/runner/hooks/job-started.sh -v "$name-work:/home/runner/_work" -v "$name-externals:/home/runner/externals")
@@ -58,6 +65,6 @@ fi
 
 token="$(gh api -X POST "repos/$repo/actions/runners/registration-token" -q .token)"
 # The token is single-use for registration and expires in an hour; restarts reuse the stored registration.
-docker run -d --name "$name" --restart unless-stopped ${run_args[@]+"${run_args[@]}"} -e RUNNER_TOKEN="$token" -e REPO_URL="https://github.com/$repo" -e RUNNER_NAME="$name" -e RUNNER_LABELS="$labels" "$image" \
+docker run -d --name "$name" --restart unless-stopped --cpus "$cpus" ${run_args[@]+"${run_args[@]}"} -e RUNNER_TOKEN="$token" -e REPO_URL="https://github.com/$repo" -e RUNNER_NAME="$name" -e RUNNER_LABELS="$labels" "$image" \
   bash -c '[ -f .runner ] || ./config.sh --unattended --url "$REPO_URL" --token "$RUNNER_TOKEN" --name "$RUNNER_NAME" --labels "$RUNNER_LABELS" --replace; exec ./run.sh' >/dev/null
 echo "started $name ($labels); set the repository variable CI_RUNNER=self-hosted to route jobs to it"
