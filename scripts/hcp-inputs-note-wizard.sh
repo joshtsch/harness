@@ -224,20 +224,22 @@ ask_value() {
   printf -v "$key" '%s' "$input"
 }
 
-# map_get / map_set read and write one input in $MAP. Values travel through env
-# vars into a JSON encoder, never through string concatenation.
+# map_get / map_set read and write one input in $MAP. The map and values go to
+# a JSON encoder over pipes (printf is a builtin): a process's environment is
+# readable by same-user processes, and bash 3.2 here-strings use temp files.
+# Only the W/C/K names travel in env.
 map_get() {
-  MAP="$MAP" W="$1" C="$2" K="$3" node -e '
-    const m = JSON.parse(process.env.MAP), e = process.env;
+  printf '%s' "$MAP" | W="$1" C="$2" K="$3" node -e '
+    const m = JSON.parse(require("fs").readFileSync(0, "utf8")), e = process.env;
     process.stdout.write(m[e.W]?.[e.C]?.[e.K] ?? "");'
 }
 map_set() {
-  MAP=$(MAP="$MAP" W="$1" C="$2" K="$3" V="$4" node -e '
-    const m = JSON.parse(process.env.MAP), e = process.env;
-    ((m[e.W] ??= {})[e.C] ??= {})[e.K] = e.V;
-    process.stdout.write(JSON.stringify(m));')
+  MAP=$(printf '%s' "$MAP" | W="$1" C="$2" K="$3" node -e '
+    const fs = require("fs"), e = process.env;
+    const m = JSON.parse(fs.readFileSync(0, "utf8"));
+    ((m[e.W] ??= {})[e.C] ??= {})[e.K] = fs.readFileSync(3, "utf8");
+    process.stdout.write(JSON.stringify(m));' 3< <(printf '%s' "$4"))
 }
-is_secret() { [[ "$1" =~ (TOKEN|KEY|PASSWORD|SECRET|PASS) || "$1" =~ (token|key|password|secret) ]]; }
 
 hint_for() {
   case "$1/$2" in
@@ -260,10 +262,14 @@ done
 [[ -d node_modules ]] || die "Run pnpm install in the harness first."
 bw_status=$(bw status | jq -r .status)
 [[ "$bw_status" == unauthenticated ]] && die "Log in first in this terminal: bw login"
+UNLOCKED_HERE=no
 if [[ "$bw_status" != unlocked || -z "${BW_SESSION:-}" ]]; then
-  step "Unlocking Bitwarden for this run only (the session ends with the wizard)."
+  step "Unlocking Bitwarden for this run; the wizard locks it again when it exits."
   BW_SESSION=$(bw unlock --raw) || die "Bitwarden didn't unlock."
   export BW_SESSION
+  UNLOCKED_HERE=yes
+  # The session key stays valid until bw lock, so lock on every exit, Ctrl-C included.
+  trap 'bw lock >/dev/null 2>&1' EXIT
 fi
 bw sync >/dev/null || warn "bw sync failed; continuing with the local vault copy."
 step "Bitwarden is unlocked and synced."
@@ -315,9 +321,8 @@ case "$(grep -c . <<<"$matches" || true)" in
   0) step "No secure note is named that yet; the wizard will create it." ;;
   1)
     NOTE_ID="$matches"
-    MAP=$(bw get item "$NOTE_ID" | jq -r '.notes // "{}"')
-    jq -e 'type == "object"' >/dev/null 2>&1 <<<"$MAP" || die "That note's notes aren't a JSON object. Fix or rename it, then re-run."
-    MAP=$(jq -c . <<<"$MAP")
+    MAP=$(bw get item "$NOTE_ID" | jq -c '.notes // "{}" | fromjson | if type == "object" then . else error end' 2>/dev/null) \
+      || die "That note's notes aren't a JSON object. Fix or rename it, then re-run."
     step "Found it. Its values are the defaults below; Enter keeps each one."
     ;;
   *) die "More than one secure note is named \"$NOTE_NAME\". Rename all but one, then re-run." ;;
@@ -328,6 +333,7 @@ pause "Press Enter for stage 4."
 stage "Values for the managed inputs"
 say "The map must hold every managed input, or the plan fails on prevent_destroy."
 say "HCP can't show stored values, so take each from its custody, not from memory."
+say "Every value is typed hidden: even URLs can embed credentials."
 if [[ -z "$MANAGED" ]]; then
   note "Nothing managed yet; add inputs in the next stage."
 else
@@ -335,8 +341,7 @@ else
     say ""
     say "$w · $c · ${BOLD}$k${RESET}"
     hint_for "$w" "$k"
-    secret=no; is_secret "$k" && secret=yes
-    ask_value value "Value$([[ $secret == yes ]] && echo ' (hidden)'):" "$(map_get "$w" "$c" "$k")" "$secret" </dev/tty
+    ask_value value "Value (hidden):" "$(map_get "$w" "$c" "$k")" yes </dev/tty
     [[ -n "$value" ]] || die "$w $c $k can't be empty."
     map_set "$w" "$c" "$k" "$value"
   done <<<"$MANAGED"
@@ -348,7 +353,8 @@ pause "Press Enter for stage 5."
 stage "New inputs"
 current_tailnet=$(map_get household-finance terraform tailnet_site_url)
 if [[ -z "$current_tailnet" ]]; then
-  detected=$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//')
+  # Tailscale missing or stopped just means no suggestion, never an exit here.
+  detected=$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//') || detected=""
   say "household-finance can take tailnet_site_url, for phone access over Tailscale (#284)."
   if [[ -n "$detected" ]] && confirm "Add tailnet_site_url = https://$detected ?"; then
     map_set household-finance terraform tailnet_site_url "https://$detected"
@@ -364,8 +370,7 @@ while confirm "Add another input?"; do
   [[ "$c" == environment || "$c" == terraform ]] || { warn "Category must be environment or terraform."; continue; }
   [[ "$k" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || { warn "Variable names are identifiers."; continue; }
   hint_for "$w" "$k"
-  secret=no; is_secret "$k" && secret=yes
-  ask_value value "Value$([[ $secret == yes ]] && echo ' (hidden)'):" "" "$secret"
+  ask_value value "Value (hidden):" "" yes
   [[ -n "$value" ]] || { warn "Empty value; not added."; continue; }
   map_set "$w" "$c" "$k" "$value"
   step "Added $w $c $k."
@@ -374,13 +379,13 @@ value=""
 
 # ── 6 ─────────────────────────────────────────────────────────────────────
 stage "Check the map"
-missing=$(MAP="$MAP" MANAGED="$MANAGED" node -e '
-  const m = JSON.parse(process.env.MAP);
+missing=$(printf '%s' "$MAP" | MANAGED="$MANAGED" node -e '
+  const m = JSON.parse(require("fs").readFileSync(0, "utf8"));
   process.stdout.write(process.env.MANAGED.split("\n").filter(Boolean)
     .filter((a) => { const [w, c, k] = a.split(" "); return !m[w]?.[c]?.[k]; }).join(", "));')
 [[ -z "$missing" ]] || die "The map leaves out managed inputs: $missing. Not saved."
 step "Every managed input has a value. The map holds (names only):"
-jq -r 'to_entries[] | .key as $w | .value | to_entries[] | .key as $c | .value | keys[] | "\($w)  \($c)  \(.)"' <<<"$MAP" \
+printf '%s' "$MAP" | jq -r 'to_entries[] | .key as $w | .value | to_entries[] | .key as $c | .value | keys[] | "\($w)  \($c)  \(.)"' \
   | while read -r line; do note "  $line"; done
 pause "Press Enter for stage 7."
 
@@ -388,12 +393,12 @@ pause "Press Enter for stage 7."
 stage "Save to Bitwarden"
 if [[ -n "$NOTE_ID" ]]; then
   confirm "Replace the notes of \"$NOTE_NAME\" with this map?" || die "Not saved."
-  bw get item "$NOTE_ID" | MAP="$MAP" jq '.notes = env.MAP' | bw encode | bw edit item "$NOTE_ID" >/dev/null \
+  bw get item "$NOTE_ID" | jq --rawfile m <(printf '%s' "$MAP") '.notes = $m' | bw encode | bw edit item "$NOTE_ID" >/dev/null \
     || die "bw edit failed; the note is unchanged."
 else
   confirm "Create the secure note \"$NOTE_NAME\" with this map?" || die "Not saved."
-  NOTE_ID=$(bw get template item | MAP="$MAP" NAME="$NOTE_NAME" \
-    jq '.type = 2 | .secureNote = {type: 0} | .name = env.NAME | .notes = env.MAP | .login = null' \
+  NOTE_ID=$(bw get template item | NAME="$NOTE_NAME" \
+    jq --rawfile m <(printf '%s' "$MAP") '.type = 2 | .secureNote = {type: 0} | .name = env.NAME | .notes = $m | .login = null' \
     | bw encode | bw create item | jq -r .id) || die "bw create failed."
 fi
 saved=$(bw get item "$NOTE_ID" | jq -c '.notes | fromjson')
@@ -427,7 +432,7 @@ MAP=""
 
 finish
 note "Next: plan and apply each changed project workspace's own Terraform root."
-note "Lock Bitwarden when you're done: bw lock"
+[[ "$UNLOCKED_HERE" == yes ]] || note "Bitwarden was already unlocked, so it stays unlocked: bw lock when you're done."
 }
 
 run_wizard "$@"; exit

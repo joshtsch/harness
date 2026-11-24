@@ -25,7 +25,9 @@ describe("secret command guard", () => {
     "pnpm -C . hcp:projects plan",
     "pnpm --dir /x hcp:projects apply",
     "pnpm -s hcp:projects plan",
+    'sh -c "pnpm hcp:projects"',
     "bash scripts/hcp-inputs-note-wizard.sh",
+    'sh -c "scripts/hcp-inputs-note-wizard.sh"',
   ])("blocks %s and sends the user to their own terminal", (command) => {
     const result = run(command);
     expect(result.status).toBe(2);
@@ -41,6 +43,7 @@ describe("secret command guard", () => {
     "pnpm hcp:projects-docs",
     "git add scripts/hcp-projects.ts src/x.ts",
     "bash -n scripts/hcp-inputs-note-wizard.sh",
+    "git show HEAD -- . ':!scripts/hcp-inputs-note-wizard.sh'",
     "vitest run src/__tests__/hcp-projects-cli.test.ts",
   ])(
     "allows %s",
