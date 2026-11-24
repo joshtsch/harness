@@ -18,7 +18,8 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/git-guard.mjs\"" }
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/git-guard.mjs\"" },
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/secret-command-guard.mjs\"" }
         ]
       },
       {

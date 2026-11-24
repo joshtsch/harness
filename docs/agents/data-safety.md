@@ -87,6 +87,12 @@ fits and the operation needs client-side cryptography or input validation.
 If a needed credential is unavailable to the agent, report the limitation; do
 not search for the value.
 
+Never run a command that reads or unlocks tier 4 secrets, such as `bw` or
+`hcp:projects`, even when asked. Give the user the command to run in their own
+terminal, outside any agent session, and ask only for the outcome. The
+[secret guard](skills-and-plugins.md#claude-code-settings) enforces this in
+Claude Code.
+
 ## Rules
 
 - Keep API keys, OAuth tokens, passwords, private keys, and connection strings in the custody their tier assigns.

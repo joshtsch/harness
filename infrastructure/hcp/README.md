@@ -213,9 +213,10 @@ to authorized administrators. Provider behavior is documented in the
 ### Protected project inputs
 
 The control plane manages provider credentials and literal Terraform inputs for
-registered project workspaces with `tfe_variable.project_input`. Supply the
-complete inventory as JSON in `TF_VAR_project_workspace_variables`, through a
-protected process environment or the ignored harness-root `.env`:
+registered project workspaces with `tfe_variable.project_input`. The complete
+inventory is one JSON object. It holds tier 4 secrets
+([ADR-0019](../../docs/adr/0019-secret-custody-tiers.md)), so keep it as the
+notes of a Bitwarden secure note, never in `.env` or another file in the harness:
 
 ```json
 {
@@ -232,8 +233,22 @@ and `terraform`; omitted categories are empty. Each individual value is a litera
 string (`hcl = false`) and sensitive, including private account metadata.
 Arbitrary HCL expressions are outside this interface.
 
-Load the private environment and run onboarding as described for organization
-contacts. The CLI validates the map without echoing it, escapes HCL template
+Edit the note in Bitwarden, then pipe it in yourself, in a terminal outside any
+agent session. `--variables-file -` reads the map from standard input, so it
+never lands on disk outside the run's temporary tfvars:
+
+```sh
+bw get notes "<note name>" | node --env-file=.env --import tsx scripts/hcp-projects.ts plan --variables-file -
+```
+
+Run `apply` the same way after reviewing the plan. `--variables-file` also
+takes a path, and refuses to run when `TF_VAR_project_workspace_variables` is
+set too. That variable still works for a protected process environment. Agents
+never run these commands: the [secret guard](../../docs/agents/skills-and-plugins.md#claude-code-settings)
+blocks `bw` and `hcp:projects` in Claude Code sessions. Runs that change no
+project inputs omit the map, and Terraform keeps the persisted one.
+
+The CLI validates the map without echoing it, escapes HCL template
 markers in temporary input, and removes its mode-`0600` tfvars after the run.
 Inspect existing variables and attached variable sets before applying; import
 existing workspace variables instead of creating duplicates. Do not override
@@ -252,9 +267,10 @@ organization/workspace/variable ID before applying.
 
 After reviewing and applying the plan, Terraform persists the complete inventory
 as the sensitive HCL variable `project_workspace_variables` in `platform-bootstrap`.
-Template markers are escaped in this persisted aggregate as well. Remove the
-local override after successful persistence so subsequent runs use that protected
-input. For rotations, supply a new complete map including unchanged inputs for
+Template markers are escaped in this persisted aggregate as well. If you
+supplied the map through `TF_VAR_project_workspace_variables`, unset it after
+successful persistence so subsequent runs use that protected input. For
+rotations, supply a new complete map including unchanged inputs for
 all managed workspaces. Omitting an existing managed input is blocked by
 `prevent_destroy`; to remove one on purpose, follow
 [Retiring project inputs](#retiring-project-inputs). Changing a variable's
