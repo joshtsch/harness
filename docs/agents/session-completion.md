@@ -48,6 +48,15 @@ completion report, and review sessions raise it as a standards finding. Either
 session proposes a separate issue to adopt Storybook instead of setting it up
 inside an unrelated change.
 
+### UI critique
+
+A change that adds or changes a UI element includes an Impeccable critique in
+its paired review, in every project. The review session runs the
+[UI design route](agent-roles.md#ui-design-routing) to critique the touched UI
+and reports design findings alongside code findings. Design findings
+follow the same fix-or-accept loop. If Impeccable cannot run, the review session
+reports that as an unresolved finding instead of skipping the critique.
+
 ## 3a. Stop what testing started
 
 In every project, once testing ends and before reporting completion, stop each
@@ -107,10 +116,11 @@ The review runs before the change request opens:
    completion report note that the paired review was declined.
 2. The review session reviews the branch on both
    [review axes](architecture.md): repository standards and the originating
-   issue or specification, including the [UI stories](#ui-stories) check. An
-   unpushed branch is reviewed from its worktree path with
-   `git diff main...HEAD`. It sends its findings to the originating
-   implementation session without asking the user, and states when none remain.
+   issue or specification, including the [UI stories](#ui-stories) check and,
+   for UI changes, the [UI critique](#ui-critique). An unpushed branch is
+   reviewed from its worktree path with `git diff main...HEAD`. It sends
+   its findings to the originating implementation session without asking the
+   user, and states when none remain.
 3. The implementation session fixes or explicitly accepts each finding. After
    each fix commit, it requests another review from the same review session and
    sends the accepted findings with its reasons, so the review session treats

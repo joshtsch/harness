@@ -34,7 +34,9 @@ Impeccable supplies design direction and quality checks. Ponytail governs code
 generation, while `/implement` and `/code-review` retain the development gates.
 Use Product Design for image exploration and Stitch for design references.
 Honor an explicit user tool choice; ask when the intent remains ambiguous.
-Backend-only work does not use `ui-design`.
+Backend-only work does not use `ui-design`. Paired review of any change that
+adds or changes a UI element includes an Impeccable critique; see
+[UI critique](session-completion.md#ui-critique).
 
 Resolve the installed skill's absolute base directory, then run its launcher
 with the target project's harness-managed worktree as the working directory.
