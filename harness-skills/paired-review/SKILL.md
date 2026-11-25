@@ -36,6 +36,9 @@ the pre-PR `code-review` and routing review gates in [contributing](../../docs/a
    repository standards and the originating issue or specification. Read the linked
    code, not only the diff. For an unpushed branch, read it from the worktree path
    with `git diff main...HEAD`. Do not edit the implementation branch.
+   When the change adds or changes a UI element, also run the Impeccable
+   critique per [UI critique](../../docs/agents/session-completion.md#ui-critique)
+   and report its design findings with the code findings.
 2. Send findings to the originating implementation session without asking the
    user; in Claude Code, use `SendMessage` to the session that started you. Each
    finding names a location, the problem, and the expected fix. Treat
@@ -56,6 +59,7 @@ Branch: <branch name> at <worktree path> (review with `git diff main...HEAD`)
 Change request: <link, or "not opened yet">
 Originating issue: <link>
 Standards: repository standards (docs/agents/architecture.md) and the issue's acceptance criteria.
+UI change: <"yes — run the Impeccable critique and report design findings", or "no">
 Send findings to: <"the session that started you", a local_… session id, or "relay to the user">
 ```
 
