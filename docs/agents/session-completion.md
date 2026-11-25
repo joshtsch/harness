@@ -118,8 +118,9 @@ The review runs before the change request opens:
    [review axes](architecture.md): repository standards and the originating
    issue or specification, including the [UI stories](#ui-stories) check and,
    for UI changes, the [UI critique](#ui-critique). An unpushed branch is
-   reviewed from its worktree path with `git diff main...HEAD`. It sends its findings to the originating
-   implementation session without asking the user, and states when none remain.
+   reviewed from its worktree path with `git diff main...HEAD`. It sends
+   its findings to the originating implementation session without asking the
+   user, and states when none remain.
 3. The implementation session fixes or explicitly accepts each finding. After
    each fix commit, it requests another review from the same review session and
    sends the accepted findings with its reasons, so the review session treats
