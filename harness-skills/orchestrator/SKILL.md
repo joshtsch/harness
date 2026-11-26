@@ -48,6 +48,7 @@ or `gh pr checks`.
 You are the implementation session for <issue link> in <project>.
 Read <the generated session AGENTS.md, or for stacked work the harness and worktree AGENTS.md> with the harness and project instructions.
 Worktree: <path>, branch <branch>, base <base>.
+Your cwd is the harness root; do all project work (edits, gates, git) in <worktree path>, with absolute paths, `git -C` and `pnpm --dir`.
 Done: <the project's quality gates>, Storybook stories for every UI element added or changed, docs updated.
 Parallel work: <other sessions and issues, or "none">. Stay within <file and package boundaries>.
 Stop and ask me on any decision the issue leaves unsettled; record settled decisions on the issue or PR.
@@ -61,8 +62,8 @@ its review session right away, without asking the user. Skip this section if tha
 session already started a reviewer.
 
 1. Check the commit with `git log`, then start a separate review session in the
-   harness root against the same worktree (`initiation: "user_asked"`, `use_worktree: false`, read-only
-   work) with the [paired-review](../paired-review/SKILL.md) review prompt,
+   harness root against the same worktree (`initiation: "user_asked"`,
+   `use_worktree: false`, read-only work) with the [paired-review](../paired-review/SKILL.md) review prompt,
    sending findings to the implementation session's `local_…` id. The user's
    instruction to orchestrate covers this start, but the app refuses starts on a
    turn another session's message began. If it refuses, propose the reviewer as
