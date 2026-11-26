@@ -17,6 +17,8 @@ resource "github_repository" "public_harness" {
   name       = "harness"
   visibility = var.public_repository_visibility
   has_issues = true
+  # Coverage checked 26 November 2026: integrations/github 6.13 supports it.
+  delete_branch_on_merge = true
 
   depends_on = [github_repository.harness]
 
