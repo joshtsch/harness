@@ -42,6 +42,14 @@ updates stories that cover it and each of its meaningful states, as defined in
 Implementation and review sessions both ask: stories added or updated for every
 UI element touched?
 
+The review session also looks at the rendered stories. It runs the project's
+Storybook on a free port and reviews every added or changed story at desktop
+and phone width, in light and dark. Where the change has stress cases, such as
+long content or many options, it reviews those too. It reports which stories,
+widths and themes it looked at. If it cannot run Storybook, it reports why as
+an unresolved finding instead of "Not run". It stops the Storybook it started,
+per [section 3a](#3a-stop-what-testing-started).
+
 When a project has a user interface but no Storybook, do not skip the check.
 Implementation sessions report the missing Storybook as a blocker in the
 completion report, and review sessions raise it as a standards finding. Either
@@ -116,8 +124,8 @@ The review runs before the change request opens:
    completion report note that the paired review was declined.
 2. The review session reviews the branch on both
    [review axes](architecture.md): repository standards and the originating
-   issue or specification, including the [UI stories](#ui-stories) check and,
-   for UI changes, the [UI critique](#ui-critique). An unpushed branch is
+   issue or specification, including the [UI stories](#ui-stories) check with
+   its Storybook review and, for UI changes, the [UI critique](#ui-critique). An unpushed branch is
    reviewed from its worktree path with `git diff main...HEAD`. It sends
    its findings to the originating implementation session without asking the
    user, and states when none remain.
