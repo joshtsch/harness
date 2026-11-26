@@ -12,8 +12,9 @@ its own review session.
 
 Claude Code only: the loop needs `start_session`, `SendMessage`,
 `preview_start` and session archiving. Start every child with `use_worktree: false`
-and `cwd` set to its harness-managed worktree, which lies outside the harness
-tree; never start one in the harness folder.
+and `cwd` set to the harness root, so it loads the harness instructions and
+hooks. Its brief names the harness-managed worktree, outside the harness tree,
+where it does all project work.
 
 Once your purpose is settled, rename this session `Orchestrator: <purpose>` with
 `set_session_title`, so it stands out from the sessions it starts.
@@ -38,7 +39,7 @@ or `gh pr checks`.
      not an epic and has Gherkin, and point the brief at the harness and
      worktree `AGENTS.md` files instead.
 3. Start the implementation session: `start_session` with `initiation: "user_asked"`,
-   `context: "fresh"`, `cwd` = the worktree, `use_worktree: false`,
+   `context: "fresh"`, `cwd` = the harness root, `use_worktree: false`,
    `wake_when_done: true`, and a `background` naming the project, the parallel
    sessions and decisions so far. Fill every field of the brief; the session
    starts cold:
@@ -60,7 +61,7 @@ its review session right away, without asking the user. Skip this section if tha
 session already started a reviewer.
 
 1. Check the commit with `git log`, then start a separate review session in the
-   same worktree (`initiation: "user_asked"`, `use_worktree: false`, read-only
+   harness root against the same worktree (`initiation: "user_asked"`, `use_worktree: false`, read-only
    work) with the [paired-review](../paired-review/SKILL.md) review prompt,
    sending findings to the implementation session's `local_…` id. The user's
    instruction to orchestrate covers this start, but the app refuses starts on a
