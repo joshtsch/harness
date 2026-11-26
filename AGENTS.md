@@ -22,6 +22,7 @@ This harness improves its own workflows and coordinates work across independent 
 
 ## Work and completion
 
+- When starting another session, by the orchestrator or any other way, set its `cwd` to the harness root unless the user names another place; its brief names any project worktree it works in.
 - For DNS failures, connection errors, or stalled network commands, follow [Sandbox network troubleshooting](docs/agents/tooling.md#sandbox-network-troubleshooting) before diagnosing the host network or remote service.
 - Follow [Agent role routing](docs/agents/agent-roles.md) for capability selection, provider-specific behavior, and skill ownership. Resolve skill routes with `pnpm capabilities`; unresolved or unsupported routes fail closed.
 - Before creating tracker issues, follow [Shaping tracker work](docs/agents/triage-labels.md#shaping-tracker-work): every task belongs to an epic; fit it under an existing one before filing a new epic.
