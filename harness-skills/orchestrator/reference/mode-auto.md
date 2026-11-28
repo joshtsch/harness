@@ -11,7 +11,8 @@ with these changes:
 - Tracker writes still need the user's say-so. One request covering a class of
   writes, such as filing follow-ups as sub-issues, covers that class for the
   rest of the run.
-- You settle open questions yourself (step 5) instead of relaying them.
+- Open questions become backlog items (step 5), so the run keeps moving
+  without waiting for the user or guessing for them.
 
 The run is done when every issue you started has an open PR with a clean
 paired review, and the final report (step 8) is sent.
@@ -28,6 +29,8 @@ paired review, and the final report (step 8) is sent.
    name each one with its reason in the notes file and the final report.
 5. Pick a Storybook port for every reviewer, distinct from each other and from
    the implementers' ports, and put it in that reviewer's brief.
+6. Run step 5 now for any question an issue already leaves open, so its
+   implementer starts with only the unblocked parts.
 
 ## 2. Pre-start every session
 
@@ -35,8 +38,8 @@ The app refuses `start_session` on a turn that another session's message or an
 automated event began. `SendMessage` and shell commands still work on those
 turns. So, on the user's turn, start every session the run needs: slice 1's
 implementers and reviewers, and each later slice's implementers and
-reviewers. Sessions that cannot work yet start **parked**. Open each parked
-brief with:
+reviewers. Only slice 1's implementers start working. Every reviewer and every
+later-slice implementer starts **parked**. Open each parked brief with:
 
 ```text
 Wait first: do nothing until a go message arrives; reply in one line that you're waiting, then end your turn.
@@ -85,19 +88,24 @@ From then on, wake each session with a `SendMessage` go message.
 3. You choose each PR's base and tell the implementer. It opens the PR only
    after a clean review.
 
-## 5. Settle open questions
+## 5. Turn open questions into backlog items
 
-When a child asks about something the issue leaves open, decide within the
-issue's scope. Record the decision in the notes file, have the child put it in
-the PR body, and list it in the final report so the user can override it.
+The run never guesses. An open question is anything an issue leaves unsettled
+that a child asks about, or a pre-existing problem a reviewer finds.
 
-A decision only the user can make, or a pre-existing problem a reviewer finds,
-becomes a `ready-for-human` sub-issue of the epic when the user has authorized
-filing those; shape it per
-[Shaping tracker work](../../../docs/agents/triage-labels.md#shaping-tracker-work).
-Without that authorization, keep it in the notes file as a proposed follow-up
-for the final report. Keep the slice going around the open question when the
-issue allows it.
+1. If the answer is a fact you can look up (the code, the project docs, the
+   issue thread, a sibling PR), look it up and send it. It was never open.
+2. Otherwise file it as a `ready-for-human` sub-issue of the epic, shaped per
+   [Shaping tracker work](../../../docs/agents/triage-labels.md#shaping-tracker-work).
+   Its body names the issue it blocks and the options you see. Without the
+   user's authorization to file, record it in the notes file as a proposed
+   sub-issue instead.
+3. Have the child finish the parts of its issue the question does not block,
+   and name the sub-issue in its PR body as an open dependency. When nothing is
+   left unblocked, park that issue and move its sessions' capacity to other
+   ready work.
+4. Work that depends on the answer waits for the user: leave it out of later
+   slices and list it in the final report.
 
 ## 6. Watch CI
 
@@ -119,8 +127,8 @@ Keep one notes file in the shared side-session notes folder, or under ignored
 - the slice plan, each issue's branch, base and worktree, and skipped issues
 - every session's name, `local_…` id, role and state (parked, working, done)
 - Storybook ports
-- decisions you took (step 5)
-- follow-ups, filed (with numbers) or proposed
+- open questions and follow-ups: each one filed (with its number) or proposed,
+  and what it blocks
 - PR numbers and their bases
 
 ## 8. Continue or finish
@@ -137,7 +145,6 @@ slice. When no eligible epic work is left:
 Then send the final report:
 
 - each PR: link, base, the PR it stacks on, review status and CI state
-- decisions you took, for the user to override
-- follow-ups, filed or proposed
+- open questions and follow-ups: each one filed or proposed, and what it blocks
 - skipped issues and why
 - blockers, such as a stuck runner, a refused start or a failing check

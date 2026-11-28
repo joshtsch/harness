@@ -31,15 +31,15 @@ The mode names how much of the loop the user steps into.
 - **Attended** (default): the user picks each slice and approves each gate
   above. Follow sections 1 to 6 as written.
 - **Auto:** the user hands over a whole epic. You run its slices in parallel,
-  stack dependent slices, settle open questions, and keep going until every PR
-  is ready for the user's review. Merging, archiving and cleanup still wait for
-  the user.
+  stack dependent slices, file open questions as backlog items instead of
+  guessing, and keep going until every PR is ready for the user's review.
+  Merging, archiving and cleanup still wait for the user.
 
 Choose auto when the user asks for auto mode for this orchestrator run, or asks
 you to work through an epic without them; otherwise attended. Claude Code's
-auto permission mode is a separate setting and does not choose this mode. In auto mode, read
-[reference/mode-auto.md](reference/mode-auto.md) before section 1; it changes
-the gates above and sections 1 to 3 and 6.
+auto permission mode is a separate setting and does not choose this mode. In
+auto mode, read [reference/mode-auto.md](reference/mode-auto.md) before
+section 1; it changes the gates above and sections 1 to 3 and 6.
 
 ## 1. Start an issue
 

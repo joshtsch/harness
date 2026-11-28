@@ -143,7 +143,7 @@ The command refuses to replace an existing skill directory or link. Remove the l
 link manually before relinking a skill.
 
 Behavioral evaluations exist for `harness-memory`, `knowledge-routing`,
-`enforcement-routing`, and `interview` (`pnpm evaluate:<skill> prepare` and `check`). All follow
+`enforcement-routing`, `interview`, and `orchestrator` (`pnpm evaluate:<skill> prepare` and `check`). All follow
 the [harness-memory evaluation procedure](harness-memory.md#behavioral-evaluation):
 independent agents run each `runs/<case>/prompt.md`, `check` covers only
 file and report-shape invariants, and each response still needs review against
@@ -157,6 +157,13 @@ decision), and change nothing outside scratch and domain docs. Cases record
 only the message text, so `check` does not cover the interactive question
 tool call. `prepare` takes the `domain-modeling` directory as an optional
 second argument.
+`orchestrator` uses `scripts/evaluate-orchestrator.ts` and covers auto-mode
+planning only: each case hands over a synthetic epic and the agent writes
+`plan.json` without starting sessions or running commands. `check` covers
+slices, stacked bases, skipped issues, one implementer and reviewer per issue
+in start order, parked briefs, distinct reviewer Storybook ports, and open
+questions recorded as `ready-for-human` sub-issues, filed only when authorized.
+Session messaging, CI and stacking at run time stay uncovered.
 
 ## Impeccable installation
 
