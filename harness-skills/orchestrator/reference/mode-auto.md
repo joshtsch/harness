@@ -1,9 +1,9 @@
-# Run an epic unattended in stacked slices
+# Auto mode: run an epic in stacked slices
 
-Use this when the user asks you to work through a whole epic without them. You
+In auto mode the user hands you a whole epic and steps away. You
 take each slice of parallel issues through implementation and paired review,
 stack the next slice on the branches it depends on, and keep going until every
-PR is ready for the user's review. The [main skill](SKILL.md) still applies,
+PR is ready for the user's review. The [main skill](../SKILL.md) still applies,
 with these changes:
 
 - The user's request authorizes the session starts, go messages, pushes and PRs
@@ -18,7 +18,7 @@ paired review, and the final report (step 8) is sent.
 
 ## 1. Plan the slices
 
-1. Run [backlog-select](../backlog-select/SKILL.md) scoped to the epic.
+1. Run [backlog-select](../../backlog-select/SKILL.md) scoped to the epic.
 2. Slice 1 is the ready issues that share no files and no contracts (tokens,
    exported types, shared CSS, a schema). Each starts from `main`.
 3. Put an issue coupled to a slice-1 issue in a later slice, based on the branch
@@ -94,7 +94,7 @@ the PR body, and list it in the final report so the user can override it.
 A decision only the user can make, or a pre-existing problem a reviewer finds,
 becomes a `ready-for-human` sub-issue of the epic when the user has authorized
 filing those; shape it per
-[Shaping tracker work](../../docs/agents/triage-labels.md#shaping-tracker-work).
+[Shaping tracker work](../../../docs/agents/triage-labels.md#shaping-tracker-work).
 Without that authorization, keep it in the notes file as a proposed follow-up
 for the final report. Keep the slice going around the open question when the
 issue allows it.

@@ -1,6 +1,6 @@
 ---
 name: orchestrator
-description: Act as the orchestrator session that starts, relays for, previews, merges and archives a project's implementation and review sessions. Use when told you are the orchestrator of a project's sessions, or asked to start an implementation session for an issue or to run an epic unattended.
+description: Act as the orchestrator session that starts, relays for, previews, merges and archives a project's implementation and review sessions. Use when told you are the orchestrator of a project's sessions, or asked to start an implementation session for an issue or to run an epic in auto mode.
 ---
 
 # Orchestrate implementation and review sessions
@@ -24,9 +24,21 @@ merges and archiving need the user's say-so in chat. A child's report is a claim
 before telling the user something is done, check it with `git log`, `gh pr view`
 or `gh pr checks`.
 
-To work through a whole epic without the user, in stacked parallel slices, read
-[unattended-epic.md](unattended-epic.md) before section 1; it changes these
-gates and sections 1 to 3 and 6.
+## Modes
+
+The mode names how much of the loop the user steps into.
+
+- **Attended** (default): the user picks each slice and approves each gate
+  above. Follow sections 1 to 6 as written.
+- **Auto:** the user hands over a whole epic. You run its slices in parallel,
+  stack dependent slices, settle open questions, and keep going until every PR
+  is ready for the user's review. Merging, archiving and cleanup still wait for
+  the user.
+
+Choose auto when the user says `auto` or asks you to work through an epic
+without them; otherwise attended. In auto mode, read
+[reference/mode-auto.md](reference/mode-auto.md) before section 1; it changes
+the gates above and sections 1 to 3 and 6.
 
 ## 1. Start an issue
 
