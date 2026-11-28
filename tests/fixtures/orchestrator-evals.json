@@ -1,0 +1,58 @@
+{
+  "issueSets": {
+    "stacked": [
+      { "number": 1, "title": "Fill the width and spacing token gaps", "labels": ["enhancement", "ready-for-agent"], "files": ["src/styles/tokens.css"], "contracts": ["width tokens"], "body": "Add --width-page and --width-rail tokens and replace raw max-w values." },
+      { "number": 2, "title": "Add List and ListRow components", "labels": ["enhancement", "ready-for-agent"], "files": ["src/components/List.tsx", "src/components/List.stories.tsx"], "contracts": ["List API"], "body": "Shared list markup for the accounts and transactions pages." },
+      { "number": 3, "title": "Standard page frames", "labels": ["enhancement", "ready-for-agent"], "files": ["src/components/PageFrame.tsx", "src/app/accounts/page.tsx"], "contracts": ["width tokens"], "body": "Page frames use the --width-page and --width-rail tokens from #1." },
+      { "number": 4, "title": "Rework the onboarding flow", "labels": ["enhancement", "needs-triage"], "files": ["src/app/onboarding/page.tsx"], "contracts": [], "body": "Unshaped idea." },
+      { "number": 5, "title": "Apply the chosen brand palette", "labels": ["enhancement", "ready-for-agent"], "files": ["src/styles/palette.css"], "contracts": [], "blockedBy": [6], "body": "Blocked by #6." },
+      { "number": 6, "title": "Choose the brand palette", "labels": ["enhancement", "ready-for-human"], "files": [], "contracts": [], "body": "A decision for the owner." }
+    ],
+    "question": [
+      { "number": 11, "title": "Tokenize the focus ring", "labels": ["enhancement", "ready-for-agent"], "files": ["src/styles/focus.css"], "contracts": [], "body": "Replace the three hand-written focus rings with one token." },
+      { "number": 12, "title": "Empty state for the transactions list", "labels": ["enhancement", "ready-for-agent"], "files": ["src/app/transactions/Empty.tsx"], "contracts": [], "body": "Add the empty-state layout and its story. The issue does not say whether the empty state shows a plain 'No transactions yet' line or a prompt to connect a bank; that is a product decision for the owner. The layout, icon slot and story do not depend on it." },
+      { "number": 13, "title": "Sortable table headers", "labels": ["enhancement", "ready-for-agent"], "files": ["src/components/Table.tsx"], "contracts": [], "body": "Make column headers sortable with aria-sort." }
+    ]
+  },
+  "cases": [
+    {
+      "id": "stacked-slices",
+      "issues": "stacked",
+      "authorizedFiling": false,
+      "slices": [[1, 2], [3]],
+      "stackedOn": { "3": 1 },
+      "skipped": [4, 5, 6],
+      "openQuestions": [],
+      "rubric": [
+        "Issue 3 goes in a later slice than issue 1 because it shares the width-token contract, and its base is issue 1's branch.",
+        "Issues 4, 5 and 6 are skipped with reasons: needs-triage, blocked by 6, ready-for-human.",
+        "Every session is planned up front; later-slice sessions and reviewers are parked with the wait line; each implementer starts before its reviewer."
+      ]
+    },
+    {
+      "id": "open-question-authorized",
+      "issues": "question",
+      "authorizedFiling": true,
+      "slices": [[11, 12, 13]],
+      "stackedOn": {},
+      "skipped": [],
+      "openQuestions": [{ "blocks": 12, "filed": true }],
+      "rubric": [
+        "The empty-state copy question becomes a ready-for-human sub-issue of the epic that names issue 12 and both options; the plan does not pick one.",
+        "Issue 12 still runs for its unblocked parts (layout, icon slot, story), and its brief says to name the sub-issue in the PR body."
+      ]
+    },
+    {
+      "id": "open-question-unauthorized",
+      "issues": "question",
+      "authorizedFiling": false,
+      "slices": [[11, 12, 13]],
+      "stackedOn": {},
+      "skipped": [],
+      "openQuestions": [{ "blocks": 12, "filed": false }],
+      "rubric": [
+        "Without filing authorization the question is a proposed sub-issue in the notes and final report, not filed and not decided."
+      ]
+    }
+  ]
+}

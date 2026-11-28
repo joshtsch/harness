@@ -94,7 +94,8 @@ prompt and findings through the user.
 ## Orchestrator routing
 
 When told to act as the orchestrator of a project's implementation and review
-sessions, or asked to start an implementation session for an issue, run
+sessions, asked to start an implementation session for an issue, or asked to
+run an epic in auto mode, run
 `pnpm capabilities route claude orchestrator` and read its
 [skill](../../harness-skills/orchestrator/SKILL.md). It is Claude Code only,
 because it starts, messages, previews and archives sessions; Codex and Gemini

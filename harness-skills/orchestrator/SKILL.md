@@ -1,6 +1,6 @@
 ---
 name: orchestrator
-description: Act as the orchestrator session that starts, relays for, previews, merges and archives a project's implementation and review sessions. Use when told you are the orchestrator of a project's sessions, or asked to start an implementation session for an issue.
+description: Act as the orchestrator session that starts, relays for, previews, merges and archives a project's implementation and review sessions. Use when told you are the orchestrator of a project's sessions, or asked to start an implementation session for an issue or to run an epic in auto mode.
 ---
 
 # Orchestrate implementation and review sessions
@@ -23,6 +23,23 @@ Approval gates: tracker writes (labels, comments, Gherkin, triage), publication,
 merges and archiving need the user's say-so in chat. A child's report is a claim:
 before telling the user something is done, check it with `git log`, `gh pr view`
 or `gh pr checks`.
+
+## Modes
+
+The mode names how much of the loop the user steps into.
+
+- **Attended** (default): the user picks each slice and approves each gate
+  above. Follow sections 1 to 6 as written.
+- **Auto:** the user hands over a whole epic. You run its slices in parallel,
+  stack dependent slices, file open questions as backlog items instead of
+  guessing, and keep going until every PR is ready for the user's review.
+  Merging, archiving and cleanup still wait for the user.
+
+Choose auto when the user asks for auto mode for this orchestrator run, or asks
+you to work through an epic without them; otherwise attended. Claude Code's
+auto permission mode is a separate setting and does not choose this mode. In
+auto mode, read [reference/mode-auto.md](reference/mode-auto.md) before
+section 1; it changes the gates above and sections 1 to 3 and 6.
 
 ## 1. Start an issue
 
