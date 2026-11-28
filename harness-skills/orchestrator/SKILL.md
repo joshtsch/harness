@@ -35,8 +35,9 @@ The mode names how much of the loop the user steps into.
   is ready for the user's review. Merging, archiving and cleanup still wait for
   the user.
 
-Choose auto when the user says `auto` or asks you to work through an epic
-without them; otherwise attended. In auto mode, read
+Choose auto when the user asks for auto mode for this orchestrator run, or asks
+you to work through an epic without them; otherwise attended. Claude Code's
+auto permission mode is a separate setting and does not choose this mode. In auto mode, read
 [reference/mode-auto.md](reference/mode-auto.md) before section 1; it changes
 the gates above and sections 1 to 3 and 6.
 
