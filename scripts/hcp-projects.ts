@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { readFileSync } from "node:fs";
 import { access, unlink, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
@@ -30,14 +31,17 @@ async function run(command: string, args: string[], environment: NodeJS.ProcessE
 
 try {
   if (action !== "plan" && action !== "apply") {
-    throw new Error("Usage: pnpm hcp:projects <plan|apply> [--config-root <harness-path>]");
+    throw new Error("Usage: pnpm hcp:projects <plan|apply> [--config-root <harness-path>] [--variables-file <path|->]");
   }
   let configRoot = resolve(".");
-  if (options.length > 0) {
-    if (options.length !== 2 || options[0] !== "--config-root" || !options[1]) {
-      throw new Error("Expected --config-root <harness-path>");
+  let variablesFile: string | undefined;
+  for (let index = 0; index < options.length; index += 2) {
+    const [flag, value] = [options[index], options[index + 1]];
+    if (!value || (flag !== "--config-root" && flag !== "--variables-file")) {
+      throw new Error("Expected --config-root <harness-path> or --variables-file <path|->");
     }
-    configRoot = resolve(options[1]);
+    if (flag === "--config-root") configRoot = resolve(value);
+    else variablesFile = value;
   }
   const organization = process.env.TF_VAR_tfe_organization;
   if (!organization) throw new Error("Set TF_VAR_tfe_organization for the existing HCP organization");
@@ -64,7 +68,15 @@ try {
   if (names.length === 0) throw new Error("No Terraform projects are configured; refusing an empty workspace inventory");
 
   let projectVariables: Parameters<typeof parseProjectInputRetirements>[2];
-  const suppliedVariables = process.env.TF_VAR_project_workspace_variables;
+  let suppliedVariables = process.env.TF_VAR_project_workspace_variables;
+  if (variablesFile !== undefined) {
+    if (suppliedVariables?.trim()) {
+      throw new Error("Supply the project inputs map once: both TF_VAR_project_workspace_variables and --variables-file are set");
+    }
+    // `-` is stdin, so the map can be piped from a Bitwarden note without touching disk.
+    suppliedVariables = readFileSync(variablesFile === "-" ? 0 : variablesFile, "utf8");
+    if (!suppliedVariables.trim()) throw new Error("--variables-file is empty");
+  }
   if (suppliedVariables?.trim()) {
     try {
       const parsed: unknown = JSON.parse(suppliedVariables);
@@ -78,7 +90,8 @@ try {
       }
       projectVariables = parsed as typeof projectVariables;
     } catch {
-      throw new Error("TF_VAR_project_workspace_variables must map registered workspaces to environment/terraform string maps");
+      const source = variablesFile === undefined ? "TF_VAR_project_workspace_variables" : "The --variables-file map";
+      throw new Error(`${source} must map registered workspaces to environment/terraform string maps`);
     }
   }
 

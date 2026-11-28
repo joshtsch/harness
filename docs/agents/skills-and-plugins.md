@@ -237,6 +237,14 @@ sessions started in `projects/`.
   the body of `gh issue` and `gh pr` `create`, `edit`, and `comment` calls
   (inline `--body` or `--body-file`) with the markdown publication check and the
   sensitive-content scan; a body from standard input is blocked.
+- **Secret guard** (`scripts/claude-hooks/secret-command-guard.mjs`, Bash)
+  blocks the Bitwarden CLI (`bw`, except `status`, `--help` and `--version`),
+  `hcp:projects` runs and `scripts/hcp-inputs-note-wizard.sh`, which read tier
+  4 secrets, and tells the agent to
+  ask the user to run the command in their own terminal. It matches command
+  text, not a shell parse: `bw` counts where a command starts, including after
+  `$(` or a quote, so `sh -c "bw …"` is blocked and a mention in a commit
+  message is not.
 - **Default-clone guard** (`scripts/claude-hooks/default-clone-guard.mjs`, Edit,
   Write, NotebookEdit, and Bash) blocks writes inside `projects/<project>/` for
   configured projects and points to `pnpm worktree`. For Bash it sees only

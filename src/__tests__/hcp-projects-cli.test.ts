@@ -32,19 +32,22 @@ root="$(dirname "$0")/.."
 echo "$*" >> "$root/calls.txt"
 case "$*" in
   *"state list"*) cat "$root/state.txt" ;;
-  *plan*) cat "$root/infrastructure/hcp/onboarding-retire.tf" > "$root/moves.txt" 2>/dev/null || true ;;
+  *plan*) cat "$root/infrastructure/hcp/onboarding-retire.tf" > "$root/moves.txt" 2>/dev/null || true
+    cat "$root/infrastructure/hcp/onboarding.auto.tfvars" > "$root/tfvars.txt" ;;
 esac
 `);
   chmodSync(join(directory, "bin", "terraform"), 0o755);
-  return (retire: string, variables = '{"example-state":{"environment":{"KEPT":"v"}}}') => spawnSync(
-    process.execPath, ["--import", tsx, script, "plan"],
+  // A null map leaves TF_VAR_project_workspace_variables unset; args and input reach the CLI.
+  return (retire: string, variables: string | null = '{"example-state":{"environment":{"KEPT":"v"}}}', args: string[] = [], input?: string) => spawnSync(
+    process.execPath, ["--import", tsx, script, "plan", ...args],
     {
       cwd: directory,
       encoding: "utf8",
+      input,
       env: {
         PATH: `${join(directory, "bin")}:${process.env.PATH}`,
         TF_VAR_tfe_organization: "synthetic-organization",
-        TF_VAR_project_workspace_variables: variables,
+        ...(variables === null ? {} : { TF_VAR_project_workspace_variables: variables }),
         HCP_RETIRE_PROJECT_INPUTS: retire,
       },
     },
@@ -91,5 +94,29 @@ describe("pnpm hcp:projects retirements", () => {
     expect(result.stderr).toContain("remains from an interrupted run");
     expect(existsSync(join(directory, "calls.txt"))).toBe(false);
     expect(existsSync(join(directory, "infrastructure", "hcp", "onboarding.auto.tfvars"))).toBe(false);
+  });
+});
+
+describe("pnpm hcp:projects --variables-file", () => {
+  const map = '{"example-state":{"terraform":{"piped":"from-a-note"}}}';
+
+  it("reads the project inputs map from stdin and keeps no copy", () => {
+    const result = harness([])("", null, ["--variables-file", "-"], map);
+    expect(result.status, result.stderr).toBe(0);
+    expect(readFileSync(join(directory, "tfvars.txt"), "utf8")).toContain('project_workspace_variables = {"example-state":{"terraform":{"piped":"from-a-note"}}}');
+    expect(existsSync(join(directory, "infrastructure", "hcp", "onboarding.auto.tfvars"))).toBe(false);
+  });
+
+  it("refuses the map from both the environment and --variables-file", () => {
+    const result = harness([])("", undefined, ["--variables-file", "-"], map);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("both TF_VAR_project_workspace_variables and --variables-file");
+    expect(existsSync(join(directory, "calls.txt"))).toBe(false);
+  });
+
+  it("validates a piped map like the environment one", () => {
+    const result = harness([])("", null, ["--variables-file", "-"], '{"unregistered":{}}');
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("must map registered workspaces");
   });
 });

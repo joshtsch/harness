@@ -50,6 +50,7 @@ are never stored in the harness `.env`.
 | `BW_SESSION`, `HARNESS_BITWARDEN_SESSION*` | 4 | None. Bitwarden unlock is interactive. |
 | `NOTION_EXPERIENCE_TOKEN` | 3 | An isolated Notion integration shared only with the approved pages, loaded by the operator-run gateway. |
 | Supabase service-role key, project JWT secret, database password | 4 | None. Kept in Bitwarden and HCP. |
+| `project_workspace_variables` map | 4 | None. A Bitwarden secure note the user pipes into `hcp:projects --variables-file -`. |
 
 Tier 3 files live under `~/.config/harness/`, not in the repository tree, so
 CLIs that read `.env` from the working directory never load them. Claude Code
