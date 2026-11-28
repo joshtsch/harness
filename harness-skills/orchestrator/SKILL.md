@@ -1,6 +1,6 @@
 ---
 name: orchestrator
-description: Act as the orchestrator session that starts, relays for, previews, merges and archives a project's implementation and review sessions. Use when told you are the orchestrator of a project's sessions, or asked to start an implementation session for an issue.
+description: Act as the orchestrator session that starts, relays for, previews, merges and archives a project's implementation and review sessions. Use when told you are the orchestrator of a project's sessions, or asked to start an implementation session for an issue or to run an epic unattended.
 ---
 
 # Orchestrate implementation and review sessions
@@ -23,6 +23,10 @@ Approval gates: tracker writes (labels, comments, Gherkin, triage), publication,
 merges and archiving need the user's say-so in chat. A child's report is a claim:
 before telling the user something is done, check it with `git log`, `gh pr view`
 or `gh pr checks`.
+
+To work through a whole epic without the user, in stacked parallel slices, read
+[unattended-epic.md](unattended-epic.md) before section 1; it changes these
+gates and sections 1 to 3.
 
 ## 1. Start an issue
 
