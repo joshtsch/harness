@@ -15,7 +15,8 @@ with these changes:
   without waiting for the user or guessing for them.
 
 The run is done when every issue you started has an open PR with a clean
-paired review, and the final report (step 8) is sent.
+paired review, or is held on an open question listed in the final report, and
+that report (step 8) is sent.
 
 ## 1. Plan the slices
 
@@ -101,9 +102,9 @@ that a child asks about, or a pre-existing problem a reviewer finds.
    user's authorization to file, record it in the notes file as a proposed
    sub-issue instead.
 3. Have the child finish the parts of its issue the question does not block,
-   and name the sub-issue in its PR body as an open dependency. When nothing is
-   left unblocked, park that issue and move its sessions' capacity to other
-   ready work.
+   and name the sub-issue, or the proposed question, in its PR body as an open
+   dependency. When nothing is left unblocked, hold that issue: its sessions
+   stop after a one-line report, and the run moves on to other ready work.
 4. Work that depends on the answer waits for the user: leave it out of later
    slices and list it in the final report.
 
