@@ -26,7 +26,7 @@ or `gh pr checks`.
 
 To work through a whole epic without the user, in stacked parallel slices, read
 [unattended-epic.md](unattended-epic.md) before section 1; it changes these
-gates and sections 1 to 3.
+gates and sections 1 to 3 and 6.
 
 ## 1. Start an issue
 

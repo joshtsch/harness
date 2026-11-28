@@ -27,7 +27,7 @@ paired review, and the final report (step 8) is sent.
 4. Leave out issues that are blocked, `needs-triage` or `ready-for-human`, and
    name each one with its reason in the notes file and the final report.
 5. Pick a Storybook port for every reviewer, distinct from each other and from
-   the implementers' ports.
+   the implementers' ports, and put it in that reviewer's brief.
 
 ## 2. Pre-start every session
 
@@ -42,11 +42,22 @@ brief with:
 Wait first: do nothing until a go message arrives; reply in one line that you're waiting, then end your turn.
 ```
 
-The rest of the brief is the usual section 1 or paired-review brief. A later
-slice's worktree may not exist yet: name the path and branch it will have, and
-send the base in the go message. If a start is refused, propose it as an
-`own_initiative` card with the same brief and tell the user that the run waits
-on that card.
+The rest of the brief is the usual section 1 or paired-review brief, with
+these changes:
+
+- Implementer: its last line becomes "Commit, then send the ready-for-review
+  message to the reviewer whose id I send you, and tell me. Do not propose a
+  review session yourself. Open the PR only after a clean review, against the
+  base I name. Never merge."
+- Reviewer: it names its implementer's `local_…` id and its Storybook port, and
+  says "Start on my go message or on a ready-for-review message from your
+  implementer."
+
+Start each implementer before its reviewer, then send the implementer the
+reviewer's id. A later slice's worktree may not exist yet: name the path and
+branch it will have, and send the base in the go message. If a start is
+refused, propose it as an `own_initiative` card with the same brief and tell
+the user that the run waits on that card.
 
 From then on, wake each session with a `SendMessage` go message.
 
@@ -61,14 +72,15 @@ From then on, wake each session with a `SendMessage` go message.
 3. A branch that another branch stacks on only gains new commits: its review
    fixes land as new commits, never as an amend, rebase or force-push. Tell its
    implementer this when the stack forms.
-4. When a base gains commits, have each stacked session run
+4. When a base gains commits, push them (`git -C <base worktree> push`), then
+   have each stacked session run
    `git merge origin/<base>`, rerun its gates, and ask its reviewer for a
    re-review.
 
 ## 4. Review loop
 
-1. Give each implementer its reviewer's `local_…` id in the go message. The
-   implementer sends the ready message to its reviewer directly.
+1. Each implementer has its reviewer's `local_…` id (step 2) and sends the
+   ready message to its reviewer directly.
 2. Every fix commit gets a re-review, nit fixes included.
 3. You choose each PR's base and tell the implementer. It opens the PR only
    after a clean review.
@@ -116,9 +128,9 @@ Keep one notes file in the shared side-session notes folder, or under ignored
 When a slice's PRs are open with clean reviews, send go messages to the next
 slice. When no eligible epic work is left:
 
-1. Rerun the project's UI consistency audit. Find how it ran before in
-   `docs/.scratch/ui-consistency-audit/` and the project's docs, and use the
-   same procedure and scope.
+1. If the project has run a UI consistency audit before, rerun it with the
+   same procedure and scope; the project's docs and the epic it fed say how it
+   ran. Otherwise skip the audit and say so in the report.
 2. File what it finds under the epic each finding belongs to, when the user
    has authorized filing; otherwise list the drafts in the report.
 
